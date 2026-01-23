@@ -100,9 +100,9 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => onDelete(reminder.id)}
-                  className="text-destructive-foreground font-bold text-sm"
+                  className="w-10 h-10 rounded-full bg-destructive-foreground/20 flex items-center justify-center"
                 >
-                  Löschen
+                  <Check className="w-5 h-5 text-destructive-foreground" />
                 </motion.button>
               </div>
               
