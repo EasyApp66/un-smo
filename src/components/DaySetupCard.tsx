@@ -21,16 +21,20 @@ const DaySetupCard = ({ selectedDate, onComplete }: DaySetupCardProps) => {
 
   // Formatiere Datum für Anzeige
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayString = today.toISOString().split('T')[0];
+    
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowString = tomorrow.toISOString().split('T')[0];
     
-    if (dateString === today.toISOString().split('T')[0]) {
+    if (dateString === todayString) {
       return 'Heute';
-    } else if (dateString === tomorrow.toISOString().split('T')[0]) {
+    } else if (dateString === tomorrowString) {
       return 'Morgen';
     } else {
+      const date = new Date(dateString + 'T00:00:00');
       return date.toLocaleDateString('de-DE', { 
         weekday: 'long', 
         day: 'numeric', 
