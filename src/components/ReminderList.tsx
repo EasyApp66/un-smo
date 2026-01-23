@@ -95,14 +95,14 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
               }}
               className="relative mb-2"
             >
-              {/* Löschen Hintergrund */}
-              <div className="absolute inset-0 rounded-xl bg-destructive flex items-center justify-end pr-4">
+              {/* Löschen Hintergrund - Grau */}
+              <div className="absolute inset-0 rounded-xl bg-muted flex items-center justify-end pr-4">
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => onDelete(reminder.id)}
-                  className="w-10 h-10 rounded-full bg-destructive-foreground/20 flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-muted-foreground/20 flex items-center justify-center"
                 >
-                  <Check className="w-5 h-5 text-destructive-foreground" />
+                  <Check className="w-5 h-5 text-muted-foreground" />
                 </motion.button>
               </div>
               
