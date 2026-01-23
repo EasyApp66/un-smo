@@ -16,27 +16,30 @@ export interface DayData {
 }
 
 interface AppState {
-  // Settings
+  // Einstellungen
   wakeTime: string; // HH:mm
   sleepTime: string; // HH:mm
   dailyCigarettes: number;
   isDarkMode: boolean;
   hasCompletedOnboarding: boolean;
+  language: 'de' | 'en';
   
-  // Data
+  // Daten
   days: Record<string, DayData>;
   
-  // Actions
+  // Aktionen
   setWakeTime: (time: string) => void;
   setSleepTime: (time: string) => void;
   setDailyCigarettes: (count: number) => void;
   toggleDarkMode: () => void;
+  setLanguage: (lang: 'de' | 'en') => void;
   completeOnboarding: () => void;
   markReminderComplete: (date: string, reminderId: string) => void;
   deleteReminder: (date: string, reminderId: string) => void;
   initializeDay: (date: string) => void;
   getTodayData: () => DayData | null;
   recalculateReminders: (date: string) => void;
+  deleteAllData: () => void;
 }
 
 const generateReminders = (wakeTime: string, sleepTime: string, count: number): ReminderTime[] => {
@@ -48,7 +51,7 @@ const generateReminders = (wakeTime: string, sleepTime: string, count: number): 
   const wakeMinutes = wakeHour * 60 + wakeMin;
   let sleepMinutes = sleepHour * 60 + sleepMin;
   
-  // Handle overnight (sleep time is next day)
+  // Über Nacht behandeln (Schlafenszeit ist am nächsten Tag)
   if (sleepMinutes <= wakeMinutes) {
     sleepMinutes += 24 * 60;
   }
@@ -83,12 +86,13 @@ const getTodayString = () => {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Default settings
+      // Standard-Einstellungen
       wakeTime: '06:00',
       sleepTime: '23:00',
       dailyCigarettes: 12,
       isDarkMode: false,
       hasCompletedOnboarding: false,
+      language: 'de',
       days: {},
       
       setWakeTime: (time) => {
@@ -116,6 +120,10 @@ export const useAppStore = create<AppState>()(
           }
           return { isDarkMode: newDarkMode };
         });
+      },
+
+      setLanguage: (lang) => {
+        set({ language: lang });
       },
       
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
@@ -200,7 +208,7 @@ export const useAppStore = create<AppState>()(
           .filter((r) => r.completed)
           .map((r) => r.id) || [];
         
-        // Preserve completion status for existing reminders
+        // Behalte den Abschluss-Status für bestehende Erinnerungen
         const updatedReminders = reminders.map((r, i) => ({
           ...r,
           completed: i < completedIds.length,
@@ -224,9 +232,25 @@ export const useAppStore = create<AppState>()(
         const today = getTodayString();
         return state.days[today] || null;
       },
+
+      deleteAllData: () => {
+        // Entferne Dark Mode Klasse
+        document.documentElement.classList.remove('dark');
+        
+        // Setze auf Standardwerte zurück
+        set({
+          wakeTime: '06:00',
+          sleepTime: '23:00',
+          dailyCigarettes: 12,
+          isDarkMode: false,
+          hasCompletedOnboarding: false,
+          language: 'de',
+          days: {},
+        });
+      },
     }),
     {
-      name: 'easysmoke-storage',
+      name: 'smoke-storage',
       onRehydrateStorage: () => (state) => {
         if (state?.isDarkMode) {
           document.documentElement.classList.add('dark');
