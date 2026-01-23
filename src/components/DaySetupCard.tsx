@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Calendar } from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
@@ -7,9 +7,11 @@ import WheelPicker from './WheelPicker';
 interface DaySetupCardProps {
   selectedDate: string;
   onComplete: () => void;
+  isEditing?: boolean;
+  onCancel?: () => void;
 }
 
-const DaySetupCard = ({ selectedDate, onComplete }: DaySetupCardProps) => {
+const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel }: DaySetupCardProps) => {
   const {
     wakeTime,
     sleepTime,
@@ -55,14 +57,24 @@ const DaySetupCard = ({ selectedDate, onComplete }: DaySetupCardProps) => {
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <Calendar className="w-5 h-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h3 className="text-lg font-bold text-foreground">
-              {formatDate(selectedDate)} einrichten
+              {isEditing ? `${formatDate(selectedDate)} bearbeiten` : `${formatDate(selectedDate)} einrichten`}
             </h3>
             <p className="text-xs text-muted-foreground">
-              Lege deine Zeiten und dein Ziel fest
+              {isEditing ? 'Zeitplan und Ziel anpassen' : 'Lege deine Zeiten und dein Ziel fest'}
             </p>
           </div>
+          {isEditing && onCancel && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onCancel}
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </motion.button>
+          )}
         </div>
 
         {/* Aufstehzeit & Schlafenszeit - kompakt nebeneinander */}
@@ -109,7 +121,7 @@ const DaySetupCard = ({ selectedDate, onComplete }: DaySetupCardProps) => {
           onClick={onComplete}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-base shadow-lg glow-green"
         >
-          Tag einrichten
+          {isEditing ? 'Änderungen speichern' : 'Tag einrichten'}
         </motion.button>
       </div>
     </motion.div>
