@@ -118,20 +118,8 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
         )}
       </div>
 
-      {/* Kompaktes Status Widget oberhalb Navigation */}
-      <div className="px-3 pb-16">
-        <div className="bg-card/60 backdrop-blur-sm rounded-lg py-2 px-3 flex justify-center items-center gap-4 border border-border/50">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground">Geraucht</span>
-            <span className="text-sm font-bold text-primary">{completedCount}</span>
-          </div>
-          <div className="w-px h-4 bg-border/50" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground">Übrig</span>
-            <span className="text-sm font-bold text-foreground">{remainingCount}</span>
-          </div>
-        </div>
-      </div>
+      {/* Platz für floating Navigation */}
+      <div className="h-20" />
 
       {/* Hintergrund Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
