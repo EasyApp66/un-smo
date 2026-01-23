@@ -54,7 +54,7 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col safe-top">
-      {/* Mini Kalender - ohne Header/Logo */}
+      {/* Mini Kalender */}
       <div className="pt-2">
         <MiniCalendar
           selectedDate={selectedDate}
@@ -62,43 +62,45 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
         />
       </div>
 
-      {/* Haupt-Zähler - kompakter */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="text-center py-4 px-4"
-      >
+      {/* Sticky Counter unter Kalender */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/30">
         <motion.div
-          key={completedCount}
-          initial={{ scale: 1 }}
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 0.3 }}
-          className="flex items-baseline justify-center gap-1"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-3 px-4"
         >
-          <span className="text-6xl font-black text-foreground">
-            {completedCount}
-          </span>
-          <span className="text-3xl font-bold text-muted-foreground/50">
-            /
-          </span>
-          <span className="text-3xl font-bold text-muted-foreground">
-            {totalCount}
-          </span>
+          <motion.div
+            key={completedCount}
+            initial={{ scale: 1 }}
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 0.3 }}
+            className="flex items-baseline justify-center gap-1"
+          >
+            <span className="text-5xl font-black text-foreground">
+              {completedCount}
+            </span>
+            <span className="text-2xl font-bold text-muted-foreground/50">
+              /
+            </span>
+            <span className="text-2xl font-bold text-muted-foreground">
+              {totalCount}
+            </span>
+          </motion.div>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-muted-foreground text-xs mt-0.5"
+          >
+            {completedCount === 0
+              ? "Bereit wenn du es bist"
+              : completedCount === totalCount
+              ? "Tag geschafft! 🎉"
+              : `Noch ${remainingCount} übrig`}
+          </motion.p>
         </motion.div>
-        
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-muted-foreground text-sm mt-1"
-        >
-          {completedCount === 0
-            ? "Bereit wenn du es bist"
-            : completedCount === totalCount
-            ? "Tag geschafft! 🎉"
-            : `Noch ${remainingCount} übrig`}
-        </motion.p>
-      </motion.div>
+      </div>
 
       {/* Tag Setup oder Erinnerungsliste */}
       <div className="flex-1 overflow-hidden">
@@ -116,24 +118,20 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
         )}
       </div>
 
-      {/* Unten: Kompaktes Status Widget - oberhalb der Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="px-4 pb-24"
-      >
-        <div className="bg-card/80 backdrop-blur-sm rounded-xl p-3 flex justify-around items-center border border-border">
-          <div className="text-center flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Geraucht</span>
-            <span className="text-lg font-bold text-primary">{completedCount}</span>
+      {/* Kompaktes Status Widget oberhalb Navigation */}
+      <div className="px-3 pb-16">
+        <div className="bg-card/60 backdrop-blur-sm rounded-lg py-2 px-3 flex justify-center items-center gap-4 border border-border/50">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground">Geraucht</span>
+            <span className="text-sm font-bold text-primary">{completedCount}</span>
           </div>
-          <div className="w-px h-6 bg-border" />
-          <div className="text-center flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Übrig</span>
-            <span className="text-lg font-bold text-foreground">{remainingCount}</span>
+          <div className="w-px h-4 bg-border/50" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground">Übrig</span>
+            <span className="text-sm font-bold text-foreground">{remainingCount}</span>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Hintergrund Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">

@@ -123,13 +123,13 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                 }`}
               >
                 <div className="flex-1">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex items-center gap-2">
                     <span
                       className={`text-2xl font-bold ${
                         reminder.completed
                           ? 'text-primary'
                           : isPassed
-                          ? 'text-muted-foreground' /* GRAU statt rot */
+                          ? 'text-muted-foreground'
                           : isNext
                           ? 'text-foreground'
                           : 'text-foreground'
@@ -137,17 +137,15 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                     >
                       {reminder.time}
                     </span>
-                    <span
-                      className={`text-xs font-medium ${
-                        isPassed
-                          ? 'text-muted-foreground' /* GRAU statt rot */
-                          : isNext
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
-                      }`}
-                    >
-                      {reminder.completed ? 'erledigt' : isPassed ? 'vorbei' : timeUntil}
-                    </span>
+                    {/* Nur Haken für abgelaufene anzeigen, keine Schrift */}
+                    {isPassed && !reminder.completed && (
+                      <Check className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    {!isPassed && !reminder.completed && (
+                      <span className={`text-xs font-medium ${isNext ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {timeUntil}
+                      </span>
+                    )}
                   </div>
                   {isNext && !reminder.completed && (
                     <motion.p

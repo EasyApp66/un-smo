@@ -27,10 +27,12 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     sleepTime,
     dailyCigarettes,
     isDarkMode,
+    applyScheduleToAllDays,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
     toggleDarkMode,
+    toggleApplyScheduleToAllDays,
     deleteAllData,
   } = useAppStore();
 
@@ -83,7 +85,36 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
             
             {/* Content */}
             <div className="overflow-y-auto px-4 py-4 space-y-5 max-h-[70vh] hide-scrollbar safe-bottom">
-              {/* Aufsteh- & Schlafenszeiten - kompakter für Mobile */}
+              {/* NEU: Zeitplan für alle Tage Toggle */}
+              <section>
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={toggleApplyScheduleToAllDays}
+                  className="w-full flex items-center justify-between p-3 bg-card rounded-xl border border-primary/20"
+                >
+                  <div className="text-left">
+                    <span className="text-sm font-semibold block">
+                      Zeitplan für alle Tage
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Änderungen auf alle Tage anwenden
+                    </span>
+                  </div>
+                  <div
+                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 ${
+                      applyScheduleToAllDays ? 'bg-primary' : 'bg-muted'
+                    }`}
+                  >
+                    <motion.div
+                      animate={{ x: applyScheduleToAllDays ? 20 : 0 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="w-5 h-5 rounded-full bg-background shadow-lg"
+                    />
+                  </div>
+                </motion.button>
+              </section>
+
+              {/* Aufsteh- & Schlafenszeiten */}
               <section>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Dein Zeitplan
