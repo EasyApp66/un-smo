@@ -117,7 +117,6 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
                 selectedDate={selectedDate} 
                 onComplete={handleDaySetupComplete}
                 isEditing={true}
-                compact
               />
             </div>
             <ReminderList
