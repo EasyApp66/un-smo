@@ -36,6 +36,12 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     deleteAllData,
   } = useAppStore();
 
+  const handleLogout = () => {
+    // Reset hasCompletedOnboarding to show welcome screen
+    useAppStore.setState({ hasCompletedOnboarding: false });
+    onClose();
+  };
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDeleteAllData = () => {
@@ -239,6 +245,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
               <section>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
+                  onClick={handleLogout}
                   className="w-full p-3 bg-card rounded-xl text-foreground text-center font-semibold flex items-center justify-center gap-2"
                 >
                   Abmelden
