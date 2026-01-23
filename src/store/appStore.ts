@@ -92,7 +92,7 @@ export const useAppStore = create<AppState>()(
       // Standard-Einstellungen
       wakeTime: '06:00',
       sleepTime: '23:00',
-      dailyCigarettes: 12,
+      dailyCigarettes: 20,
       isDarkMode: false,
       hasCompletedOnboarding: false,
       language: 'de',
@@ -307,7 +307,7 @@ export const useAppStore = create<AppState>()(
         set({
           wakeTime: '06:00',
           sleepTime: '23:00',
-          dailyCigarettes: 12,
+          dailyCigarettes: 20,
           isDarkMode: false,
           hasCompletedOnboarding: false,
           language: 'de',
