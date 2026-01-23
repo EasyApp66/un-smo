@@ -1,13 +1,14 @@
 import { useAppStore } from '../store/appStore';
 import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
+import StatisticsScreen from '../components/StatisticsScreen';
 import SettingsSheet from '../components/SettingsSheet';
 import BottomTabBar from '../components/BottomTabBar';
 import { useEffect, useState } from 'react';
 
 const Index = () => {
   const { hasCompletedOnboarding, isDarkMode } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'home' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Apply dark mode on mount
@@ -20,7 +21,7 @@ const Index = () => {
   }, [isDarkMode]);
 
   // Handle tab change
-  const handleTabChange = (tab: 'home' | 'settings') => {
+  const handleTabChange = (tab: 'home' | 'stats' | 'settings') => {
     setActiveTab(tab);
     if (tab === 'settings') {
       setIsSettingsOpen(true);
@@ -39,7 +40,13 @@ const Index = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-background">
-      <HomeScreen onOpenSettings={() => setIsSettingsOpen(true)} />
+      {activeTab === 'home' && (
+        <HomeScreen onOpenSettings={() => setIsSettingsOpen(true)} />
+      )}
+      
+      {activeTab === 'stats' && (
+        <StatisticsScreen />
+      )}
       
       {/* Bottom Navigation */}
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />

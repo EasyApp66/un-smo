@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion';
-import { Home, Settings } from 'lucide-react';
+import { Home, Settings, BarChart3 } from 'lucide-react';
 
 interface BottomTabBarProps {
-  activeTab: 'home' | 'settings';
-  onTabChange: (tab: 'home' | 'settings') => void;
+  activeTab: 'home' | 'stats' | 'settings';
+  onTabChange: (tab: 'home' | 'stats' | 'settings') => void;
 }
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   const tabs = [
     { id: 'home' as const, icon: Home, label: 'Home' },
+    { id: 'stats' as const, icon: BarChart3, label: 'Statistik' },
     { id: 'settings' as const, icon: Settings, label: 'Einstellungen' },
   ];
 
