@@ -8,11 +8,9 @@ interface DaySetupCardProps {
   selectedDate: string;
   onComplete: () => void;
   isEditing?: boolean;
-  onCancel?: () => void;
-  compact?: boolean;
 }
 
-const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel, compact = false }: DaySetupCardProps) => {
+const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupCardProps) => {
   const {
     wakeTime,
     sleepTime,
@@ -46,50 +44,6 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel, c
     }
   };
 
-  // Kompakte Variante für eingerichtete Tage
-  if (compact) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-xl p-3 shadow-sm border border-border"
-      >
-        <div className="grid grid-cols-3 gap-2">
-          <TimePicker
-            value={wakeTime}
-            onChange={setWakeTime}
-            label="Aufstehen"
-            compact
-          />
-          <TimePicker
-            value={sleepTime}
-            onChange={setSleepTime}
-            label="Schlafen"
-            compact
-          />
-          <WheelPicker
-            value={dailyCigarettes}
-            min={0}
-            max={60}
-            step={1}
-            onChange={setDailyCigarettes}
-            label="Zigaretten"
-            compact
-          />
-        </div>
-        
-        {/* Aktualisieren Button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onComplete}
-          className="w-full mt-3 py-2 rounded-lg bg-primary/10 text-primary font-semibold text-sm"
-        >
-          Zeitplan aktualisieren
-        </motion.button>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
