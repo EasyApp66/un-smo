@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
 interface WheelPickerProps {
@@ -9,6 +9,7 @@ interface WheelPickerProps {
   onChange: (value: number) => void;
   formatValue?: (value: number) => string;
   label?: string;
+  compact?: boolean;
 }
 
 const WheelPicker = ({
@@ -19,6 +20,7 @@ const WheelPicker = ({
   onChange,
   formatValue = (v) => v.toString(),
   label,
+  compact = false,
 }: WheelPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -29,7 +31,9 @@ const WheelPicker = ({
   }
 
   const currentIndex = values.indexOf(value);
-  const itemHeight = 60;
+  const itemHeight = compact ? 45 : 60;
+  const containerHeight = compact ? 135 : 180;
+  const wheelWidth = compact ? 80 : 100;
 
   useEffect(() => {
     if (containerRef.current && !isDragging) {
@@ -39,7 +43,7 @@ const WheelPicker = ({
         behavior: 'smooth',
       });
     }
-  }, [currentIndex, isDragging]);
+  }, [currentIndex, isDragging, itemHeight]);
 
   const handleScroll = () => {
     if (containerRef.current) {
@@ -61,21 +65,21 @@ const WheelPicker = ({
   return (
     <div className="flex flex-col items-center">
       {label && (
-        <span className="text-sm font-medium text-muted-foreground mb-2">
+        <span className={`font-medium text-muted-foreground mb-2 ${compact ? 'text-xs' : 'text-sm'}`}>
           {label}
         </span>
       )}
       
-      <div className="relative h-[180px] w-[100px] overflow-hidden">
+      <div className="relative overflow-hidden" style={{ height: containerHeight, width: wheelWidth }}>
         {/* Selection indicator */}
-        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-[60px] pointer-events-none z-10">
+        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-10" style={{ height: itemHeight }}>
           <div className="absolute inset-0 border-y-2 border-primary/30" />
           <div className="absolute inset-0 bg-primary/5 rounded-xl" />
         </div>
         
         {/* Gradient overlays */}
-        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none z-20" />
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none z-20" />
+        <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-background to-transparent pointer-events-none z-20" />
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-20" />
         
         {/* Scrollable wheel */}
         <div
@@ -87,8 +91,8 @@ const WheelPicker = ({
           onMouseUp={() => setIsDragging(false)}
           className="h-full overflow-y-scroll hide-scrollbar snap-y snap-mandatory"
           style={{
-            paddingTop: 60,
-            paddingBottom: 60,
+            paddingTop: itemHeight,
+            paddingBottom: itemHeight,
           }}
         >
           {values.map((v, index) => {
@@ -105,12 +109,13 @@ const WheelPicker = ({
                   scale,
                 }}
                 transition={{ duration: 0.1 }}
-                className={`h-[60px] flex items-center justify-center snap-center cursor-pointer ${
-                  isSelected ? 'text-primary text-glow-cyan' : 'text-muted-foreground'
+                style={{ height: itemHeight }}
+                className={`flex items-center justify-center snap-center cursor-pointer ${
+                  isSelected ? 'text-primary' : 'text-muted-foreground'
                 }`}
                 onClick={() => onChange(v)}
               >
-                <span className="text-brutal-lg">
+                <span className={compact ? 'text-2xl font-bold' : 'text-brutal-lg'}>
                   {formatValue(v)}
                 </span>
               </motion.div>

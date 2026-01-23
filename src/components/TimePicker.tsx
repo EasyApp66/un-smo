@@ -5,9 +5,10 @@ interface TimePickerProps {
   value: string; // HH:mm
   onChange: (value: string) => void;
   label: string;
+  compact?: boolean;
 }
 
-const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
+const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps) => {
   const [hours, minutes] = value.split(':').map(Number);
   const hoursRef = useRef<HTMLDivElement>(null);
   const minutesRef = useRef<HTMLDivElement>(null);
@@ -16,7 +17,7 @@ const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
   const hourValues = Array.from({ length: 24 }, (_, i) => i);
   const minuteValues = Array.from({ length: 60 }, (_, i) => i);
   
-  const itemHeight = 50;
+  const itemHeight = compact ? 40 : 50;
 
   const scrollToValue = (ref: React.RefObject<HTMLDivElement>, index: number) => {
     if (ref.current && !isScrolling) {
@@ -58,21 +59,24 @@ const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
     }
   };
 
+  const wheelHeight = compact ? 120 : 150;
+  const wheelWidth = compact ? 50 : 70;
+
   const renderWheel = (
     ref: React.RefObject<HTMLDivElement>,
     values: number[],
     currentValue: number,
     onScroll: () => void
   ) => (
-    <div className="relative h-[150px] w-[70px] overflow-hidden">
+    <div className="relative overflow-hidden" style={{ height: wheelHeight, width: wheelWidth }}>
       {/* Selection highlight */}
-      <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-[50px] pointer-events-none z-10">
-        <div className="absolute inset-0 bg-primary/10 rounded-xl border border-primary/20" />
+      <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-10" style={{ height: itemHeight }}>
+        <div className="absolute inset-0 bg-primary/10 rounded-lg border border-primary/20" />
       </div>
       
       {/* Gradients */}
-      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-card to-transparent pointer-events-none z-20" />
-      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card to-transparent pointer-events-none z-20" />
+      <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-card to-transparent pointer-events-none z-20" />
+      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card to-transparent pointer-events-none z-20" />
       
       <div
         ref={ref}
@@ -80,7 +84,7 @@ const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
         onTouchStart={() => setIsScrolling(true)}
         onTouchEnd={() => setIsScrolling(false)}
         className="h-full overflow-y-scroll hide-scrollbar snap-y snap-mandatory"
-        style={{ paddingTop: 50, paddingBottom: 50 }}
+        style={{ paddingTop: itemHeight, paddingBottom: itemHeight }}
       >
         {values.map((v) => {
           const isSelected = v === currentValue;
@@ -88,11 +92,12 @@ const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
           return (
             <div
               key={v}
-              className={`h-[50px] flex items-center justify-center snap-center transition-all duration-150 ${
-                isSelected ? 'text-primary text-glow-cyan' : 'text-muted-foreground/60'
+              style={{ height: itemHeight }}
+              className={`flex items-center justify-center snap-center transition-all duration-150 ${
+                isSelected ? 'text-primary' : 'text-muted-foreground/60'
               }`}
             >
-              <span className={`font-bold ${isSelected ? 'text-3xl' : 'text-2xl'}`}>
+              <span className={`font-bold ${isSelected ? (compact ? 'text-2xl' : 'text-3xl') : (compact ? 'text-xl' : 'text-2xl')}`}>
                 {v.toString().padStart(2, '0')}
               </span>
             </div>
@@ -108,13 +113,13 @@ const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center"
     >
-      <span className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+      <span className={`font-semibold text-muted-foreground mb-2 uppercase tracking-wide ${compact ? 'text-[10px]' : 'text-xs'}`}>
         {label}
       </span>
       
-      <div className="flex items-center gap-1 bg-card p-3 rounded-2xl">
+      <div className={`flex items-center gap-0.5 bg-card rounded-xl ${compact ? 'p-2' : 'p-3'}`}>
         {renderWheel(hoursRef, hourValues, hours, handleHourScroll)}
-        <span className="text-2xl font-bold text-muted-foreground mx-1">:</span>
+        <span className={`font-bold text-muted-foreground ${compact ? 'text-lg' : 'text-2xl'}`}>:</span>
         {renderWheel(minutesRef, minuteValues, minutes, handleMinuteScroll)}
       </div>
     </motion.div>

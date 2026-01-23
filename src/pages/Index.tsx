@@ -1,10 +1,14 @@
 import { useAppStore } from '../store/appStore';
 import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
-import { useEffect } from 'react';
+import SettingsSheet from '../components/SettingsSheet';
+import BottomTabBar from '../components/BottomTabBar';
+import { useEffect, useState } from 'react';
 
 const Index = () => {
   const { hasCompletedOnboarding, isDarkMode } = useAppStore();
+  const [activeTab, setActiveTab] = useState<'home' | 'settings'>('home');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Apply dark mode on mount
   useEffect(() => {
@@ -15,11 +19,38 @@ const Index = () => {
     }
   }, [isDarkMode]);
 
+  // Handle tab change
+  const handleTabChange = (tab: 'home' | 'settings') => {
+    setActiveTab(tab);
+    if (tab === 'settings') {
+      setIsSettingsOpen(true);
+    }
+  };
+
+  // When settings closes, go back to home
+  const handleSettingsClose = () => {
+    setIsSettingsOpen(false);
+    setActiveTab('home');
+  };
+
   if (!hasCompletedOnboarding) {
     return <OnboardingScreen />;
   }
 
-  return <HomeScreen />;
+  return (
+    <div className="max-w-md mx-auto min-h-screen bg-background">
+      <HomeScreen onOpenSettings={() => setIsSettingsOpen(true)} />
+      
+      {/* Bottom Navigation */}
+      <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+      
+      {/* Einstellungen Sheet */}
+      <SettingsSheet
+        isOpen={isSettingsOpen}
+        onClose={handleSettingsClose}
+      />
+    </div>
+  );
 };
 
 export default Index;

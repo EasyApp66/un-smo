@@ -43,45 +43,48 @@ const DaySetupCard = ({ selectedDate, onComplete }: DaySetupCardProps) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex-1 px-4 pb-32"
+      className="flex-1 px-4 pb-8 overflow-y-auto"
     >
-      <div className="bg-card rounded-3xl p-6 shadow-lg border border-border">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-primary" />
+      <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
+        {/* Header kompakt */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Calendar className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-brutal-sm text-foreground">
+            <h3 className="text-lg font-bold text-foreground">
               {formatDate(selectedDate)} einrichten
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Lege deine Zeiten und dein Ziel fest
             </p>
           </div>
         </div>
 
-        {/* Aufstehzeit & Schlafenszeit */}
-        <div className="mb-6">
-          <h4 className="text-sm font-semibold text-muted-foreground mb-4">
+        {/* Aufstehzeit & Schlafenszeit - kompakt nebeneinander */}
+        <div className="mb-4">
+          <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
             Dein Zeitplan
           </h4>
-          <div className="flex justify-around">
+          <div className="grid grid-cols-2 gap-2">
             <TimePicker
               value={wakeTime}
               onChange={setWakeTime}
               label="Aufstehzeit"
+              compact
             />
             <TimePicker
               value={sleepTime}
               onChange={setSleepTime}
               label="Schlafenszeit"
+              compact
             />
           </div>
         </div>
 
-        {/* Tagesziel */}
-        <div className="mb-6">
-          <h4 className="text-sm font-semibold text-muted-foreground mb-4">
+        {/* Tagesziel - kompakter */}
+        <div className="mb-4">
+          <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
             Tagesziel Zigaretten
           </h4>
           <WheelPicker
@@ -91,6 +94,7 @@ const DaySetupCard = ({ selectedDate, onComplete }: DaySetupCardProps) => {
             step={1}
             onChange={setDailyCigarettes}
             label="Zigaretten pro Tag"
+            compact
           />
         </div>
 
@@ -99,7 +103,7 @@ const DaySetupCard = ({ selectedDate, onComplete }: DaySetupCardProps) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onComplete}
-          className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-lg shadow-lg glow-green"
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-base shadow-lg glow-green"
         >
           Tag einrichten
         </motion.button>
