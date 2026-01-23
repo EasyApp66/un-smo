@@ -69,45 +69,47 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
             </div>
             
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="text-brutal-md">Einstellungen</h2>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h2 className="text-xl font-bold">Einstellungen</h2>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClose}
-                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+                className="w-9 h-9 rounded-full bg-muted flex items-center justify-center"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </motion.button>
             </div>
             
             {/* Content */}
-            <div className="overflow-y-auto px-6 py-6 space-y-8 max-h-[70vh] hide-scrollbar safe-bottom">
-              {/* Aufsteh- & Schlafenszeiten */}
+            <div className="overflow-y-auto px-4 py-4 space-y-5 max-h-[70vh] hide-scrollbar safe-bottom">
+              {/* Aufsteh- & Schlafenszeiten - kompakter für Mobile */}
               <section>
-                <h3 className="text-brutal-sm text-muted-foreground mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Dein Zeitplan
                 </h3>
-                <div className="flex justify-around">
+                <div className="grid grid-cols-2 gap-2">
                   <TimePicker
                     value={wakeTime}
                     onChange={setWakeTime}
                     label="Aufstehzeit"
+                    compact
                   />
                   <TimePicker
                     value={sleepTime}
                     onChange={setSleepTime}
                     label="Schlafenszeit"
+                    compact
                   />
                 </div>
               </section>
               
               {/* Tagesziel Zigaretten */}
               <section>
-                <h3 className="text-brutal-sm text-muted-foreground mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Tagesziel
                 </h3>
-                <div className="bg-card rounded-2xl p-6">
+                <div className="bg-card rounded-xl p-4">
                   <WheelPicker
                     value={dailyCigarettes}
                     min={0}
@@ -115,8 +117,9 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     step={1}
                     onChange={setDailyCigarettes}
                     label="Zigaretten pro Tag"
+                    compact
                   />
-                  <p className="text-center text-sm text-muted-foreground mt-4">
+                  <p className="text-center text-xs text-muted-foreground mt-3">
                     Weniger = längere Pausen = mehr Stärke
                   </p>
                 </div>
@@ -124,26 +127,26 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
               
               {/* Theme Umschalter */}
               <section>
-                <h3 className="text-brutal-sm text-muted-foreground mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Darstellung
                 </h3>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   onClick={toggleDarkMode}
-                  className="w-full flex items-center justify-between p-5 bg-card rounded-2xl"
+                  className="w-full flex items-center justify-between p-4 bg-card rounded-xl"
                 >
-                  <span className="text-lg font-semibold">
+                  <span className="text-base font-semibold">
                     {isDarkMode ? 'Dunkelmodus' : 'Hellmodus'}
                   </span>
                   <div
-                    className={`w-16 h-9 rounded-full p-1 transition-colors duration-300 ${
-                      isDarkMode ? 'bg-primary glow-green' : 'bg-muted'
+                    className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-primary' : 'bg-muted'
                     }`}
                   >
                     <motion.div
-                      animate={{ x: isDarkMode ? 28 : 0 }}
+                      animate={{ x: isDarkMode ? 24 : 0 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="w-7 h-7 rounded-full bg-background shadow-lg"
+                      className="w-6 h-6 rounded-full bg-background shadow-lg"
                     />
                   </div>
                 </motion.button>
@@ -151,34 +154,34 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
 
               {/* Sprache */}
               <section>
-                <h3 className="text-brutal-sm text-muted-foreground mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Sprache
                 </h3>
-                <div className="bg-card rounded-2xl p-5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Globe className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-lg font-semibold">Deutsch</span>
+                <div className="bg-card rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-base font-semibold">Deutsch</span>
                   </div>
-                  <span className="text-sm text-primary font-medium">Aktiv</span>
+                  <span className="text-xs text-primary font-medium">Aktiv</span>
                 </div>
               </section>
               
               {/* Premium */}
               <section>
-                <h3 className="text-brutal-sm text-muted-foreground mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Mehr freischalten
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className="w-full p-5 bg-gradient-to-r from-primary to-secondary rounded-2xl glow-green"
+                    className="w-full p-4 bg-gradient-to-r from-primary to-secondary rounded-xl"
                   >
                     <div className="text-left">
-                      <p className="text-lg font-bold text-primary-foreground">
+                      <p className="text-base font-bold text-primary-foreground">
                         Lebenslanger Zugang
                       </p>
-                      <p className="text-sm text-primary-foreground/80">
+                      <p className="text-xs text-primary-foreground/80">
                         Einmaliger Kauf • 20 CHF
                       </p>
                     </div>
@@ -187,13 +190,13 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className="w-full p-5 bg-card border-2 border-secondary/30 rounded-2xl"
+                    className="w-full p-4 bg-card border border-secondary/30 rounded-xl"
                   >
                     <div className="text-left">
-                      <p className="text-lg font-bold">
+                      <p className="text-base font-bold">
                         Abonnieren
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         1 CHF / Monat • Eigene Themes, Statistiken & mehr
                       </p>
                     </div>
@@ -205,7 +208,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
               <section>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  className="w-full p-4 bg-card rounded-2xl text-foreground text-center font-semibold flex items-center justify-center gap-2"
+                  className="w-full p-3 bg-card rounded-xl text-foreground text-center font-semibold flex items-center justify-center gap-2"
                 >
                   Abmelden
                   <ChevronRight className="w-4 h-4" />
@@ -214,38 +217,38 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
 
               {/* Rechtliches */}
               <section>
-                <h3 className="text-brutal-sm text-muted-foreground mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Rechtliches
                 </h3>
-                <div className="bg-card rounded-2xl overflow-hidden">
-                  <button className="w-full p-4 flex items-center justify-between border-b border-border hover:bg-muted/50 transition-colors">
-                    <span className="font-medium">AGB</span>
+                <div className="bg-card rounded-xl overflow-hidden">
+                  <button className="w-full p-3 flex items-center justify-between border-b border-border hover:bg-muted/50 transition-colors">
+                    <span className="text-sm font-medium">AGB</span>
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <button className="w-full p-4 flex items-center justify-between border-b border-border hover:bg-muted/50 transition-colors">
-                    <span className="font-medium">Datenschutzerklärung</span>
+                  <button className="w-full p-3 flex items-center justify-between border-b border-border hover:bg-muted/50 transition-colors">
+                    <span className="text-sm font-medium">Datenschutzerklärung</span>
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <button className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                    <span className="font-medium">Nutzungsbedingungen</span>
+                  <button className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                    <span className="text-sm font-medium">Nutzungsbedingungen</span>
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </div>
               </section>
               
               {/* Gefahrenzone */}
-              <section className="pt-4">
+              <section className="pb-4">
                 <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
                   <AlertDialogTrigger asChild>
                     <motion.button
                       whileTap={{ scale: 0.98 }}
-                      className="w-full p-4 text-destructive text-center font-semibold flex items-center justify-center gap-2"
+                      className="w-full p-3 text-destructive text-center font-semibold flex items-center justify-center gap-2 text-sm"
                     >
                       <AlertTriangle className="w-4 h-4" />
                       Alle Daten löschen
                     </motion.button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="max-w-sm mx-4">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Wirklich alle Daten löschen?</AlertDialogTitle>
                       <AlertDialogDescription>

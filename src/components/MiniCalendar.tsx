@@ -11,13 +11,25 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
     const result = [];
     const today = new Date();
     
+    // Deutsche Wochentage
+    const weekdayNames: Record<string, string> = {
+      'Mon': 'Mo',
+      'Tue': 'Di',
+      'Wed': 'Mi',
+      'Thu': 'Do',
+      'Fri': 'Fr',
+      'Sat': 'Sa',
+      'Sun': 'So',
+    };
+    
     for (let i = -2; i <= 2; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       
       const dateString = date.toISOString().split('T')[0];
       const dayNumber = date.getDate();
-      const weekday = date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+      const weekdayEn = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const weekday = weekdayNames[weekdayEn] || weekdayEn;
       const isToday = i === 0;
       
       result.push({
@@ -32,7 +44,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   }, []);
 
   return (
-    <div className="flex items-center justify-center gap-3 px-4 py-4 overflow-x-auto hide-scrollbar">
+    <div className="flex items-center justify-center gap-2 px-4 py-3 overflow-x-auto hide-scrollbar">
       {days.map((day, index) => {
         const isSelected = selectedDate === day.date;
         
@@ -44,7 +56,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
             transition={{ delay: index * 0.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onDateSelect(day.date)}
-            className={`relative flex flex-col items-center justify-center min-w-[60px] h-[80px] rounded-2xl transition-all duration-300 ${
+            className={`relative flex flex-col items-center justify-center min-w-[50px] h-[65px] rounded-xl transition-all duration-300 ${
               isSelected
                 ? 'bg-card'
                 : 'bg-transparent'
@@ -54,7 +66,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
             {day.isToday && (
               <motion.div
                 layoutId="today-ring"
-                className="absolute inset-0 rounded-2xl border-2 border-primary glow-cyan"
+                className="absolute inset-0 rounded-xl border-2 border-primary"
                 initial={false}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
@@ -64,21 +76,21 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
             {isSelected && !day.isToday && (
               <motion.div
                 layoutId="selected-bg"
-                className="absolute inset-0 rounded-2xl bg-muted"
+                className="absolute inset-0 rounded-xl bg-muted"
                 initial={false}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
             
             <span
-              className={`relative z-10 text-brutal-lg ${
-                day.isToday ? 'text-primary text-glow-cyan' : 'text-foreground'
+              className={`relative z-10 text-2xl font-bold ${
+                day.isToday ? 'text-primary' : 'text-foreground'
               }`}
             >
               {day.dayNumber}
             </span>
             <span
-              className={`relative z-10 text-xs font-medium ${
+              className={`relative z-10 text-[10px] font-medium ${
                 day.isToday ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
