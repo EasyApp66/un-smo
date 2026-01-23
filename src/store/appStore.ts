@@ -23,6 +23,7 @@ interface AppState {
   isDarkMode: boolean;
   hasCompletedOnboarding: boolean;
   language: 'de' | 'en';
+  applyScheduleToAllDays: boolean; // NEU: Zeitplan für alle Tage
   
   // Daten
   days: Record<string, DayData>;
@@ -33,12 +34,14 @@ interface AppState {
   setDailyCigarettes: (count: number) => void;
   toggleDarkMode: () => void;
   setLanguage: (lang: 'de' | 'en') => void;
+  toggleApplyScheduleToAllDays: () => void; // NEU
   completeOnboarding: () => void;
   markReminderComplete: (date: string, reminderId: string) => void;
   deleteReminder: (date: string, reminderId: string) => void;
   initializeDay: (date: string) => void;
   getTodayData: () => DayData | null;
   recalculateReminders: (date: string) => void;
+  recalculateAllDays: () => void; // NEU
   deleteAllData: () => void;
 }
 
@@ -93,21 +96,37 @@ export const useAppStore = create<AppState>()(
       isDarkMode: false,
       hasCompletedOnboarding: false,
       language: 'de',
+      applyScheduleToAllDays: false,
       days: {},
       
       setWakeTime: (time) => {
         set({ wakeTime: time });
-        get().recalculateReminders(getTodayString());
+        const state = get();
+        if (state.applyScheduleToAllDays) {
+          state.recalculateAllDays();
+        } else {
+          state.recalculateReminders(getTodayString());
+        }
       },
       
       setSleepTime: (time) => {
         set({ sleepTime: time });
-        get().recalculateReminders(getTodayString());
+        const state = get();
+        if (state.applyScheduleToAllDays) {
+          state.recalculateAllDays();
+        } else {
+          state.recalculateReminders(getTodayString());
+        }
       },
       
       setDailyCigarettes: (count) => {
         set({ dailyCigarettes: count });
-        get().recalculateReminders(getTodayString());
+        const state = get();
+        if (state.applyScheduleToAllDays) {
+          state.recalculateAllDays();
+        } else {
+          state.recalculateReminders(getTodayString());
+        }
       },
       
       toggleDarkMode: () => {
@@ -124,6 +143,18 @@ export const useAppStore = create<AppState>()(
 
       setLanguage: (lang) => {
         set({ language: lang });
+      },
+
+      toggleApplyScheduleToAllDays: () => {
+        set((state) => {
+          const newValue = !state.applyScheduleToAllDays;
+          return { applyScheduleToAllDays: newValue };
+        });
+        // Wenn aktiviert, alle Tage neu berechnen
+        const state = get();
+        if (state.applyScheduleToAllDays) {
+          state.recalculateAllDays();
+        }
       },
       
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
@@ -226,6 +257,41 @@ export const useAppStore = create<AppState>()(
           },
         }));
       },
+
+      recalculateAllDays: () => {
+        const state = get();
+        const allDates = Object.keys(state.days);
+        
+        allDates.forEach((date) => {
+          const reminders = generateReminders(
+            state.wakeTime,
+            state.sleepTime,
+            state.dailyCigarettes
+          );
+          
+          const existingDay = state.days[date];
+          const completedIds = existingDay?.reminders
+            .filter((r) => r.completed)
+            .map((r) => r.id) || [];
+          
+          const updatedReminders = reminders.map((r, i) => ({
+            ...r,
+            completed: i < completedIds.length,
+          }));
+          
+          set((s) => ({
+            days: {
+              ...s.days,
+              [date]: {
+                date,
+                cigarettesSmoked: updatedReminders.filter((r) => r.completed).length,
+                totalCigarettes: s.dailyCigarettes,
+                reminders: updatedReminders,
+              },
+            },
+          }));
+        });
+      },
       
       getTodayData: () => {
         const state = get();
@@ -245,6 +311,7 @@ export const useAppStore = create<AppState>()(
           isDarkMode: false,
           hasCompletedOnboarding: false,
           language: 'de',
+          applyScheduleToAllDays: false,
           days: {},
         });
       },
