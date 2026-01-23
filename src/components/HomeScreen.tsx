@@ -5,28 +5,33 @@ import { useAppStore } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import SettingsSheet from './SettingsSheet';
+import DaySetupCard from './DaySetupCard';
 
 const HomeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
 
   const { days, initializeDay, markReminderComplete, deleteReminder, dailyCigarettes } = useAppStore();
 
   useEffect(() => {
-    initializeDay(selectedDate);
-  }, [selectedDate, initializeDay]);
+    // Nur initialisieren wenn es das heutige Datum ist
+    const today = new Date().toISOString().split('T')[0];
+    if (selectedDate === today && !days[selectedDate]) {
+      initializeDay(selectedDate);
+    }
+  }, [selectedDate, initializeDay, days]);
 
   const dayData = days[selectedDate];
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
   const totalCount = dayData?.totalCigarettes || dailyCigarettes;
+  const remainingCount = totalCount - completedCount;
 
   const handleComplete = (reminderId: string) => {
     markReminderComplete(selectedDate, reminderId);
     
-    // Haptic feedback
+    // Haptisches Feedback
     if ('vibrate' in navigator) {
       navigator.vibrate([10, 50, 10]);
     }
@@ -39,16 +44,23 @@ const HomeScreen = () => {
     }
   };
 
+  const handleDaySetupComplete = () => {
+    initializeDay(selectedDate);
+  };
+
+  // Prüfe ob für diesen Tag noch keine Daten existieren
+  const needsSetup = !dayData;
+
   return (
     <div className="min-h-screen bg-background flex flex-col safe-top">
-      {/* Header with Settings */}
+      {/* Header mit Einstellungen */}
       <div className="flex items-center justify-between px-4 pt-2">
         <motion.h1
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="text-2xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
         >
-          easySmoke
+          Smoke
         </motion.h1>
         
         <motion.button
@@ -61,13 +73,13 @@ const HomeScreen = () => {
         </motion.button>
       </div>
 
-      {/* Mini Calendar */}
+      {/* Mini Kalender */}
       <MiniCalendar
         selectedDate={selectedDate}
         onDateSelect={setSelectedDate}
       />
 
-      {/* Main Counter */}
+      {/* Haupt-Zähler */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -98,27 +110,53 @@ const HomeScreen = () => {
           className="text-muted-foreground text-lg mt-2"
         >
           {completedCount === 0
-            ? "Ready when you are"
+            ? "Bereit wenn du es bist"
             : completedCount === totalCount
-            ? "Day complete! 🎉"
-            : `${totalCount - completedCount} remaining today`}
+            ? "Tag geschafft! 🎉"
+            : `Noch ${remainingCount} übrig`}
         </motion.p>
       </motion.div>
 
-      {/* Reminders List */}
-      <ReminderList
-        reminders={dayData?.reminders || []}
-        onComplete={handleComplete}
-        onDelete={handleDelete}
-      />
+      {/* Tag Setup oder Erinnerungsliste */}
+      {needsSetup ? (
+        <DaySetupCard 
+          selectedDate={selectedDate} 
+          onComplete={handleDaySetupComplete}
+        />
+      ) : (
+        <ReminderList
+          reminders={dayData?.reminders || []}
+          onComplete={handleComplete}
+          onDelete={handleDelete}
+        />
+      )}
 
-      {/* Settings Sheet */}
+      {/* Unten: Status Widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent"
+      >
+        <div className="bg-card rounded-2xl p-4 flex justify-around items-center shadow-lg border border-border">
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">Heute geraucht</p>
+            <p className="text-2xl font-bold text-primary">{completedCount}</p>
+          </div>
+          <div className="w-px h-10 bg-border" />
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">Noch übrig</p>
+            <p className="text-2xl font-bold text-foreground">{remainingCount}</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Einstellungen Sheet */}
       <SettingsSheet
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      {/* Background Gradient */}
+      {/* Hintergrund Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <motion.div
           animate={{

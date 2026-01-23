@@ -61,11 +61,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Neon accent colors
+        // Frische Grün-Akzentfarben
         neon: {
-          cyan: "hsl(186 100% 50%)",
-          magenta: "hsl(324 100% 50%)",
-          lime: "hsl(75 100% 50%)",
+          green: "hsl(152 75% 45%)",
+          mint: "hsl(160 60% 50%)",
+          lime: "hsl(85 70% 50%)",
           violet: "hsl(263 70% 70%)",
         },
       },

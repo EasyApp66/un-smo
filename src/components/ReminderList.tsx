@@ -19,7 +19,7 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
     const target = new Date();
     target.setHours(hours, minutes, 0, 0);
     
-    // If target time has passed, it might be for tomorrow
+    // Falls Zeit schon vorbei ist, könnte es für morgen sein
     if (target < now) {
       target.setDate(target.getDate() + 1);
     }
@@ -27,9 +27,9 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
     const diffMs = target.getTime() - now.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     
-    if (diffMins < 0) return 'passed';
-    if (diffMins === 0) return 'now';
-    if (diffMins < 60) return `in ${diffMins}m`;
+    if (diffMins < 0) return 'vorbei';
+    if (diffMins === 0) return 'jetzt';
+    if (diffMins < 60) return `in ${diffMins} Min`;
     
     const hours_left = Math.floor(diffMins / 60);
     const mins_left = diffMins % 60;
@@ -53,7 +53,7 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
   }, [sortedReminders]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pb-32 hide-scrollbar">
+    <div className="flex-1 overflow-y-auto px-4 pb-40 hide-scrollbar">
       <AnimatePresence mode="popLayout">
         {sortedReminders.map((reminder, index) => {
           const isNext = index === nextReminderIndex;
@@ -84,18 +84,18 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
               }}
               className="relative mb-3"
             >
-              {/* Delete background */}
+              {/* Löschen Hintergrund */}
               <div className="absolute inset-0 rounded-2xl bg-destructive flex items-center justify-end pr-6">
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => onDelete(reminder.id)}
                   className="text-destructive-foreground font-bold"
                 >
-                  Delete
+                  Löschen
                 </motion.button>
               </div>
               
-              {/* Main card */}
+              {/* Haupt Karte */}
               <motion.div
                 animate={{
                   x: swipedId === reminder.id ? -80 : 0,
@@ -107,7 +107,7 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                     : isPassed
                     ? 'bg-muted/50 opacity-60'
                     : isNext
-                    ? 'bg-card border-2 border-primary glow-cyan'
+                    ? 'bg-card border-2 border-primary glow-green'
                     : 'bg-card'
                 }`}
               >
@@ -127,11 +127,11 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                     <span
                       className={`text-sm font-medium ${
                         isNext
-                          ? 'text-primary text-glow-cyan'
+                          ? 'text-primary text-glow-green'
                           : 'text-muted-foreground'
                       }`}
                     >
-                      {reminder.completed ? 'done' : timeUntil}
+                      {reminder.completed ? 'erledigt' : timeUntil}
                     </span>
                   </div>
                   {isNext && !reminder.completed && (
@@ -140,12 +140,12 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                       animate={{ opacity: 1, y: 0 }}
                       className="text-sm text-muted-foreground mt-1"
                     >
-                      Hold strong – you got this
+                      Halte durch – du schaffst das
                     </motion.p>
                   )}
                 </div>
                 
-                {/* Complete button */}
+                {/* Erledigt Button */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.9 }}
@@ -153,7 +153,7 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                   disabled={reminder.completed}
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
                     reminder.completed
-                      ? 'bg-primary glow-cyan'
+                      ? 'bg-primary glow-green'
                       : 'bg-muted hover:bg-primary/20 border-2 border-muted-foreground/20'
                   }`}
                 >
