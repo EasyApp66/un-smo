@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Settings2 } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
@@ -14,7 +13,6 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
-  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
 
   const { days, initializeDay, markReminderComplete, deleteReminder, dailyCigarettes } = useAppStore();
 
@@ -49,17 +47,10 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
 
   const handleDaySetupComplete = () => {
     initializeDay(selectedDate);
-    setIsEditingSchedule(false);
   };
 
   // Prüfe ob für diesen Tag noch keine Daten existieren
   const needsSetup = !dayData;
-  const showSetupCard = needsSetup || isEditingSchedule;
-
-  // Reset edit mode when date changes
-  useEffect(() => {
-    setIsEditingSchedule(false);
-  }, [selectedDate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col safe-top">
@@ -76,22 +67,8 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-3 px-4 relative"
+          className="text-center py-3 px-4"
         >
-          {/* Zeitplan bearbeiten Button - nur wenn Tag bereits eingerichtet */}
-          {dayData && !isEditingSchedule && (
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsEditingSchedule(true)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center"
-            >
-              <Settings2 className="w-4 h-4 text-muted-foreground" />
-            </motion.button>
-          )}
-
           <motion.div
             key={completedCount}
             initial={{ scale: 1 }}
@@ -127,19 +104,28 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
 
       {/* Tag Setup oder Erinnerungsliste */}
       <div className="flex-1 overflow-hidden">
-        {showSetupCard ? (
+        {needsSetup ? (
           <DaySetupCard 
             selectedDate={selectedDate} 
             onComplete={handleDaySetupComplete}
-            isEditing={isEditingSchedule}
-            onCancel={() => setIsEditingSchedule(false)}
           />
         ) : (
-          <ReminderList
-            reminders={dayData?.reminders || []}
-            onComplete={handleComplete}
-            onDelete={handleDelete}
-          />
+          <>
+            {/* Kompakte Zeitplan-Einstellungen */}
+            <div className="px-4 pt-3">
+              <DaySetupCard 
+                selectedDate={selectedDate} 
+                onComplete={handleDaySetupComplete}
+                isEditing={true}
+                compact
+              />
+            </div>
+            <ReminderList
+              reminders={dayData?.reminders || []}
+              onComplete={handleComplete}
+              onDelete={handleDelete}
+            />
+          </>
         )}
       </div>
 
