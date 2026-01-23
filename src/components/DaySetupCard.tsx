@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Calendar, X } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
@@ -9,9 +9,10 @@ interface DaySetupCardProps {
   onComplete: () => void;
   isEditing?: boolean;
   onCancel?: () => void;
+  compact?: boolean;
 }
 
-const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel }: DaySetupCardProps) => {
+const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel, compact = false }: DaySetupCardProps) => {
   const {
     wakeTime,
     sleepTime,
@@ -45,6 +46,51 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel }:
     }
   };
 
+  // Kompakte Variante für eingerichtete Tage
+  if (compact) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-xl p-3 shadow-sm border border-border"
+      >
+        <div className="grid grid-cols-3 gap-2">
+          <TimePicker
+            value={wakeTime}
+            onChange={setWakeTime}
+            label="Aufstehen"
+            compact
+          />
+          <TimePicker
+            value={sleepTime}
+            onChange={setSleepTime}
+            label="Schlafen"
+            compact
+          />
+          <WheelPicker
+            value={dailyCigarettes}
+            min={0}
+            max={60}
+            step={1}
+            onChange={setDailyCigarettes}
+            label="Zigaretten"
+            compact
+          />
+        </div>
+        
+        {/* Aktualisieren Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onComplete}
+          className="w-full mt-3 py-2 rounded-lg bg-primary/10 text-primary font-semibold text-sm"
+        >
+          Zeitplan aktualisieren
+        </motion.button>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -59,22 +105,12 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel }:
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-foreground">
-              {isEditing ? `${formatDate(selectedDate)} bearbeiten` : `${formatDate(selectedDate)} einrichten`}
+              {formatDate(selectedDate)} einrichten
             </h3>
             <p className="text-xs text-muted-foreground">
-              {isEditing ? 'Zeitplan und Ziel anpassen' : 'Lege deine Zeiten und dein Ziel fest'}
+              Lege deine Zeiten und dein Ziel fest
             </p>
           </div>
-          {isEditing && onCancel && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onCancel}
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </motion.button>
-          )}
         </div>
 
         {/* Aufstehzeit & Schlafenszeit - kompakt nebeneinander */}
@@ -121,7 +157,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false, onCancel }:
           onClick={onComplete}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-base shadow-lg glow-green"
         >
-          {isEditing ? 'Änderungen speichern' : 'Tag einrichten'}
+          Tag einrichten
         </motion.button>
       </div>
     </motion.div>
