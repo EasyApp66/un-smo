@@ -17,7 +17,7 @@ import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
 import PinLockScreen from './PinLockScreen';
-import { enablePush, disablePush } from '../lib/push';
+import { enablePush, disablePush, sendTestPush } from '../lib/push';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +70,20 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     deleteAllData();
     setShowDeleteConfirm(false);
     onClose();
+  };
+
+  const handleTestPush = async () => {
+    if (!pushToken) return;
+    setPushBusy(true);
+    setPushMessage(null);
+    try {
+      await sendTestPush(pushToken);
+      setPushMessage('Test gesendet – die Meldung sollte in wenigen Sekunden erscheinen.');
+    } catch {
+      setPushMessage('Test fehlgeschlagen. Bitte Push aus- und wieder einschalten.');
+    } finally {
+      setPushBusy(false);
+    }
   };
 
   const handleTogglePush = async () => {
@@ -300,6 +314,16 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                       />
                     </motion.button>
                   </div>
+                  {pushEnabled && pushToken && (
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      disabled={pushBusy}
+                      onClick={handleTestPush}
+                      className="mt-3 w-full rounded-lg bg-primary/10 text-primary text-sm font-semibold py-2 disabled:opacity-60"
+                    >
+                      Test-Meldung senden
+                    </motion.button>
+                  )}
                   {pushMessage && (
                     <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{pushMessage}</p>
                   )}

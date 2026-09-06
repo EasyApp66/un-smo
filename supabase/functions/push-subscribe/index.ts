@@ -1,6 +1,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
+import webpush from 'npm:web-push@3.6.7';
 
 const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -27,6 +28,10 @@ const BodySchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('unsubscribe'),
+    endpoint: z.string().url().max(2000),
+  }),
+  z.object({
+    action: z.literal('test'),
     endpoint: z.string().url().max(2000),
   }),
 ]);
@@ -86,6 +91,31 @@ Deno.serve(async (req) => {
         })
         .eq('endpoint', body.endpoint);
       if (error) throw error;
+      return json({ ok: true });
+    }
+
+    if (body.action === 'test') {
+      const priv = Deno.env.get('VAPID_PRIVATE_KEY');
+      const pub = Deno.env.get('VAPID_PUBLIC_KEY');
+      if (!priv || !pub) return json({ error: 'VAPID keys not configured' }, 500);
+      webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:push@un-smo.app', pub, priv);
+      const { data: sub, error } = await supabase
+        .from('push_subscriptions')
+        .select('subscription')
+        .eq('endpoint', body.endpoint)
+        .maybeSingle();
+      if (error) throw error;
+      if (!sub) return json({ error: 'not subscribed' }, 404);
+      try {
+        await webpush.sendNotification(
+          sub.subscription,
+          JSON.stringify({ title: 'UN-SMO', body: 'Test erfolgreich – Push-Meldungen funktionieren.', tag: 'un-smo-test' }),
+          { TTL: 120, urgency: 'high' },
+        );
+      } catch (e) {
+        console.error('test push failed', e);
+        return json({ error: 'send failed', status: (e as { statusCode?: number }).statusCode }, 502);
+      }
       return json({ ok: true });
     }
 

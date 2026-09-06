@@ -10,7 +10,7 @@ interface ReminderListProps {
 }
 
 // Abstand vom unteren Bildschirmrand, damit die nächste Zeile leicht oberhalb vom Menü steht
-const BOTTOM_OFFSET = 120;
+const BOTTOM_OFFSET = 150;
 
 const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
   // Live-Tick jede Sekunde für Countdown
@@ -77,21 +77,33 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, [nextReminder, now]);
 
-  // Nächste Zeile langsam nach unten scrollen – leicht oberhalb vom Menü
-  useEffect(() => {
+  // Nächste Zeile langsam nach unten scrollen – immer leicht oberhalb vom Menü
+  const scrollToNext = () => {
     const el = nextRowRef.current;
     if (!el) return;
-    const t = setTimeout(() => {
-      const rect = el.getBoundingClientRect();
-      const desiredBottom = window.innerHeight - BOTTOM_OFFSET;
-      const delta = rect.bottom - desiredBottom;
-      if (Math.abs(delta) > 4) {
-        window.scrollBy({ top: delta, behavior: 'smooth' });
-      }
-    }, 450);
-    return () => clearTimeout(t);
+    const rect = el.getBoundingClientRect();
+    const desiredBottom = window.innerHeight - BOTTOM_OFFSET;
+    const delta = rect.bottom - desiredBottom;
+    if (Math.abs(delta) > 4) {
+      window.scrollBy({ top: delta, behavior: 'smooth' });
+    }
+  };
+  const completedCount = sortedReminders.filter((r) => r.completed).length;
+  useEffect(() => {
+    // Zweimal: einmal nach der Einblend-Animation, einmal nachdem sich das Layout beruhigt hat
+    const t1 = setTimeout(scrollToNext, 500);
+    const t2 = setTimeout(scrollToNext, 1400);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') setTimeout(scrollToNext, 300);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nextReminder?.id, sortedReminders.length, sortedReminders.filter((r) => r.completed).length]);
+  }, [nextReminder?.id, sortedReminders.length, completedCount]);
 
   return (
     <div className="px-4 pb-48">
