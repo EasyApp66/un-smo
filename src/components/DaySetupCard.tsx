@@ -70,9 +70,6 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
 
         {/* Aufstehzeit & Schlafenszeit - kompakt nebeneinander */}
         <div className="mb-4">
-          <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-            Dein Zeitplan
-          </h4>
           <div className="grid grid-cols-2 gap-2">
             <TimePicker
               value={wakeTime}
@@ -91,9 +88,6 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
 
         {/* Tagesziel - kompakter */}
         <div className="mb-4">
-          <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-            Tagesziel Zigaretten
-          </h4>
           <WheelPicker
             value={dailyCigarettes}
             min={0}

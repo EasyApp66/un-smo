@@ -127,9 +127,9 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       // Standard-Einstellungen
-      wakeTime: '06:00',
+      wakeTime: '06:30',
       sleepTime: '23:00',
-      dailyCigarettes: 20,
+      dailyCigarettes: 30,
       themeMode: 'system',
       hasCompletedOnboarding: false,
       language: 'de',
@@ -342,9 +342,9 @@ export const useAppStore = create<AppState>()(
       deleteAllData: () => {
         // Setze auf Standardwerte zurück
         set({
-          wakeTime: '06:00',
+          wakeTime: '06:30',
           sleepTime: '23:00',
-          dailyCigarettes: 20,
+          dailyCigarettes: 30,
           themeMode: 'system',
           hasCompletedOnboarding: false,
           language: 'de',
@@ -360,11 +360,16 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'smoke-storage',
-      version: 2,
-      migrate: (persisted: unknown) => {
+      version: 3,
+      migrate: (persisted: unknown, version: number) => {
         const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
         if (p.themeMode === undefined) {
           p.themeMode = p.isDarkMode ? 'dark' : 'system';
+        }
+        if (version < 3) {
+          // Neue Standardwerte: 06:30 Aufstehzeit, 30 Zigaretten pro Tag
+          p.wakeTime = '06:30';
+          p.dailyCigarettes = 30;
         }
         return p as unknown as AppState;
       },
