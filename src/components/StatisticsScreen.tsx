@@ -95,9 +95,9 @@ const StatisticsScreen = () => {
   const trendText = stats.trend === 'down' ? 'Weniger geraucht' : stats.trend === 'up' ? 'Mehr geraucht' : 'Stabil';
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-28">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border safe-top">
         <div className="px-4 py-4">
           <h1 className="text-xl font-bold text-foreground">Statistik</h1>
           <p className="text-sm text-muted-foreground">Letzte 7 Tage</p>
