@@ -37,39 +37,32 @@ const HomeScreen = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Kalender ganz oben */}
-      <div className="pt-safe-top px-3 pt-2">
-        <div className="max-w-md mx-auto rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-sm">
-          <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
-        </div>
-      </div>
-
-      {/* Kleiner Counter, nicht sticky */}
-      <div className="text-center py-2 px-4">
+      {/* Sticky Pill-Zähler im Header */}
+      <div
+        className="sticky top-0 z-40 flex justify-center pb-2 pointer-events-none"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}
+      >
         <motion.div
           key={completedCount}
           initial={{ scale: 1 }}
-          animate={{ scale: [1, 1.05, 1] }}
+          animate={{ scale: [1, 1.06, 1] }}
           transition={{ duration: 0.3 }}
-          className="flex items-baseline justify-center gap-1"
+          className="pointer-events-auto flex items-baseline gap-1 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 shadow-md px-4 py-1.5"
         >
-          <span className="text-3xl font-black text-foreground">{completedCount}</span>
-          <span className="text-lg font-bold text-muted-foreground/50">/</span>
-          <span className="text-lg font-bold text-muted-foreground">{totalCount}</span>
+          <span className="text-base font-black text-foreground tabular-nums">{completedCount}</span>
+          <span className="text-sm font-bold text-muted-foreground/50">/</span>
+          <span className="text-sm font-bold text-muted-foreground tabular-nums">{totalCount}</span>
+          <span className="text-[11px] font-medium text-muted-foreground ml-1">
+            {completedCount >= totalCount && totalCount > 0 ? 'geschafft 🎉' : 'Zigaretten'}
+          </span>
         </motion.div>
+      </div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-muted-foreground text-[10px] mt-0"
-        >
-          {completedCount === 0
-            ? 'Bereit wenn du es bist'
-            : completedCount >= totalCount
-            ? 'Tag geschafft! 🎉'
-            : `Noch ${remainingCount} übrig`}
-        </motion.p>
+      {/* Kalender – mit Abstand unter dem Header */}
+      <div className="px-3 pt-2">
+        <div className="max-w-md mx-auto rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-sm">
+          <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+        </div>
       </div>
 
       {/* Tag Setup oder Erinnerungsliste */}

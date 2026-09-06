@@ -1,16 +1,18 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface ReminderListProps {
   reminders: ReminderTime[];
   onComplete: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) => {
-  const [swipedId, setSwipedId] = useState<string | null>(null);
+// Abstand vom unteren Bildschirmrand, damit die nächste Zeile leicht oberhalb vom Menü steht
+const BOTTOM_OFFSET = 120;
+
+const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
   // Live-Tick jede Sekunde für Countdown
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -18,39 +20,29 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
     return () => clearInterval(id);
   }, []);
 
+  const nextRowRef = useRef<HTMLDivElement | null>(null);
+
   const getTimeUntil = (timeString: string): string => {
-    const now = new Date();
+    const nowDate = new Date(now);
     const [hours, minutes] = timeString.split(':').map(Number);
-    
-    const target = new Date();
+    const target = new Date(nowDate);
     target.setHours(hours, minutes, 0, 0);
-    
-    // Falls Zeit schon vorbei ist, könnte es für morgen sein
-    if (target < now) {
-      target.setDate(target.getDate() + 1);
-    }
-    
-    const diffMs = target.getTime() - now.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 0) return 'vorbei';
-    if (diffMins === 0) return 'jetzt';
+    if (target < nowDate) target.setDate(target.getDate() + 1);
+
+    const diffMins = Math.floor((target.getTime() - nowDate.getTime()) / 60000);
+    if (diffMins <= 0) return 'jetzt';
     if (diffMins < 60) return `in ${diffMins} Min`;
-    
-    const hours_left = Math.floor(diffMins / 60);
-    const mins_left = diffMins % 60;
-    return `in ${hours_left}h ${mins_left}m`;
+    const h = Math.floor(diffMins / 60);
+    const m = diffMins % 60;
+    return `in ${h}h ${m}m`;
   };
 
-  // Prüft ob Zeit abgelaufen ist
   const isTimePassed = (timeString: string): boolean => {
-    const now = new Date();
+    const nowDate = new Date(now);
     const [hours, minutes] = timeString.split(':').map(Number);
-    
-    const target = new Date();
+    const target = new Date(nowDate);
     target.setHours(hours, minutes, 0, 0);
-    
-    return target < now;
+    return target < nowDate;
   };
 
   const sortedReminders = useMemo(() => {
@@ -58,172 +50,143 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
   }, [reminders]);
 
   const nextReminderIndex = useMemo(() => {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
+    const nowDate = new Date(now);
+    const currentMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
     for (let i = 0; i < sortedReminders.length; i++) {
       if (!sortedReminders[i].completed && sortedReminders[i].timestamp >= currentMinutes) {
         return i;
       }
     }
-    return -1;
+    // Sonst: erster noch offener Wecker
+    return sortedReminders.findIndex((r) => !r.completed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedReminders, Math.floor(now / 60000)]);
 
-  // Zuletzt abgehakter Wecker → dort läuft der Live-Countdown bis zum nächsten
-  const lastCompletedId = useMemo(() => {
-    let best: ReminderTime | null = null;
-    for (const r of sortedReminders) {
-      if (!r.completed) continue;
-      if (!best || (r.completedAt ?? r.timestamp) > (best.completedAt ?? best.timestamp)) best = r;
-    }
-    return best?.id ?? null;
-  }, [sortedReminders]);
-
   const nextReminder = nextReminderIndex >= 0 ? sortedReminders[nextReminderIndex] : null;
+
   const countdown = useMemo(() => {
     if (!nextReminder) return null;
     const [h, m] = nextReminder.time.split(':').map(Number);
     const target = new Date(now);
     target.setHours(h, m, 0, 0);
     const diff = Math.max(0, Math.floor((target.getTime() - now) / 1000));
-    const mins = Math.floor(diff / 60);
+    const hrs = Math.floor(diff / 3600);
+    const mins = Math.floor((diff % 3600) / 60);
     const secs = diff % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')} Min`;
+    if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, [nextReminder, now]);
 
+  // Nächste Zeile langsam nach unten scrollen – leicht oberhalb vom Menü
+  useEffect(() => {
+    const el = nextRowRef.current;
+    if (!el) return;
+    const t = setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      const desiredBottom = window.innerHeight - BOTTOM_OFFSET;
+      const delta = rect.bottom - desiredBottom;
+      if (Math.abs(delta) > 4) {
+        window.scrollBy({ top: delta, behavior: 'smooth' });
+      }
+    }, 450);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextReminder?.id, sortedReminders.length, sortedReminders.filter((r) => r.completed).length]);
+
   return (
-    <div className="flex-1 overflow-y-auto px-4 pb-48 hide-scrollbar">
-      <AnimatePresence mode="popLayout">
+    <div className="px-4 pb-48">
+      <AnimatePresence mode="popLayout" initial={false}>
         {sortedReminders.map((reminder, index) => {
           const isNext = index === nextReminderIndex;
-          const isPassed = !reminder.completed && isTimePassed(reminder.time);
+          const isPassed = !reminder.completed && !isNext && isTimePassed(reminder.time);
           const timeUntil = getTimeUntil(reminder.time);
-          
+
           return (
             <motion.div
               key={reminder.id}
-              layout
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100, scale: 0.9 }}
-              transition={{ 
-                duration: 0.3, 
-                delay: index * 0.03,
-                layout: { type: 'spring', stiffness: 500, damping: 30 }
-              }}
-              drag="x"
-              dragConstraints={{ left: -100, right: 0 }}
-              dragElastic={0.1}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -50) {
-                  setSwipedId(reminder.id);
-                } else {
-                  setSwipedId(null);
-                }
+              ref={isNext ? nextRowRef : undefined}
+              layout="position"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{
+                duration: 0.25,
+                delay: Math.min(index * 0.02, 0.3),
+                layout: { type: 'spring', stiffness: 500, damping: 30 },
               }}
               className="relative mb-2"
             >
-              {/* Löschen Hintergrund - Grau */}
-              <div className="absolute inset-0 rounded-xl bg-muted flex items-center justify-end pr-4">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => onDelete(reminder.id)}
-                  className="w-10 h-10 rounded-full bg-muted-foreground/20 flex items-center justify-center"
-                >
-                  <Check className="w-5 h-5 text-muted-foreground" />
-                </motion.button>
-              </div>
-              
-              {/* Haupt Karte */}
-              <motion.div
-                animate={{
-                  x: swipedId === reminder.id ? -80 : 0,
-                }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                className={`relative flex items-center justify-between p-3 rounded-xl transition-all duration-300 ${
+              {/* Ganze Zeile klickbar */}
+              <motion.button
+                type="button"
+                whileTap={!reminder.completed ? { scale: 0.98 } : undefined}
+                onClick={() => !reminder.completed && onComplete(reminder.id)}
+                disabled={reminder.completed}
+                className={`relative w-full text-left flex items-center justify-between p-3 rounded-xl transition-colors duration-300 ${
                   reminder.completed
                     ? 'bg-primary/10 border border-primary/20'
                     : isPassed
-                    ? 'bg-muted/30 opacity-50' /* GRAU statt rot für abgelaufene */
+                    ? 'bg-muted/30 opacity-50'
                     : isNext
                     ? 'bg-card border-2 border-primary glow-green'
                     : 'bg-card'
                 }`}
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-2xl font-bold ${
-                        reminder.completed
-                          ? 'text-primary'
-                          : isPassed
-                          ? 'text-muted-foreground'
-                          : isNext
-                          ? 'text-foreground'
-                          : 'text-foreground'
-                      }`}
-                    >
-                      {reminder.time}
-                    </span>
-                    {/* Nur Haken für abgelaufene anzeigen, keine Schrift */}
-                    {isPassed && !reminder.completed && (
-                      <Check className="w-4 h-4 text-muted-foreground" />
-                    )}
-                    {!isPassed && !reminder.completed && (
-                      <span className={`text-xs font-medium ${isNext ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {timeUntil}
-                      </span>
-                    )}
-                  </div>
-                  {reminder.id === lastCompletedId && countdown && (
-                    <motion.p
+                {/* Zeit links */}
+                <span
+                  className={`text-2xl font-bold tabular-nums ${
+                    reminder.completed
+                      ? 'text-primary'
+                      : isPassed
+                      ? 'text-muted-foreground'
+                      : 'text-foreground'
+                  }`}
+                >
+                  {reminder.time}
+                </span>
+
+                {/* Mitte: Countdown bei der nächsten Zeile, sonst kleine Restzeit */}
+                <span className="absolute left-1/2 -translate-x-1/2 text-center">
+                  {isNext && countdown && (
+                    <motion.span
+                      key="cd"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-xs font-semibold text-primary mt-0.5 tabular-nums"
+                      className="text-base font-black text-primary tabular-nums"
                     >
-                      Nächste in {countdown}
-                    </motion.p>
+                      {countdown}
+                    </motion.span>
                   )}
-                  {isNext && !reminder.completed && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-xs text-muted-foreground mt-0.5"
-                    >
-                      Halte durch – du schaffst das
-                    </motion.p>
+                  {!isNext && !isPassed && !reminder.completed && (
+                    <span className="text-xs font-medium text-muted-foreground">{timeUntil}</span>
                   )}
-                </div>
-                
-                {/* Erledigt Button - kleiner */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => !reminder.completed && onComplete(reminder.id)}
-                  disabled={reminder.completed}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                </span>
+
+                {/* Rechts: Status-Kreis (nur Anzeige) */}
+                <span
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-300 ${
                     reminder.completed
                       ? 'bg-primary'
                       : isPassed
-                      ? 'bg-muted/50 border border-muted-foreground/20' /* Grau für abgelaufen */
-                      : 'bg-muted hover:bg-primary/20 border border-muted-foreground/20'
+                      ? 'bg-muted/50 border border-muted-foreground/20'
+                      : 'bg-muted border border-muted-foreground/20'
                   }`}
                 >
                   <AnimatePresence mode="wait">
                     {reminder.completed && (
-                      <motion.div
+                      <motion.span
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         exit={{ scale: 0 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                        className="flex"
                       >
                         <Check className="w-5 h-5 text-primary-foreground" strokeWidth={3} />
-                      </motion.div>
+                      </motion.span>
                     )}
                   </AnimatePresence>
-                </motion.button>
-              </motion.div>
+                </span>
+              </motion.button>
             </motion.div>
           );
         })}
