@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface ReminderListProps {
   reminders: ReminderTime[];
@@ -11,6 +11,12 @@ interface ReminderListProps {
 
 const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) => {
   const [swipedId, setSwipedId] = useState<string | null>(null);
+  // Live-Tick jede Sekunde für Countdown
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const getTimeUntil = (timeString: string): string => {
     const now = new Date();
@@ -61,7 +67,30 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
       }
     }
     return -1;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedReminders, Math.floor(now / 60000)]);
+
+  // Zuletzt abgehakter Wecker → dort läuft der Live-Countdown bis zum nächsten
+  const lastCompletedId = useMemo(() => {
+    let best: ReminderTime | null = null;
+    for (const r of sortedReminders) {
+      if (!r.completed) continue;
+      if (!best || (r.completedAt ?? r.timestamp) > (best.completedAt ?? best.timestamp)) best = r;
+    }
+    return best?.id ?? null;
   }, [sortedReminders]);
+
+  const nextReminder = nextReminderIndex >= 0 ? sortedReminders[nextReminderIndex] : null;
+  const countdown = useMemo(() => {
+    if (!nextReminder) return null;
+    const [h, m] = nextReminder.time.split(':').map(Number);
+    const target = new Date(now);
+    target.setHours(h, m, 0, 0);
+    const diff = Math.max(0, Math.floor((target.getTime() - now) / 1000));
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')} Min`;
+  }, [nextReminder, now]);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pb-48 hide-scrollbar">
@@ -147,6 +176,15 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
                       </span>
                     )}
                   </div>
+                  {reminder.id === lastCompletedId && countdown && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-xs font-semibold text-primary mt-0.5 tabular-nums"
+                    >
+                      Nächste in {countdown}
+                    </motion.p>
+                  )}
                   {isNext && !reminder.completed && (
                     <motion.p
                       initial={{ opacity: 0, y: 5 }}

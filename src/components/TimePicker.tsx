@@ -19,7 +19,8 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
   const mountedRef = useRef(false);
 
   const hourValues = Array.from({ length: 24 }, (_, i) => i);
-  const minuteValues = Array.from({ length: 60 }, (_, i) => i);
+  const minuteValues = [0, 15, 30, 45];
+  const minuteIndex = Math.max(0, Math.min(3, Math.round(minutes / 15)));
   
   const itemHeight = compact ? 40 : 50;
 
@@ -42,7 +43,7 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
 
   useEffect(() => {
     scrollToValue(hoursRef, hours);
-    scrollToValue(minutesRef, minutes);
+    scrollToValue(minutesRef, minuteIndex);
     mountedRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hours, minutes, isScrolling]);
@@ -71,7 +72,7 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
   const handleMinuteScroll = () =>
     settle(() => {
       if (!minutesRef.current) return;
-      const newMinute = Math.max(0, Math.min(59, Math.round(minutesRef.current.scrollTop / itemHeight)));
+      const newMinute = Math.max(0, Math.min(3, Math.round(minutesRef.current.scrollTop / itemHeight))) * 15;
       if (newMinute !== minutes) {
         onChange(`${pad(hours)}:${pad(newMinute)}`);
         if ('vibrate' in navigator) navigator.vibrate(3);
@@ -139,7 +140,7 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
       <div className={`flex items-center gap-0.5 bg-card rounded-xl ${compact ? 'p-2' : 'p-3'}`}>
         {renderWheel(hoursRef, hourValues, hours, handleHourScroll)}
         <span className={`font-bold text-muted-foreground ${compact ? 'text-lg' : 'text-2xl'}`}>:</span>
-        {renderWheel(minutesRef, minuteValues, minutes, handleMinuteScroll)}
+        {renderWheel(minutesRef, minuteValues, minuteIndex * 15, handleMinuteScroll)}
       </div>
     </motion.div>
   );

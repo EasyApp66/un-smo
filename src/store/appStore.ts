@@ -5,6 +5,7 @@ export interface ReminderTime {
   id: string;
   time: string; // HH:mm format
   completed: boolean;
+  completedAt?: number; // Date.now() beim Abhaken
   timestamp: number;
 }
 
@@ -205,7 +206,7 @@ export const useAppStore = create<AppState>()(
           if (!dayData) return state;
           
           const updatedReminders = dayData.reminders.map((r) =>
-            r.id === reminderId ? { ...r, completed: true } : r
+            r.id === reminderId ? { ...r, completed: true, completedAt: Date.now() } : r
           );
           
           const completedCount = updatedReminders.filter((r) => r.completed).length;
