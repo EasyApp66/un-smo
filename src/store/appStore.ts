@@ -360,11 +360,16 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'smoke-storage',
-      version: 2,
-      migrate: (persisted: unknown) => {
+      version: 3,
+      migrate: (persisted: unknown, version: number) => {
         const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
         if (p.themeMode === undefined) {
           p.themeMode = p.isDarkMode ? 'dark' : 'system';
+        }
+        if (version < 3) {
+          // Neue Standardwerte: 06:30 Aufstehzeit, 30 Zigaretten pro Tag
+          p.wakeTime = '06:30';
+          p.dailyCigarettes = 30;
         }
         return p as unknown as AppState;
       },
