@@ -40,7 +40,7 @@ const HomeScreen = () => {
       {/* Sticky Pill-Zähler im Header */}
       <div
         className="sticky top-0 z-40 flex justify-center pb-2 pointer-events-none"
-        style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.5rem)' }}
       >
         <motion.div
           key={completedCount}
