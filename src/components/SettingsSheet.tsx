@@ -384,8 +384,8 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   onClick={handleLogout}
                   className="w-full p-3 bg-card rounded-xl text-foreground text-center font-semibold flex items-center justify-center gap-2"
                 >
-                  Abmelden
-                  <ChevronRight className="w-4 h-4" />
+                  <LogOut className="w-4 h-4" />
+                  Abmelden (App sperren)
                 </motion.button>
               </section>
 
