@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Calendar } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
+import { formatLocalDate } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
 
@@ -24,11 +25,11 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
   const formatDate = (dateString: string) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayString = today.toISOString().split('T')[0];
+    const todayString = formatLocalDate(today);
     
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowString = tomorrow.toISOString().split('T')[0];
+    const tomorrowString = formatLocalDate(tomorrow);
     
     if (dateString === todayString) {
       return 'Heute';

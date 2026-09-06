@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
+import { formatLocalDate } from '../store/appStore';
 
 const OnboardingScreen = () => {
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
   const initializeDay = useAppStore((state) => state.initializeDay);
 
   const handleGetStarted = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatLocalDate();
     initializeDay(today);
     completeOnboarding();
   };

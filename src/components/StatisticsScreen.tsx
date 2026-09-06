@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
+import { formatLocalDate } from '../store/appStore';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingDown, TrendingUp, Minus, Cigarette, Calendar, Target } from 'lucide-react';
 import { useMemo } from 'react';
@@ -15,7 +16,7 @@ const StatisticsScreen = () => {
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = formatLocalDate(date);
       const dayData = days[dateString];
       
       const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];

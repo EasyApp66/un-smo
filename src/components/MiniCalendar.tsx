@@ -1,3 +1,4 @@
+import { formatLocalDate } from '../store/appStore';
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 
@@ -26,7 +27,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = formatLocalDate(date);
       const dayNumber = date.getDate();
       const weekdayEn = date.toLocaleDateString('en-US', { weekday: 'short' });
       const weekday = weekdayNames[weekdayEn] || weekdayEn;

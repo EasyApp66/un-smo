@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store/appStore';
+import { formatLocalDate } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
@@ -11,14 +12,14 @@ interface HomeScreenProps {
 
 const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
   const [selectedDate, setSelectedDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
+    return formatLocalDate();
   });
 
   const { days, initializeDay, markReminderComplete, deleteReminder, dailyCigarettes } = useAppStore();
 
   useEffect(() => {
     // Nur initialisieren wenn es das heutige Datum ist
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatLocalDate();
     if (selectedDate === today && !days[selectedDate]) {
       // Nicht automatisch initialisieren - User soll Setup machen
     }
