@@ -81,10 +81,37 @@ const generateReminders = (wakeTime: string, sleepTime: string, count: number): 
   return reminders;
 };
 
-const getTodayString = () => {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
+/** Lokales Datum als YYYY-MM-DD (keine UTC-Verschiebung) */
+export const formatLocalDate = (d: Date = new Date()) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 };
+
+const getTodayString = () => formatLocalDate();
+
+const darkQuery =
+  typeof window !== 'undefined' && 'matchMedia' in window
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : null;
+
+export const resolveIsDark = (mode: ThemeMode) =>
+  mode === 'dark' || (mode === 'system' && !!darkQuery?.matches);
+
+export const applyTheme = (mode: ThemeMode) => {
+  if (typeof document === 'undefined') return;
+  const dark = resolveIsDark(mode);
+  document.documentElement.classList.toggle('dark', dark);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', dark ? '#1C1C1E' : '#FAFCFA');
+};
+
+// Systemwechsel live übernehmen
+darkQuery?.addEventListener?.('change', () => {
+  const mode = useAppStore.getState().themeMode;
+  if (mode === 'system') applyTheme('system');
+});
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -93,10 +120,14 @@ export const useAppStore = create<AppState>()(
       wakeTime: '06:00',
       sleepTime: '23:00',
       dailyCigarettes: 20,
-      isDarkMode: false,
+      themeMode: 'system',
       hasCompletedOnboarding: false,
       language: 'de',
       applyScheduleToAllDays: false,
+      pinHash: null,
+      isLocked: false,
+      pushEnabled: false,
+      pushToken: null,
       days: {},
       
       setWakeTime: (time) => {
