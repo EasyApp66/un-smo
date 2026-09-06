@@ -14,7 +14,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+    <div className="fixed left-1/2 -translate-x-1/2 z-50" style={{ bottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}>
       <div className="bg-card/95 backdrop-blur-xl rounded-full border border-border/50 shadow-lg px-1 py-1">
         <div className="flex items-center gap-1">
           {tabs.map((tab) => {
