@@ -47,15 +47,11 @@ Deno.serve(async (req) => {
       let slotDate = date;
       let slotMin = slot;
       if (slot >= 1440) {
-        // gehört zum "Tag davor", wenn wir gerade nach Mitternacht sind
-        if (minutes < 1440 - (sub.daily_cigarettes > 0 ? 0 : 0) && minutes < slot - 1440 + 4) {
-          const d = new Date(`${date}T12:00:00Z`);
-          d.setUTCDate(d.getUTCDate() - 1);
-          slotDate = d.toISOString().slice(0, 10);
-          slotMin = slot - 1440;
-        } else {
-          return; // heute noch nicht dran
-        }
+        // Slot nach Mitternacht gehört zum Zeitplan des Vortags
+        const d = new Date(`${date}T12:00:00Z`);
+        d.setUTCDate(d.getUTCDate() - 1);
+        slotDate = d.toISOString().slice(0, 10);
+        slotMin = slot - 1440;
       }
       const diff = minutes - slotMin;
       if (diff >= 0 && diff <= 3) {
