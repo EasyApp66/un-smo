@@ -1,9 +1,23 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronRight, AlertTriangle, Globe } from 'lucide-react';
+import {
+  X,
+  ChevronRight,
+  AlertTriangle,
+  Globe,
+  Sun,
+  Moon,
+  Smartphone,
+  Bell,
+  BellOff,
+  KeyRound,
+  LogOut,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
+import PinLockScreen from './PinLockScreen';
+import { enablePush, disablePush, syncPushSchedule } from '../lib/push';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,29 +40,80 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     wakeTime,
     sleepTime,
     dailyCigarettes,
-    isDarkMode,
+    themeMode,
     applyScheduleToAllDays,
+    pushEnabled,
+    pushToken,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
-    toggleDarkMode,
+    setThemeMode,
+    setPushEnabled,
     toggleApplyScheduleToAllDays,
     deleteAllData,
+    lock,
   } = useAppStore();
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPinChange, setShowPinChange] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMessage, setPushMessage] = useState<string | null>(null);
+
+  // "Abmelden" sperrt die App wieder (PIN-Eingabe)
   const handleLogout = () => {
-    // Reset hasCompletedOnboarding to show welcome screen
-    useAppStore.setState({ hasCompletedOnboarding: false });
     onClose();
+    lock();
   };
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const handleDeleteAllData = () => {
+  const handleDeleteAllData = async () => {
+    if (pushToken) await disablePush(pushToken).catch(() => undefined);
     deleteAllData();
     setShowDeleteConfirm(false);
     onClose();
   };
+
+  const handleTogglePush = async () => {
+    setPushBusy(true);
+    setPushMessage(null);
+    try {
+      if (pushEnabled) {
+        if (pushToken) await disablePush(pushToken);
+        setPushEnabled(false);
+        setPushMessage('Push-Meldungen sind aus.');
+      } else {
+        const result = await enablePush();
+        if (result.status === 'registered') {
+          await syncPushSchedule(result.token, { wakeTime, sleepTime, dailyCigarettes });
+          setPushEnabled(true, result.token);
+          setPushMessage('Aktiv. Du erhältst zu jeder Erinnerungszeit eine Meldung.');
+        } else if (result.status === 'open-in-new-tab') {
+          setPushMessage('Bitte die App in einem eigenen Tab oder vom Home-Bildschirm öffnen – in der Vorschau geht das nicht.');
+        } else if (result.status === 'denied') {
+          setPushMessage('Erlaubnis abgelehnt. Bitte in den iPhone-Einstellungen unter Mitteilungen erlauben.');
+        } else if (result.status === 'unsupported') {
+          setPushMessage('Auf diesem Gerät nur möglich, wenn die App zum Home-Bildschirm hinzugefügt wurde (Safari → Teilen → Zum Home-Bildschirm).');
+        } else {
+          setPushMessage('Push ist noch nicht eingerichtet (Verbindung fehlt).');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setPushMessage('Das hat nicht geklappt. Bitte später erneut versuchen.');
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  if (showPinChange) {
+    return (
+      <PinLockScreen
+        mode="change"
+        onDone={() => setShowPinChange(false)}
+        onCancel={() => setShowPinChange(false)}
+      />
+    );
+  }
+
 
   return (
     <AnimatePresence>
@@ -167,25 +232,96 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Darstellung
                 </h3>
+                <div className="bg-card rounded-xl p-1.5 grid grid-cols-3 gap-1">
+                  {(
+                    [
+                      { id: 'light', label: 'Hell', Icon: Sun },
+                      { id: 'dark', label: 'Dunkel', Icon: Moon },
+                      { id: 'system', label: 'System', Icon: Smartphone },
+                    ] as const
+                  ).map(({ id, label, Icon }) => {
+                    const active = themeMode === id;
+                    return (
+                      <motion.button
+                        key={id}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setThemeMode(id)}
+                        className={`relative h-11 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors ${
+                          active ? 'text-primary-foreground' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {active && (
+                          <motion.div
+                            layoutId="theme-pill"
+                            className="absolute inset-0 rounded-lg bg-primary"
+                            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                          />
+                        )}
+                        <Icon className="w-4 h-4 relative z-10" />
+                        <span className="relative z-10">{label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Push-Meldungen */}
+              <section>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                  Erinnerungen
+                </h3>
+                <div className="bg-card rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {pushEnabled ? (
+                        <Bell className="w-4 h-4 text-primary" />
+                      ) : (
+                        <BellOff className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <div>
+                        <span className="text-base font-semibold block">Push-Meldungen</span>
+                        <span className="text-xs text-muted-foreground">
+                          Auch bei geschlossener App
+                        </span>
+                      </div>
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      disabled={pushBusy}
+                      onClick={handleTogglePush}
+                      aria-label="Push-Meldungen umschalten"
+                      className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 ${
+                        pushEnabled ? 'bg-primary' : 'bg-muted'
+                      } ${pushBusy ? 'opacity-60' : ''}`}
+                    >
+                      <motion.div
+                        animate={{ x: pushEnabled ? 20 : 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        className="w-5 h-5 rounded-full bg-background shadow-lg"
+                      />
+                    </motion.button>
+                  </div>
+                  {pushMessage && (
+                    <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{pushMessage}</p>
+                  )}
+                </div>
+              </section>
+
+              {/* Sicherheit */}
+              <section>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                  Sicherheit
+                </h3>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  onClick={toggleDarkMode}
-                  className="w-full flex items-center justify-between p-4 bg-card rounded-xl"
+                  onClick={() => setShowPinChange(true)}
+                  className="w-full bg-card rounded-xl p-4 flex items-center justify-between"
                 >
-                  <span className="text-base font-semibold">
-                    {isDarkMode ? 'Dunkelmodus' : 'Hellmodus'}
-                  </span>
-                  <div
-                    className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${
-                      isDarkMode ? 'bg-primary' : 'bg-muted'
-                    }`}
-                  >
-                    <motion.div
-                      animate={{ x: isDarkMode ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="w-6 h-6 rounded-full bg-background shadow-lg"
-                    />
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-base font-semibold">PIN ändern</span>
                   </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </motion.button>
               </section>
 
@@ -248,8 +384,8 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   onClick={handleLogout}
                   className="w-full p-3 bg-card rounded-xl text-foreground text-center font-semibold flex items-center justify-center gap-2"
                 >
-                  Abmelden
-                  <ChevronRight className="w-4 h-4" />
+                  <LogOut className="w-4 h-4" />
+                  Abmelden (App sperren)
                 </motion.button>
               </section>
 

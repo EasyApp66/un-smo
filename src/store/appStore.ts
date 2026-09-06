@@ -15,15 +15,21 @@ export interface DayData {
   reminders: ReminderTime[];
 }
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 interface AppState {
   // Einstellungen
   wakeTime: string; // HH:mm
   sleepTime: string; // HH:mm
   dailyCigarettes: number;
-  isDarkMode: boolean;
+  themeMode: ThemeMode;
   hasCompletedOnboarding: boolean;
   language: 'de' | 'en';
-  applyScheduleToAllDays: boolean; // NEU: Zeitplan für alle Tage
+  applyScheduleToAllDays: boolean; // Zeitplan für alle Tage
+  pinHash: string | null;
+  isLocked: boolean;
+  pushEnabled: boolean;
+  pushToken: string | null;
   
   // Daten
   days: Record<string, DayData>;
@@ -32,16 +38,20 @@ interface AppState {
   setWakeTime: (time: string) => void;
   setSleepTime: (time: string) => void;
   setDailyCigarettes: (count: number) => void;
-  toggleDarkMode: () => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  setPinHash: (hash: string | null) => void;
+  lock: () => void;
+  unlock: () => void;
+  setPushEnabled: (enabled: boolean, token?: string | null) => void;
   setLanguage: (lang: 'de' | 'en') => void;
-  toggleApplyScheduleToAllDays: () => void; // NEU
+  toggleApplyScheduleToAllDays: () => void;
   completeOnboarding: () => void;
   markReminderComplete: (date: string, reminderId: string) => void;
   deleteReminder: (date: string, reminderId: string) => void;
   initializeDay: (date: string) => void;
   getTodayData: () => DayData | null;
   recalculateReminders: (date: string) => void;
-  recalculateAllDays: () => void; // NEU
+  recalculateAllDays: () => void;
   deleteAllData: () => void;
 }
 
@@ -81,10 +91,37 @@ const generateReminders = (wakeTime: string, sleepTime: string, count: number): 
   return reminders;
 };
 
-const getTodayString = () => {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
+/** Lokales Datum als YYYY-MM-DD (keine UTC-Verschiebung) */
+export const formatLocalDate = (d: Date = new Date()) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 };
+
+const getTodayString = () => formatLocalDate();
+
+const darkQuery =
+  typeof window !== 'undefined' && 'matchMedia' in window
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : null;
+
+export const resolveIsDark = (mode: ThemeMode) =>
+  mode === 'dark' || (mode === 'system' && !!darkQuery?.matches);
+
+export const applyTheme = (mode: ThemeMode) => {
+  if (typeof document === 'undefined') return;
+  const dark = resolveIsDark(mode);
+  document.documentElement.classList.toggle('dark', dark);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', dark ? '#1C1C1E' : '#FAFCFA');
+};
+
+// Systemwechsel live übernehmen
+darkQuery?.addEventListener?.('change', () => {
+  const mode = useAppStore.getState().themeMode;
+  if (mode === 'system') applyTheme('system');
+});
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -93,10 +130,14 @@ export const useAppStore = create<AppState>()(
       wakeTime: '06:00',
       sleepTime: '23:00',
       dailyCigarettes: 20,
-      isDarkMode: false,
+      themeMode: 'system',
       hasCompletedOnboarding: false,
       language: 'de',
       applyScheduleToAllDays: false,
+      pinHash: null,
+      isLocked: false,
+      pushEnabled: false,
+      pushToken: null,
       days: {},
       
       setWakeTime: (time) => {
@@ -129,17 +170,16 @@ export const useAppStore = create<AppState>()(
         }
       },
       
-      toggleDarkMode: () => {
-        set((state) => {
-          const newDarkMode = !state.isDarkMode;
-          if (newDarkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-          return { isDarkMode: newDarkMode };
-        });
+      setThemeMode: (mode) => {
+        set({ themeMode: mode });
+        applyTheme(mode);
       },
+
+      setPinHash: (hash) => set({ pinHash: hash, isLocked: false }),
+      lock: () => set((state) => ({ isLocked: !!state.pinHash })),
+      unlock: () => set({ isLocked: false }),
+      setPushEnabled: (enabled, token = null) =>
+        set({ pushEnabled: enabled, pushToken: enabled ? token : null }),
 
       setLanguage: (lang) => {
         set({ language: lang });
@@ -300,28 +340,45 @@ export const useAppStore = create<AppState>()(
       },
 
       deleteAllData: () => {
-        // Entferne Dark Mode Klasse
-        document.documentElement.classList.remove('dark');
-        
         // Setze auf Standardwerte zurück
         set({
           wakeTime: '06:00',
           sleepTime: '23:00',
           dailyCigarettes: 20,
-          isDarkMode: false,
+          themeMode: 'system',
           hasCompletedOnboarding: false,
           language: 'de',
           applyScheduleToAllDays: false,
+          pinHash: null,
+          isLocked: false,
+          pushEnabled: false,
+          pushToken: null,
           days: {},
         });
+        applyTheme('system');
       },
     }),
     {
       name: 'smoke-storage',
-      onRehydrateStorage: () => (state) => {
-        if (state?.isDarkMode) {
-          document.documentElement.classList.add('dark');
+      version: 2,
+      migrate: (persisted: unknown) => {
+        const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
+        if (p.themeMode === undefined) {
+          p.themeMode = p.isDarkMode ? 'dark' : 'system';
         }
+        return p as unknown as AppState;
+      },
+      partialize: (state) => {
+        // isLocked wird nicht gespeichert: App startet immer gesperrt, wenn eine PIN existiert
+        const { isLocked, ...rest } = state;
+        return rest as AppState;
+      },
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>;
+        return { ...current, ...p, isLocked: !!p.pinHash };
+      },
+      onRehydrateStorage: () => (state) => {
+        applyTheme(state?.themeMode ?? 'system');
       },
     }
   )

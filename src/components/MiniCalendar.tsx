@@ -1,3 +1,4 @@
+import { formatLocalDate } from '../store/appStore';
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 
@@ -26,7 +27,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = formatLocalDate(date);
       const dayNumber = date.getDate();
       const weekdayEn = date.toLocaleDateString('en-US', { weekday: 'short' });
       const weekday = weekdayNames[weekdayEn] || weekdayEn;
@@ -44,7 +45,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   }, []);
 
   return (
-    <div className="flex items-center justify-center gap-2 px-4 py-3 overflow-x-auto hide-scrollbar">
+    <div className="flex items-center justify-around gap-1 px-2 py-1.5 overflow-x-auto hide-scrollbar">
       {days.map((day, index) => {
         const isSelected = selectedDate === day.date;
         
@@ -56,7 +57,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
             transition={{ delay: index * 0.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onDateSelect(day.date)}
-            className={`relative flex flex-col items-center justify-center min-w-[50px] h-[65px] rounded-xl transition-all duration-300 ${
+            className={`relative flex flex-col items-center justify-center min-w-[48px] h-[56px] rounded-xl transition-all duration-300 ${
               isSelected
                 ? 'bg-card'
                 : 'bg-transparent'
@@ -83,7 +84,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
             )}
             
             <span
-              className={`relative z-10 text-2xl font-bold ${
+              className={`relative z-10 text-xl font-bold ${
                 day.isToday ? 'text-primary' : 'text-foreground'
               }`}
             >

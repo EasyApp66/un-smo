@@ -1,38 +1,22 @@
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { useAppStore } from '../store/appStore';
+import { useState } from 'react';
+import { useAppStore, formatLocalDate } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
 
-interface HomeScreenProps {
-  onOpenSettings: () => void;
-}
-
-const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
-  const [selectedDate, setSelectedDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
-  });
+const HomeScreen = () => {
+  const [selectedDate, setSelectedDate] = useState(() => formatLocalDate());
 
   const { days, initializeDay, markReminderComplete, deleteReminder, dailyCigarettes } = useAppStore();
 
-  useEffect(() => {
-    // Nur initialisieren wenn es das heutige Datum ist
-    const today = new Date().toISOString().split('T')[0];
-    if (selectedDate === today && !days[selectedDate]) {
-      // Nicht automatisch initialisieren - User soll Setup machen
-    }
-  }, [selectedDate, initializeDay, days]);
-
   const dayData = days[selectedDate];
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
-  const totalCount = dayData?.totalCigarettes || dailyCigarettes;
-  const remainingCount = totalCount - completedCount;
+  const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
+  const remainingCount = Math.max(totalCount - completedCount, 0);
 
   const handleComplete = (reminderId: string) => {
     markReminderComplete(selectedDate, reminderId);
-    
-    // Haptisches Feedback
     if ('vibrate' in navigator) {
       navigator.vibrate([10, 50, 10]);
     }
@@ -49,25 +33,16 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
     initializeDay(selectedDate);
   };
 
-  // Prüfe ob für diesen Tag noch keine Daten existieren
   const needsSetup = !dayData;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col safe-top">
-      {/* Mini Kalender */}
-      <div className="pt-2">
-        <MiniCalendar
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
-        />
-      </div>
-
-      {/* Sticky Counter unter Kalender */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/30">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Sticky Counter oben */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/30 safe-top">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-3 px-4"
+          className="text-center pb-3 px-4"
         >
           <motion.div
             key={completedCount}
@@ -76,17 +51,11 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
             transition={{ duration: 0.3 }}
             className="flex items-baseline justify-center gap-1"
           >
-            <span className="text-5xl font-black text-foreground">
-              {completedCount}
-            </span>
-            <span className="text-2xl font-bold text-muted-foreground/50">
-              /
-            </span>
-            <span className="text-2xl font-bold text-muted-foreground">
-              {totalCount}
-            </span>
+            <span className="text-5xl font-black text-foreground">{completedCount}</span>
+            <span className="text-2xl font-bold text-muted-foreground/50">/</span>
+            <span className="text-2xl font-bold text-muted-foreground">{totalCount}</span>
           </motion.div>
-          
+
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -94,27 +63,25 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
             className="text-muted-foreground text-xs mt-0.5"
           >
             {completedCount === 0
-              ? "Bereit wenn du es bist"
-              : completedCount === totalCount
-              ? "Tag geschafft! 🎉"
+              ? 'Bereit wenn du es bist'
+              : completedCount >= totalCount
+              ? 'Tag geschafft! 🎉'
               : `Noch ${remainingCount} übrig`}
           </motion.p>
         </motion.div>
       </div>
 
       {/* Tag Setup oder Erinnerungsliste */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1">
         {needsSetup ? (
-          <DaySetupCard 
-            selectedDate={selectedDate} 
-            onComplete={handleDaySetupComplete}
-          />
+          <div className="pt-3">
+            <DaySetupCard selectedDate={selectedDate} onComplete={handleDaySetupComplete} />
+          </div>
         ) : (
           <>
-            {/* Kompakte Zeitplan-Einstellungen */}
             <div className="px-4 pt-3">
-              <DaySetupCard 
-                selectedDate={selectedDate} 
+              <DaySetupCard
+                selectedDate={selectedDate}
                 onComplete={handleDaySetupComplete}
                 isEditing={true}
               />
@@ -128,20 +95,23 @@ const HomeScreen = ({ onOpenSettings }: HomeScreenProps) => {
         )}
       </div>
 
-      {/* Platz für floating Navigation */}
-      <div className="h-20" />
+      {/* Platz für Kalender + floating Navigation */}
+      <div className="h-44" />
+
+      {/* Kalender fixiert über dem Menü */}
+      <div className="fixed left-0 right-0 z-40 pointer-events-none" style={{ bottom: "calc(max(env(safe-area-inset-bottom), 0.75rem) + 58px)" }}>
+        <div className="max-w-md mx-auto pointer-events-auto">
+          <div className="mx-3 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg">
+            <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+          </div>
+        </div>
+      </div>
 
       {/* Hintergrund Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <motion.div
-          animate={{
-            rotate: [0, 360],
-          }}
-          transition={{
-            duration: 120,
-            repeat: Infinity,
-            ease: "linear",
-          }}
+          animate={{ rotate: [0, 360] }}
+          transition={{ duration: 120, repeat: Infinity, ease: 'linear' }}
           className="absolute top-0 right-0 w-[600px] h-[600px] -translate-y-1/2 translate-x-1/2"
         >
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 blur-3xl" />

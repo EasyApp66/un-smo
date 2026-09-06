@@ -1,26 +1,31 @@
-import { useAppStore } from '../store/appStore';
+import { useAppStore, applyTheme } from '../store/appStore';
 import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
 import StatisticsScreen from '../components/StatisticsScreen';
 import SettingsSheet from '../components/SettingsSheet';
 import BottomTabBar from '../components/BottomTabBar';
+import PinLockScreen from '../components/PinLockScreen';
 import { useEffect, useState } from 'react';
 
 const Index = () => {
-  const { hasCompletedOnboarding, isDarkMode } = useAppStore();
+  const { hasCompletedOnboarding, themeMode, pinHash, isLocked, lock } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // Apply dark mode on mount
+  // Theme anwenden (Hell / Dunkel / System)
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
+    applyTheme(themeMode);
+  }, [themeMode]);
 
-  // Handle tab change
+  // App sperren, wenn sie in den Hintergrund geht (iPhone: Home-Bildschirm-App)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') lock();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [lock]);
+
   const handleTabChange = (tab: 'home' | 'stats' | 'settings') => {
     setActiveTab(tab);
     if (tab === 'settings') {
@@ -28,7 +33,6 @@ const Index = () => {
     }
   };
 
-  // When settings closes, go back to home
   const handleSettingsClose = () => {
     setIsSettingsOpen(false);
     setActiveTab('home');
@@ -38,24 +42,26 @@ const Index = () => {
     return <OnboardingScreen />;
   }
 
+  // Erster Start: PIN festlegen
+  if (!pinHash) {
+    return <PinLockScreen mode="setup" />;
+  }
+
+  if (isLocked) {
+    return <PinLockScreen mode="unlock" />;
+  }
+
   return (
     <div className="max-w-md mx-auto min-h-screen bg-background">
-      {activeTab === 'home' && (
-        <HomeScreen onOpenSettings={() => setIsSettingsOpen(true)} />
-      )}
-      
-      {activeTab === 'stats' && (
-        <StatisticsScreen />
-      )}
-      
+      {activeTab === 'home' && <HomeScreen />}
+
+      {activeTab === 'stats' && <StatisticsScreen />}
+
       {/* Bottom Navigation */}
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
-      
+
       {/* Einstellungen Sheet */}
-      <SettingsSheet
-        isOpen={isSettingsOpen}
-        onClose={handleSettingsClose}
-      />
+      <SettingsSheet isOpen={isSettingsOpen} onClose={handleSettingsClose} />
     </div>
   );
 };
