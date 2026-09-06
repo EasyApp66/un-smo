@@ -13,51 +13,70 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
   const hoursRef = useRef<HTMLDivElement>(null);
   const minutesRef = useRef<HTMLDivElement>(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const programmaticRef = useRef(false);
+  const programmaticTimer = useRef<number | null>(null);
+  const settleTimer = useRef<number | null>(null);
+  const mountedRef = useRef(false);
 
   const hourValues = Array.from({ length: 24 }, (_, i) => i);
   const minuteValues = Array.from({ length: 60 }, (_, i) => i);
   
   const itemHeight = compact ? 40 : 50;
 
+  const markProgrammatic = (ms: number) => {
+    programmaticRef.current = true;
+    if (programmaticTimer.current) window.clearTimeout(programmaticTimer.current);
+    programmaticTimer.current = window.setTimeout(() => {
+      programmaticRef.current = false;
+    }, ms);
+  };
+
   const scrollToValue = (ref: React.RefObject<HTMLDivElement>, index: number) => {
-    if (ref.current && !isScrolling) {
-      ref.current.scrollTo({
-        top: index * itemHeight,
-        behavior: 'smooth',
-      });
-    }
+    const el = ref.current;
+    if (!el || isScrolling) return;
+    const target = index * itemHeight;
+    if (Math.abs(el.scrollTop - target) < 1) return;
+    markProgrammatic(400);
+    el.scrollTo({ top: target, behavior: mountedRef.current ? 'smooth' : 'auto' });
   };
 
   useEffect(() => {
     scrollToValue(hoursRef, hours);
     scrollToValue(minutesRef, minutes);
+    mountedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hours, minutes, isScrolling]);
 
-  const handleHourScroll = () => {
-    if (hoursRef.current) {
-      const scrollTop = hoursRef.current.scrollTop;
-      const newHour = Math.round(scrollTop / itemHeight);
-      const clampedHour = Math.max(0, Math.min(23, newHour));
-      
-      if (clampedHour !== hours) {
-        onChange(`${clampedHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
-        if ('vibrate' in navigator) navigator.vibrate(3);
-      }
+  const pad = (n: number) => n.toString().padStart(2, '0');
+
+  const settle = (fn: () => void) => {
+    if (programmaticRef.current) {
+      markProgrammatic(150);
+      return;
     }
+    if (settleTimer.current) window.clearTimeout(settleTimer.current);
+    settleTimer.current = window.setTimeout(fn, 120);
   };
 
-  const handleMinuteScroll = () => {
-    if (minutesRef.current) {
-      const scrollTop = minutesRef.current.scrollTop;
-      const newMinute = Math.round(scrollTop / itemHeight);
-      const clampedMinute = Math.max(0, Math.min(59, newMinute));
-      
-      if (clampedMinute !== minutes) {
-        onChange(`${hours.toString().padStart(2, '0')}:${clampedMinute.toString().padStart(2, '0')}`);
+  const handleHourScroll = () =>
+    settle(() => {
+      if (!hoursRef.current) return;
+      const newHour = Math.max(0, Math.min(23, Math.round(hoursRef.current.scrollTop / itemHeight)));
+      if (newHour !== hours) {
+        onChange(`${pad(newHour)}:${pad(minutes)}`);
         if ('vibrate' in navigator) navigator.vibrate(3);
       }
-    }
-  };
+    });
+
+  const handleMinuteScroll = () =>
+    settle(() => {
+      if (!minutesRef.current) return;
+      const newMinute = Math.max(0, Math.min(59, Math.round(minutesRef.current.scrollTop / itemHeight)));
+      if (newMinute !== minutes) {
+        onChange(`${pad(hours)}:${pad(newMinute)}`);
+        if ('vibrate' in navigator) navigator.vibrate(3);
+      }
+    });
 
   const wheelHeight = compact ? 120 : 150;
   const wheelWidth = compact ? 50 : 70;
