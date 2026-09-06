@@ -15,15 +15,21 @@ export interface DayData {
   reminders: ReminderTime[];
 }
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 interface AppState {
   // Einstellungen
   wakeTime: string; // HH:mm
   sleepTime: string; // HH:mm
   dailyCigarettes: number;
-  isDarkMode: boolean;
+  themeMode: ThemeMode;
   hasCompletedOnboarding: boolean;
   language: 'de' | 'en';
-  applyScheduleToAllDays: boolean; // NEU: Zeitplan für alle Tage
+  applyScheduleToAllDays: boolean; // Zeitplan für alle Tage
+  pinHash: string | null;
+  isLocked: boolean;
+  pushEnabled: boolean;
+  pushToken: string | null;
   
   // Daten
   days: Record<string, DayData>;
@@ -32,16 +38,20 @@ interface AppState {
   setWakeTime: (time: string) => void;
   setSleepTime: (time: string) => void;
   setDailyCigarettes: (count: number) => void;
-  toggleDarkMode: () => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  setPinHash: (hash: string | null) => void;
+  lock: () => void;
+  unlock: () => void;
+  setPushEnabled: (enabled: boolean, token?: string | null) => void;
   setLanguage: (lang: 'de' | 'en') => void;
-  toggleApplyScheduleToAllDays: () => void; // NEU
+  toggleApplyScheduleToAllDays: () => void;
   completeOnboarding: () => void;
   markReminderComplete: (date: string, reminderId: string) => void;
   deleteReminder: (date: string, reminderId: string) => void;
   initializeDay: (date: string) => void;
   getTodayData: () => DayData | null;
   recalculateReminders: (date: string) => void;
-  recalculateAllDays: () => void; // NEU
+  recalculateAllDays: () => void;
   deleteAllData: () => void;
 }
 
