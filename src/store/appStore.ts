@@ -127,9 +127,9 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       // Standard-Einstellungen
-      wakeTime: '06:00',
+      wakeTime: '06:30',
       sleepTime: '23:00',
-      dailyCigarettes: 20,
+      dailyCigarettes: 30,
       themeMode: 'system',
       hasCompletedOnboarding: false,
       language: 'de',
@@ -342,9 +342,9 @@ export const useAppStore = create<AppState>()(
       deleteAllData: () => {
         // Setze auf Standardwerte zurück
         set({
-          wakeTime: '06:00',
+          wakeTime: '06:30',
           sleepTime: '23:00',
-          dailyCigarettes: 20,
+          dailyCigarettes: 30,
           themeMode: 'system',
           hasCompletedOnboarding: false,
           language: 'de',
