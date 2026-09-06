@@ -36,7 +36,7 @@ export const isPushSupported = () =>
   'Notification' in window;
 
 /** Aus einem Klick-Handler aufrufen (Browser verlangen eine Nutzeraktion). */
-export async function enablePush(): Promise<PushResult> {
+export async function enablePush(schedule: PushSchedule): Promise<PushResult> {
   if (!isPushSupported()) return { status: 'unsupported' };
   if (window.top !== window.self) return { status: 'open-in-new-tab' };
 
@@ -59,20 +59,15 @@ export async function enablePush(): Promise<PushResult> {
   await callFn({
     action: 'subscribe',
     subscription: { endpoint: json.endpoint, keys: json.keys, expirationTime: json.expirationTime ?? null },
-    wakeTime: currentSchedule?.wakeTime ?? '06:00',
-    sleepTime: currentSchedule?.sleepTime ?? '23:00',
-    dailyCigarettes: currentSchedule?.dailyCigarettes ?? 20,
+    ...schedule,
     timezone: timezone(),
   });
 
   return { status: 'registered', token: subscription.endpoint };
 }
 
-let currentSchedule: PushSchedule | null = null;
-
 /** Zeitplan an den Server übertragen (wird bei jeder Änderung aufgerufen). */
 export async function syncPushSchedule(endpoint: string, schedule: PushSchedule) {
-  currentSchedule = schedule;
   await callFn({ action: 'sync', endpoint, ...schedule, timezone: timezone() });
 }
 

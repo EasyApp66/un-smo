@@ -6,9 +6,11 @@ import SettingsSheet from '../components/SettingsSheet';
 import BottomTabBar from '../components/BottomTabBar';
 import PinLockScreen from '../components/PinLockScreen';
 import { useEffect, useState } from 'react';
+import { syncPushSchedule } from '../lib/push';
 
 const Index = () => {
-  const { hasCompletedOnboarding, themeMode, pinHash, isLocked, lock } = useAppStore();
+  const { hasCompletedOnboarding, themeMode, pinHash, isLocked, lock, pushToken, wakeTime, sleepTime, dailyCigarettes } =
+    useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -25,6 +27,17 @@ const Index = () => {
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [lock]);
+
+  // Zeitplan-Änderungen an den Push-Server übertragen (entprellt)
+  useEffect(() => {
+    if (!pushToken) return;
+    const t = setTimeout(() => {
+      syncPushSchedule(pushToken, { wakeTime, sleepTime, dailyCigarettes }).catch((e) =>
+        console.warn('Push-Sync fehlgeschlagen', e)
+      );
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [pushToken, wakeTime, sleepTime, dailyCigarettes]);
 
   const handleTabChange = (tab: 'home' | 'stats' | 'settings') => {
     setActiveTab(tab);
