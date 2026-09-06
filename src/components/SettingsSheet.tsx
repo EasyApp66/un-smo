@@ -167,25 +167,96 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                   Darstellung
                 </h3>
+                <div className="bg-card rounded-xl p-1.5 grid grid-cols-3 gap-1">
+                  {(
+                    [
+                      { id: 'light', label: 'Hell', Icon: Sun },
+                      { id: 'dark', label: 'Dunkel', Icon: Moon },
+                      { id: 'system', label: 'System', Icon: Smartphone },
+                    ] as const
+                  ).map(({ id, label, Icon }) => {
+                    const active = themeMode === id;
+                    return (
+                      <motion.button
+                        key={id}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setThemeMode(id)}
+                        className={`relative h-11 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors ${
+                          active ? 'text-primary-foreground' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {active && (
+                          <motion.div
+                            layoutId="theme-pill"
+                            className="absolute inset-0 rounded-lg bg-primary"
+                            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                          />
+                        )}
+                        <Icon className="w-4 h-4 relative z-10" />
+                        <span className="relative z-10">{label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Push-Meldungen */}
+              <section>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                  Erinnerungen
+                </h3>
+                <div className="bg-card rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {pushEnabled ? (
+                        <Bell className="w-4 h-4 text-primary" />
+                      ) : (
+                        <BellOff className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <div>
+                        <span className="text-base font-semibold block">Push-Meldungen</span>
+                        <span className="text-xs text-muted-foreground">
+                          Auch bei geschlossener App
+                        </span>
+                      </div>
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      disabled={pushBusy}
+                      onClick={handleTogglePush}
+                      aria-label="Push-Meldungen umschalten"
+                      className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 ${
+                        pushEnabled ? 'bg-primary' : 'bg-muted'
+                      } ${pushBusy ? 'opacity-60' : ''}`}
+                    >
+                      <motion.div
+                        animate={{ x: pushEnabled ? 20 : 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        className="w-5 h-5 rounded-full bg-background shadow-lg"
+                      />
+                    </motion.button>
+                  </div>
+                  {pushMessage && (
+                    <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{pushMessage}</p>
+                  )}
+                </div>
+              </section>
+
+              {/* Sicherheit */}
+              <section>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                  Sicherheit
+                </h3>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  onClick={toggleDarkMode}
-                  className="w-full flex items-center justify-between p-4 bg-card rounded-xl"
+                  onClick={() => setShowPinChange(true)}
+                  className="w-full bg-card rounded-xl p-4 flex items-center justify-between"
                 >
-                  <span className="text-base font-semibold">
-                    {isDarkMode ? 'Dunkelmodus' : 'Hellmodus'}
-                  </span>
-                  <div
-                    className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${
-                      isDarkMode ? 'bg-primary' : 'bg-muted'
-                    }`}
-                  >
-                    <motion.div
-                      animate={{ x: isDarkMode ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="w-6 h-6 rounded-full bg-background shadow-lg"
-                    />
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-base font-semibold">PIN ändern</span>
                   </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </motion.button>
               </section>
 
