@@ -1,9 +1,23 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronRight, AlertTriangle, Globe } from 'lucide-react';
+import {
+  X,
+  ChevronRight,
+  AlertTriangle,
+  Globe,
+  Sun,
+  Moon,
+  Smartphone,
+  Bell,
+  BellOff,
+  KeyRound,
+  LogOut,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
+import PinLockScreen from './PinLockScreen';
+import { enablePush, disablePush, syncPushSchedule } from '../lib/push';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,29 +40,80 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     wakeTime,
     sleepTime,
     dailyCigarettes,
-    isDarkMode,
+    themeMode,
     applyScheduleToAllDays,
+    pushEnabled,
+    pushToken,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
-    toggleDarkMode,
+    setThemeMode,
+    setPushEnabled,
     toggleApplyScheduleToAllDays,
     deleteAllData,
+    lock,
   } = useAppStore();
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPinChange, setShowPinChange] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMessage, setPushMessage] = useState<string | null>(null);
+
+  // "Abmelden" sperrt die App wieder (PIN-Eingabe)
   const handleLogout = () => {
-    // Reset hasCompletedOnboarding to show welcome screen
-    useAppStore.setState({ hasCompletedOnboarding: false });
     onClose();
+    lock();
   };
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const handleDeleteAllData = () => {
+  const handleDeleteAllData = async () => {
+    if (pushToken) await disablePush(pushToken).catch(() => undefined);
     deleteAllData();
     setShowDeleteConfirm(false);
     onClose();
   };
+
+  const handleTogglePush = async () => {
+    setPushBusy(true);
+    setPushMessage(null);
+    try {
+      if (pushEnabled) {
+        if (pushToken) await disablePush(pushToken);
+        setPushEnabled(false);
+        setPushMessage('Push-Meldungen sind aus.');
+      } else {
+        const result = await enablePush();
+        if (result.status === 'registered') {
+          await syncPushSchedule(result.token, { wakeTime, sleepTime, dailyCigarettes });
+          setPushEnabled(true, result.token);
+          setPushMessage('Aktiv. Du erhältst zu jeder Erinnerungszeit eine Meldung.');
+        } else if (result.status === 'open-in-new-tab') {
+          setPushMessage('Bitte die App in einem eigenen Tab oder vom Home-Bildschirm öffnen – in der Vorschau geht das nicht.');
+        } else if (result.status === 'denied') {
+          setPushMessage('Erlaubnis abgelehnt. Bitte in den iPhone-Einstellungen unter Mitteilungen erlauben.');
+        } else if (result.status === 'unsupported') {
+          setPushMessage('Auf diesem Gerät nur möglich, wenn die App zum Home-Bildschirm hinzugefügt wurde (Safari → Teilen → Zum Home-Bildschirm).');
+        } else {
+          setPushMessage('Push ist noch nicht eingerichtet (Verbindung fehlt).');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setPushMessage('Das hat nicht geklappt. Bitte später erneut versuchen.');
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  if (showPinChange) {
+    return (
+      <PinLockScreen
+        mode="change"
+        onDone={() => setShowPinChange(false)}
+        onCancel={() => setShowPinChange(false)}
+      />
+    );
+  }
+
 
   return (
     <AnimatePresence>
