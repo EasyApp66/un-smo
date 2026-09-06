@@ -81,3 +81,8 @@ export async function disablePush(endpoint: string) {
   }
   await callFn({ action: 'unsubscribe', endpoint });
 }
+
+/** Sofort eine Test-Meldung an dieses Gerät senden. */
+export async function sendTestPush(endpoint: string) {
+  await callFn({ action: 'test', endpoint });
+}
