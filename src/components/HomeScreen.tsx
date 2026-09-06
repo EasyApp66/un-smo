@@ -99,7 +99,7 @@ const HomeScreen = () => {
       <div className="h-44" />
 
       {/* Kalender fixiert über dem Menü */}
-      <div className="fixed left-0 right-0 bottom-[68px] z-40 pointer-events-none">
+      <div className="fixed left-0 right-0 z-40 pointer-events-none" style={{ bottom: "calc(max(env(safe-area-inset-bottom), 0.75rem) + 58px)" }}>
         <div className="max-w-md mx-auto pointer-events-auto">
           <div className="mx-3 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg">
             <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />

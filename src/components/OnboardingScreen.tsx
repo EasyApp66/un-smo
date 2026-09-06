@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
+import appIcon from '../assets/app-icon.png';
 
 const OnboardingScreen = () => {
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
@@ -31,9 +32,16 @@ const OnboardingScreen = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-brutal-display mb-8 text-white drop-shadow-lg"
+          className="flex flex-col items-center mb-8"
         >
-          Smoke
+          <img
+            src={appIcon}
+            alt="UN-SMO Logo"
+            width={112}
+            height={112}
+            className="w-28 h-28 rounded-[28px] shadow-2xl mb-6"
+          />
+          <span className="text-brutal-xl text-white drop-shadow-lg tracking-tight">UN-SMO</span>
         </motion.h1>
 
         {/* Beschreibung */}
