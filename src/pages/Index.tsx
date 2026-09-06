@@ -51,7 +51,9 @@ const Index = () => {
     setActiveTab('home');
   };
 
-  if (!hasCompletedOnboarding) {
+  // Startseite vorübergehend ausgeblendet (nicht gelöscht) – direkt zur PIN-Seite
+  const SHOW_ONBOARDING = false;
+  if (SHOW_ONBOARDING && !hasCompletedOnboarding) {
     return <OnboardingScreen />;
   }
 
