@@ -17,7 +17,7 @@ import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
 import PinLockScreen from './PinLockScreen';
-import { enablePush, disablePush, syncPushSchedule } from '../lib/push';
+import { enablePush, disablePush } from '../lib/push';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,9 +81,8 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
         setPushEnabled(false);
         setPushMessage('Push-Meldungen sind aus.');
       } else {
-        const result = await enablePush();
+        const result = await enablePush({ wakeTime, sleepTime, dailyCigarettes });
         if (result.status === 'registered') {
-          await syncPushSchedule(result.token, { wakeTime, sleepTime, dailyCigarettes });
           setPushEnabled(true, result.token);
           setPushMessage('Aktiv. Du erhältst zu jeder Erinnerungszeit eine Meldung.');
         } else if (result.status === 'open-in-new-tab') {

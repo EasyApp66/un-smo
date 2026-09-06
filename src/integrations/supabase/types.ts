@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          daily_cigarettes: number
+          endpoint: string
+          id: string
+          last_sent_slot: string | null
+          sleep_time: string
+          subscription: Json
+          timezone: string
+          updated_at: string
+          wake_time: string
+        }
+        Insert: {
+          created_at?: string
+          daily_cigarettes?: number
+          endpoint: string
+          id?: string
+          last_sent_slot?: string | null
+          sleep_time?: string
+          subscription: Json
+          timezone?: string
+          updated_at?: string
+          wake_time?: string
+        }
+        Update: {
+          created_at?: string
+          daily_cigarettes?: number
+          endpoint?: string
+          id?: string
+          last_sent_slot?: string | null
+          sleep_time?: string
+          subscription?: Json
+          timezone?: string
+          updated_at?: string
+          wake_time?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

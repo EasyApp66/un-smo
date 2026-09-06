@@ -24,6 +24,10 @@ const WheelPicker = ({
 }: WheelPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const programmaticRef = useRef(false);
+  const programmaticTimer = useRef<number | null>(null);
+  const settleTimer = useRef<number | null>(null);
+  const mountedRef = useRef(false);
 
   const values = [];
   for (let i = min; i <= max; i += step) {
@@ -36,30 +40,40 @@ const WheelPicker = ({
   const wheelWidth = compact ? 80 : 100;
 
   useEffect(() => {
-    if (containerRef.current && !isDragging) {
-      const scrollPosition = currentIndex * itemHeight;
-      containerRef.current.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth',
-      });
-    }
+    const el = containerRef.current;
+    if (!el || isDragging || currentIndex < 0) return;
+    const target = currentIndex * itemHeight;
+    if (Math.abs(el.scrollTop - target) < 1) return;
+    // Programmatisches Scrollen darf keinen onChange auslösen
+    programmaticRef.current = true;
+    el.scrollTo({ top: target, behavior: mountedRef.current ? 'smooth' : 'auto' });
+    mountedRef.current = true;
+    if (programmaticTimer.current) window.clearTimeout(programmaticTimer.current);
+    programmaticTimer.current = window.setTimeout(() => {
+      programmaticRef.current = false;
+    }, 400);
   }, [currentIndex, isDragging, itemHeight]);
 
   const handleScroll = () => {
-    if (containerRef.current) {
-      const scrollTop = containerRef.current.scrollTop;
-      const newIndex = Math.round(scrollTop / itemHeight);
+    if (programmaticRef.current) {
+      if (programmaticTimer.current) window.clearTimeout(programmaticTimer.current);
+      programmaticTimer.current = window.setTimeout(() => {
+        programmaticRef.current = false;
+      }, 150);
+      return;
+    }
+    // Erst übernehmen, wenn das Scrollen zur Ruhe kommt
+    if (settleTimer.current) window.clearTimeout(settleTimer.current);
+    settleTimer.current = window.setTimeout(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      const newIndex = Math.round(el.scrollTop / itemHeight);
       const clampedIndex = Math.max(0, Math.min(values.length - 1, newIndex));
-      
       if (values[clampedIndex] !== value) {
         onChange(values[clampedIndex]);
-        
-        // Haptic feedback simulation
-        if ('vibrate' in navigator) {
-          navigator.vibrate(5);
-        }
+        if ('vibrate' in navigator) navigator.vibrate(5);
       }
-    }
+    }, 120);
   };
 
   return (
