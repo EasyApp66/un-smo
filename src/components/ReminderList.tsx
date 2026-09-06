@@ -90,7 +90,8 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
       }
     }, 450);
     return () => clearTimeout(t);
-  }, [nextReminder?.id, sortedReminders.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextReminder?.id, sortedReminders.length, sortedReminders.filter((r) => r.completed).length]);
 
   return (
     <div className="px-4 pb-48">
