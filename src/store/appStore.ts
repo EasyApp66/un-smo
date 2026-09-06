@@ -129,17 +129,16 @@ export const useAppStore = create<AppState>()(
         }
       },
       
-      toggleDarkMode: () => {
-        set((state) => {
-          const newDarkMode = !state.isDarkMode;
-          if (newDarkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-          return { isDarkMode: newDarkMode };
-        });
+      setThemeMode: (mode) => {
+        set({ themeMode: mode });
+        applyTheme(mode);
       },
+
+      setPinHash: (hash) => set({ pinHash: hash, isLocked: false }),
+      lock: () => set((state) => ({ isLocked: !!state.pinHash })),
+      unlock: () => set({ isLocked: false }),
+      setPushEnabled: (enabled, token = null) =>
+        set({ pushEnabled: enabled, pushToken: enabled ? token : null }),
 
       setLanguage: (lang) => {
         set({ language: lang });
