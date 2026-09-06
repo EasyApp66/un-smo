@@ -64,7 +64,7 @@ const ReminderList = ({ reminders, onComplete, onDelete }: ReminderListProps) =>
   }, [sortedReminders]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pb-8 hide-scrollbar">
+    <div className="flex-1 overflow-y-auto px-4 pb-48 hide-scrollbar">
       <AnimatePresence mode="popLayout">
         {sortedReminders.map((reminder, index) => {
           const isNext = index === nextReminderIndex;

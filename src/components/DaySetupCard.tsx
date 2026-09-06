@@ -50,7 +50,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex-1 px-4 pb-8 overflow-y-auto"
+      className={isEditing ? "px-0 pb-2" : "flex-1 px-4 pb-8 overflow-y-auto"}
     >
       <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
         {/* Header kompakt */}
@@ -60,7 +60,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-foreground">
-              {formatDate(selectedDate)} einrichten
+              {isEditing ? `Zeitplan · ${formatDate(selectedDate)}` : `${formatDate(selectedDate)} einrichten`}
             </h3>
             <p className="text-xs text-muted-foreground">
               Lege deine Zeiten und dein Ziel fest
@@ -112,7 +112,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
           onClick={onComplete}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-base shadow-lg glow-green"
         >
-          Tag einrichten
+          {isEditing ? 'Zeitplan aktualisieren' : 'Tag einrichten'}
         </motion.button>
       </div>
     </motion.div>
