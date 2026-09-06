@@ -300,28 +300,45 @@ export const useAppStore = create<AppState>()(
       },
 
       deleteAllData: () => {
-        // Entferne Dark Mode Klasse
-        document.documentElement.classList.remove('dark');
-        
         // Setze auf Standardwerte zurück
         set({
           wakeTime: '06:00',
           sleepTime: '23:00',
           dailyCigarettes: 20,
-          isDarkMode: false,
+          themeMode: 'system',
           hasCompletedOnboarding: false,
           language: 'de',
           applyScheduleToAllDays: false,
+          pinHash: null,
+          isLocked: false,
+          pushEnabled: false,
+          pushToken: null,
           days: {},
         });
+        applyTheme('system');
       },
     }),
     {
       name: 'smoke-storage',
-      onRehydrateStorage: () => (state) => {
-        if (state?.isDarkMode) {
-          document.documentElement.classList.add('dark');
+      version: 2,
+      migrate: (persisted: unknown) => {
+        const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
+        if (p.themeMode === undefined) {
+          p.themeMode = p.isDarkMode ? 'dark' : 'system';
         }
+        return p as unknown as AppState;
+      },
+      partialize: (state) => {
+        // isLocked wird nicht gespeichert: App startet immer gesperrt, wenn eine PIN existiert
+        const { isLocked, ...rest } = state;
+        return rest as AppState;
+      },
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>;
+        return { ...current, ...p, isLocked: !!p.pinHash };
+      },
+      onRehydrateStorage: () => (state) => {
+        applyTheme(state?.themeMode ?? 'system');
       },
     }
   )
