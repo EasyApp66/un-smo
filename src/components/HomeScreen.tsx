@@ -37,49 +37,50 @@ const HomeScreen = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Sticky Counter oben */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/30 safe-top">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center pb-3 px-4"
-        >
-          <motion.div
-            key={completedCount}
-            initial={{ scale: 1 }}
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 0.3 }}
-            className="flex items-baseline justify-center gap-1"
-          >
-            <span className="text-5xl font-black text-foreground">{completedCount}</span>
-            <span className="text-2xl font-bold text-muted-foreground/50">/</span>
-            <span className="text-2xl font-bold text-muted-foreground">{totalCount}</span>
-          </motion.div>
+      {/* Kalender ganz oben */}
+      <div className="pt-safe-top px-3 pt-2">
+        <div className="max-w-md mx-auto rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-sm">
+          <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+        </div>
+      </div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-muted-foreground text-xs mt-0.5"
-          >
-            {completedCount === 0
-              ? 'Bereit wenn du es bist'
-              : completedCount >= totalCount
-              ? 'Tag geschafft! 🎉'
-              : `Noch ${remainingCount} übrig`}
-          </motion.p>
+      {/* Kleiner Counter, nicht sticky */}
+      <div className="text-center py-2 px-4">
+        <motion.div
+          key={completedCount}
+          initial={{ scale: 1 }}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 0.3 }}
+          className="flex items-baseline justify-center gap-1"
+        >
+          <span className="text-3xl font-black text-foreground">{completedCount}</span>
+          <span className="text-lg font-bold text-muted-foreground/50">/</span>
+          <span className="text-lg font-bold text-muted-foreground">{totalCount}</span>
         </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-muted-foreground text-[10px] mt-0"
+        >
+          {completedCount === 0
+            ? 'Bereit wenn du es bist'
+            : completedCount >= totalCount
+            ? 'Tag geschafft! 🎉'
+            : `Noch ${remainingCount} übrig`}
+        </motion.p>
       </div>
 
       {/* Tag Setup oder Erinnerungsliste */}
       <div className="flex-1">
         {needsSetup ? (
-          <div className="pt-3">
+          <div className="pt-1">
             <DaySetupCard selectedDate={selectedDate} onComplete={handleDaySetupComplete} />
           </div>
         ) : (
           <>
-            <div className="px-4 pt-3">
+            <div className="px-4 pt-1">
               <DaySetupCard
                 selectedDate={selectedDate}
                 onComplete={handleDaySetupComplete}
@@ -93,18 +94,6 @@ const HomeScreen = () => {
             />
           </>
         )}
-      </div>
-
-      {/* Platz für Kalender + floating Navigation */}
-      <div className="h-44" />
-
-      {/* Kalender fixiert über dem Menü */}
-      <div className="fixed left-0 right-0 z-40 pointer-events-none" style={{ bottom: "calc(max(env(safe-area-inset-bottom), 0.75rem) + 58px)" }}>
-        <div className="max-w-md mx-auto pointer-events-auto">
-          <div className="mx-3 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg">
-            <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
-          </div>
-        </div>
       </div>
 
       {/* Hintergrund Gradient */}
