@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Plus, Ban } from 'lucide-react';
+import { Check, Plus, Ban, ChevronDown } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
@@ -21,6 +21,8 @@ const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
 const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Live-Tick jede Sekunde für Countdown
   const [now, setNow] = useState(() => Date.now());
+  const [showCompleted, setShowCompleted] = useState(false);
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
@@ -140,10 +142,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     }
   };
 
-  return (
-    <div className="px-4 pb-48">
-      <AnimatePresence mode="popLayout" initial={false}>
-        {sortedReminders.map((reminder, index) => {
+  const renderRow = (reminder: ReminderTime, index: number) => {
+
           const isNext = index === nextReminderIndex;
           const isSkipped = !!reminder.skipped;
           const isPassed = !reminder.completed && !isSkipped && !isNext && isTimePassed(reminder.time);
@@ -284,11 +284,64 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
                 </span>
               </motion.div>
             </motion.div>
-          );
-        })}
+    );
+  };
+
+  const completedRows = sortedReminders
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => r.completed);
+  const openRows = sortedReminders.map((r, i) => ({ r, i })).filter(({ r }) => !r.completed);
+
+  return (
+    <div className="px-4 pb-48">
+      {completedRows.length > 0 && (
+        <div className="mb-2">
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setShowCompleted((v) => !v);
+              tap();
+            }}
+            aria-expanded={showCompleted}
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-primary/10 border border-primary/20"
+          >
+            <span className="text-sm font-bold text-primary">
+              {completedRows.length} geraucht
+            </span>
+            <ChevronDown
+              className={`w-5 h-5 text-primary transition-transform duration-300 ${
+                showCompleted ? 'rotate-180' : ''
+              }`}
+              strokeWidth={3}
+            />
+          </motion.button>
+
+          <AnimatePresence initial={false}>
+            {showCompleted && (
+              <motion.div
+                key="completed"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-2">
+                  {completedRows.map(({ r, i }) => renderRow(r, i))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      <AnimatePresence mode="popLayout" initial={false}>
+        {openRows.map(({ r, i }) => renderRow(r, i))}
       </AnimatePresence>
     </div>
   );
+
 };
 
 export default ReminderList;
