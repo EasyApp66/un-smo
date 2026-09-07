@@ -131,11 +131,6 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   }, [nextReminder?.id, sortedReminders.length, completedCount, scrollToNext]);
 
   const toggle = (reminder: ReminderTime) => {
-    if (reminder.skipped) {
-      onSkip?.(reminder.id);
-      tap();
-      return;
-    }
     if (reminder.completed) {
       onUncomplete?.(reminder.id);
       tap();
@@ -195,25 +190,6 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
               >
                 {/* Zeit links – mit rotem Überspringen-Knopf davor */}
                 <span className="flex items-center gap-2">
-                  {!reminder.extra && (
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.85 }}
-                      aria-label={isSkipped ? 'Überspringen rückgängig' : 'Zigarette überspringen'}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSkip?.(reminder.id);
-                        tap();
-                      }}
-                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${
-                        isSkipped
-                          ? 'bg-destructive text-destructive-foreground'
-                          : 'bg-destructive/15 text-destructive'
-                      }`}
-                    >
-                      <Ban className="w-3.5 h-3.5" strokeWidth={2.5} />
-                    </motion.button>
-                  )}
                   <span
                     className={`text-2xl font-bold tabular-nums ${
                       reminder.completed
@@ -255,37 +231,57 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
                   )}
                 </span>
 
-                {/* Rechts: Haken – Antippen setzt zurück */}
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.85 }}
-                  aria-label={reminder.completed ? 'Zurücksetzen' : 'Als geraucht markieren'}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggle(reminder);
-                  }}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-300 ${
-                    reminder.completed
-                      ? 'bg-primary'
-                      : isPassed
-                      ? 'bg-muted/50 border border-muted-foreground/20'
-                      : 'bg-muted border border-muted-foreground/20'
-                  }`}
-                >
-                  <AnimatePresence mode="wait">
-                    {reminder.completed && (
-                      <motion.span
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        exit={{ scale: 0 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                        className="flex"
-                      >
-                        <Check className="w-5 h-5 text-primary-foreground" strokeWidth={3} />
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
+                {/* Rechts: Überspringen-Knopf und Haken */}
+                <span className="flex items-center gap-2">
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.85 }}
+                    aria-label={isSkipped ? 'Überspringen rückgängig' : 'Zigarette überspringen'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSkip?.(reminder.id);
+                      tap();
+                    }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                      isSkipped
+                        ? 'bg-muted text-muted-foreground'
+                        : 'bg-transparent border border-muted-foreground/30'
+                    }`}
+                  >
+                    {isSkipped && <Ban className="w-4 h-4" strokeWidth={2.5} />}
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.85 }}
+                    aria-label={reminder.completed ? 'Zurücksetzen' : 'Als geraucht markieren'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggle(reminder);
+                    }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                      reminder.completed
+                        ? 'bg-primary'
+                        : isPassed
+                        ? 'bg-muted/50 border border-muted-foreground/20'
+                        : 'bg-muted border border-muted-foreground/20'
+                    }`}
+                  >
+                    <AnimatePresence mode="wait">
+                      {reminder.completed && (
+                        <motion.span
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          exit={{ scale: 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                          className="flex"
+                        >
+                          <Check className="w-5 h-5 text-primary-foreground" strokeWidth={3} />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                </span>
               </motion.div>
             </motion.div>
           );
