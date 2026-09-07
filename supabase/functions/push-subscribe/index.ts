@@ -62,8 +62,35 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  const allow = async (key: string, limit: number, windowSeconds: number) => {
+    const { data, error } = await supabase.rpc('consume_rate_limit', {
+      _key: key,
+      _limit: limit,
+      _window_seconds: windowSeconds,
+    });
+    if (error) {
+      console.error('rate limit check failed', error);
+      return true; // Begrenzung darf die Funktion nicht blockieren
+    }
+    return data === true;
+  };
+
+  // Allgemeine Begrenzung: 10 Anfragen pro Minute je IP
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('cf-connecting-ip') ??
+    'unknown';
+  if (!(await allow(`ip:${ip}`, 10, 60))) return json({ error: 'Too many requests' }, 429);
+
   const body = parsed.data;
+
+  // Zusätzliche Begrenzung für Test-Meldungen: 3 pro Stunde je Gerät
+  if (body.action === 'test' && !(await allow(`test:${body.endpoint}`, 3, 3600))) {
+    return json({ error: 'Too many requests' }, 429);
+  }
+
   try {
+
     if (body.action === 'subscribe') {
       const { error } = await supabase.from('push_subscriptions').upsert(
         {
