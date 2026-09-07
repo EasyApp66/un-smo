@@ -19,6 +19,7 @@ const Index = () => {
     wakeTime,
     sleepTime,
     dailyCigarettes,
+    days,
     addExtraCigarette,
   } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
@@ -47,7 +48,7 @@ const Index = () => {
       );
     }, 1500);
     return () => clearTimeout(t);
-  }, [pushToken, wakeTime, sleepTime, dailyCigarettes]);
+  }, [pushToken, wakeTime, sleepTime, dailyCigarettes, days]);
 
   const handleTabChange = (tab: 'home' | 'stats' | 'settings') => {
     setActiveTab(tab);
