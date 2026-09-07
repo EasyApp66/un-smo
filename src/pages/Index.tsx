@@ -26,14 +26,6 @@ const Index = () => {
     applyTheme(themeMode);
   }, [themeMode]);
 
-  // App sperren, wenn sie in den Hintergrund geht (iPhone: Home-Bildschirm-App)
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') lock();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [lock]);
 
   // Zeitplan-Änderungen an den Push-Server übertragen (entprellt)
   useEffect(() => {
@@ -64,14 +56,6 @@ const Index = () => {
     return <OnboardingScreen />;
   }
 
-  // Erster Start: PIN festlegen
-  if (!pinHash) {
-    return <PinLockScreen mode="setup" />;
-  }
-
-  if (isLocked) {
-    return <PinLockScreen mode="unlock" />;
-  }
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-background">
