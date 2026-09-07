@@ -47,8 +47,7 @@ const WheelPicker = ({
         crossSize={horizontal ? (compact ? 56 : 72) : compact ? 80 : 100}
         horizontal={horizontal}
         format={formatValue}
-        textClass={horizontal && !compact ? 'text-lg text-muted-foreground/45' : undefined}
-        selectedTextClass={horizontal && !compact ? 'text-[34px] font-semibold text-primary' : undefined}
+        textClass={horizontal && !compact ? 'text-muted-foreground/45' : undefined}
       />
     </div>
   );
