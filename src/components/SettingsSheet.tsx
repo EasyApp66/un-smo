@@ -333,7 +333,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className="w-full p-4 bg-gradient-to-r from-primary to-secondary rounded-xl"
+                    className="w-full p-4 bg-primary rounded-2xl"
                   >
                     <div className="text-left">
                       <p className="text-base font-bold text-primary-foreground">
@@ -348,7 +348,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className="w-full p-4 bg-card border border-secondary/30 rounded-xl"
+                    className="w-full p-4 bg-card border border-border rounded-2xl"
                   >
                     <div className="text-left">
                       <p className="text-base font-bold">

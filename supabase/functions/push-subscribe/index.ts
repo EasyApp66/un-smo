@@ -62,8 +62,35 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  const allow = async (key: string, limit: number, windowSeconds: number) => {
+    const { data, error } = await supabase.rpc('consume_rate_limit', {
+      _key: key,
+      _limit: limit,
+      _window_seconds: windowSeconds,
+    });
+    if (error) {
+      console.error('rate limit check failed', error);
+      return true; // Begrenzung darf die Funktion nicht blockieren
+    }
+    return data === true;
+  };
+
+  // Allgemeine Begrenzung: 10 Anfragen pro Minute je IP
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('cf-connecting-ip') ??
+    'unknown';
+  if (!(await allow(`ip:${ip}`, 10, 60))) return json({ error: 'Too many requests' }, 429);
+
   const body = parsed.data;
+
+  // Zusätzliche Begrenzung für Test-Meldungen: 3 pro Stunde je Gerät
+  if (body.action === 'test' && !(await allow(`test:${body.endpoint}`, 3, 3600))) {
+    return json({ error: 'Too many requests' }, 429);
+  }
+
   try {
+
     if (body.action === 'subscribe') {
       const { error } = await supabase.from('push_subscriptions').upsert(
         {
@@ -102,7 +129,7 @@ Deno.serve(async (req) => {
     if (body.action === 'test') {
       const priv = Deno.env.get('VAPID_PRIVATE_KEY');
       const pub = Deno.env.get('VAPID_PUBLIC_KEY');
-      if (!priv || !pub) return json({ error: 'VAPID keys not configured' }, 500);
+      if (!priv || !pub) return json({ error: 'Not configured' }, 500);
       webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:push@un-smo.app', pub, priv);
       const { data: sub, error } = await supabase
         .from('push_subscriptions')
@@ -129,6 +156,6 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   } catch (e) {
     console.error('push-subscribe failed', e);
-    return json({ error: 'Database error' }, 500);
+    return json({ error: 'Internal error' }, 500);
   }
 });
