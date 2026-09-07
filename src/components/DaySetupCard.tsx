@@ -76,7 +76,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
 
   const Stat = ({ value, label }: { value: string; label: string }) => (
     <div className="flex flex-col items-start min-w-0">
-      <span className="text-[19px] font-semibold tabular-nums text-foreground leading-tight truncate">
+      <span className="text-[17px] font-semibold tabular-nums text-foreground leading-tight whitespace-nowrap">
         {value}
       </span>
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -100,7 +100,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
                 {formatDate(selectedDate)} einrichten
               </h3>
             )}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-[1.5fr_0.7fr_1fr] gap-2 items-end">
               <Stat value={`${wakeTime} – ${sleepTime}`} label="Wach" />
               <Stat value={`${dailyCigarettes}`} label="Ziel" />
               <Stat value={schedule.interval ? fmtGap(schedule.interval) : '–'} label="Abstand" />
