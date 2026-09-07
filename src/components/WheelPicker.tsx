@@ -42,11 +42,13 @@ const WheelPicker = ({
         values={values}
         index={index}
         onIndexChange={(i) => onChange(values[i])}
-        itemSize={horizontal ? 56 : compact ? 45 : 60}
+        itemSize={horizontal ? (compact ? 56 : 66) : compact ? 45 : 60}
         viewport={horizontal ? viewportWidth : compact ? 135 : 180}
-        crossSize={horizontal ? 56 : compact ? 80 : 100}
+        crossSize={horizontal ? (compact ? 56 : 72) : compact ? 80 : 100}
         horizontal={horizontal}
         format={formatValue}
+        textClass={horizontal && !compact ? 'text-lg text-muted-foreground/45' : undefined}
+        selectedTextClass={horizontal && !compact ? 'text-[34px] font-semibold text-primary' : undefined}
       />
     </div>
   );
