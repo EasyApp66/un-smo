@@ -145,7 +145,13 @@ const ScrollWheel = ({
             >
               <span
                 className={`font-bold tabular-nums transition-all duration-150 ${
-                  isSelected ? 'text-2xl' : 'text-lg opacity-70'
+                  isSelected
+                    ? itemSize >= 64
+                      ? 'text-[32px]'
+                      : 'text-2xl'
+                    : itemSize >= 64
+                      ? 'text-xl opacity-50'
+                      : 'text-lg opacity-70'
                 }`}
               >
                 {format(v)}
