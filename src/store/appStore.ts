@@ -329,7 +329,6 @@ export const useAppStore = create<AppState>()(
               [date]: {
                 ...dayData,
                 reminders: updatedReminders,
-                totalCigarettes: updatedReminders.length,
               },
             },
           };
