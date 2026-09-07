@@ -4,7 +4,6 @@ import HomeScreen from '../components/HomeScreen';
 import StatisticsScreen from '../components/StatisticsScreen';
 import SettingsSheet from '../components/SettingsSheet';
 import BottomTabBar from '../components/BottomTabBar';
-import PinLockScreen from '../components/PinLockScreen';
 import { useEffect, useState } from 'react';
 import { syncPushSchedule } from '../lib/push';
 
@@ -12,9 +11,6 @@ const Index = () => {
   const {
     hasCompletedOnboarding,
     themeMode,
-    pinHash,
-    isLocked,
-    lock,
     pushToken,
     wakeTime,
     sleepTime,
