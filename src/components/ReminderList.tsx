@@ -150,7 +150,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
       <AnimatePresence mode="popLayout" initial={false}>
         {sortedReminders.map((reminder, index) => {
           const isNext = index === nextReminderIndex;
-          const isPassed = !reminder.completed && !isNext && isTimePassed(reminder.time);
+          const isSkipped = !!reminder.skipped;
+          const isPassed = !reminder.completed && !isSkipped && !isNext && isTimePassed(reminder.time);
           const timeUntil = getTimeUntil(reminder.time);
 
           return (
@@ -183,6 +184,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
                 className={`relative w-full cursor-pointer select-none text-left flex items-center justify-between p-3 rounded-xl transition-colors duration-300 ${
                   reminder.completed
                     ? 'bg-primary/10 border border-primary/20'
+                    : isSkipped
+                    ? 'bg-muted/20 opacity-60'
                     : isPassed
                     ? 'bg-muted/30 opacity-50'
                     : isNext
@@ -190,12 +193,33 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
                     : 'bg-card'
                 }`}
               >
-                {/* Zeit links */}
+                {/* Zeit links – mit rotem Überspringen-Knopf davor */}
                 <span className="flex items-center gap-2">
+                  {!reminder.extra && (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.85 }}
+                      aria-label={isSkipped ? 'Überspringen rückgängig' : 'Zigarette überspringen'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSkip?.(reminder.id);
+                        tap();
+                      }}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                        isSkipped
+                          ? 'bg-destructive text-destructive-foreground'
+                          : 'bg-destructive/15 text-destructive'
+                      }`}
+                    >
+                      <Ban className="w-3.5 h-3.5" strokeWidth={2.5} />
+                    </motion.button>
+                  )}
                   <span
                     className={`text-2xl font-bold tabular-nums ${
                       reminder.completed
                         ? 'text-primary'
+                        : isSkipped
+                        ? 'text-muted-foreground line-through'
                         : isPassed
                         ? 'text-muted-foreground'
                         : 'text-foreground'
@@ -223,8 +247,11 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
                       {countdown}
                     </motion.span>
                   )}
-                  {!isNext && !isPassed && !reminder.completed && (
+                  {!isNext && !isPassed && !reminder.completed && !isSkipped && (
                     <span className="text-xs font-medium text-muted-foreground">{timeUntil}</span>
+                  )}
+                  {isSkipped && (
+                    <span className="text-xs font-medium text-muted-foreground">übersprungen</span>
                   )}
                 </span>
 
