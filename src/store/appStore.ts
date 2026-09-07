@@ -244,7 +244,9 @@ export const useAppStore = create<AppState>()(
           if (!dayData) return state;
           
           const updatedReminders = dayData.reminders.map((r) =>
-            r.id === reminderId ? { ...r, completed: true, completedAt: Date.now() } : r
+            r.id === reminderId
+              ? { ...r, completed: true, completedAt: Date.now(), skipped: undefined }
+              : r
           );
           
           const completedCount = updatedReminders.filter((r) => r.completed).length;
@@ -365,20 +367,18 @@ export const useAppStore = create<AppState>()(
       initializeDay: (date) => {
         const state = get();
         if (state.days[date]) return;
-        
-        const reminders = generateReminders(
-          state.wakeTime,
-          state.sleepTime,
-          state.dailyCigarettes
-        );
-        
+
+        const goal = state.dailyCigarettes;
+        const reminders = generateReminders(state.wakeTime, state.sleepTime, goal);
+
         set((s) => ({
+          dailyCigarettes: goal,
           days: {
             ...s.days,
             [date]: {
               date,
               cigarettesSmoked: 0,
-              totalCigarettes: s.dailyCigarettes,
+              totalCigarettes: goal,
               reminders,
             },
           },
@@ -466,6 +466,11 @@ export const useAppStore = create<AppState>()(
         });
       },
       
+      getSuggestedGoal: (date) => {
+        const state = get();
+        return suggestGoal(state.days, date, state.dailyCigarettes);
+      },
+
       getTodayData: () => {
         const state = get();
         const today = getTodayString();
