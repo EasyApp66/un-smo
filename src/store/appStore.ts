@@ -58,6 +58,7 @@ interface AppState {
   getTodayData: () => DayData | null;
   recalculateReminders: (date: string) => void;
   recalculateAllDays: () => void;
+  getSuggestedGoal: (date: string) => number;
   deleteAllData: () => void;
 }
 
@@ -106,6 +107,32 @@ export const formatLocalDate = (d: Date = new Date()) => {
 };
 
 const getTodayString = () => formatLocalDate();
+
+/** Untergrenze für automatische Ziel-Empfehlungen */
+export const GOAL_FLOOR = 20;
+
+/**
+ * Schlaues Tagesziel: Basis ist der letzte Tag mit Daten vor `date`.
+ * Ziel erreicht -> eine Zigarette weniger. Ziel verfehlt -> Ziel bleibt.
+ * Es geht nie nach oben und nie unter GOAL_FLOOR.
+ */
+export const suggestGoal = (
+  days: Record<string, DayData>,
+  date: string,
+  fallback: number
+): number => {
+  const prevDates = Object.keys(days)
+    .filter((d) => d < date && days[d] && days[d].totalCigarettes > 0)
+    .sort();
+  const prev = prevDates.length ? days[prevDates[prevDates.length - 1]] : null;
+  if (!prev) return Math.max(fallback, GOAL_FLOOR);
+
+  const prevGoal = prev.totalCigarettes;
+  const smoked = prev.cigarettesSmoked;
+  const base = Math.min(prevGoal, smoked > 0 ? smoked : prevGoal);
+  const next = smoked <= prevGoal ? base - 1 : base;
+  return Math.max(GOAL_FLOOR, Math.min(prevGoal, next));
+};
 
 const darkQuery =
   typeof window !== 'undefined' && 'matchMedia' in window
@@ -217,7 +244,9 @@ export const useAppStore = create<AppState>()(
           if (!dayData) return state;
           
           const updatedReminders = dayData.reminders.map((r) =>
-            r.id === reminderId ? { ...r, completed: true, completedAt: Date.now() } : r
+            r.id === reminderId
+              ? { ...r, completed: true, completedAt: Date.now(), skipped: undefined }
+              : r
           );
           
           const completedCount = updatedReminders.filter((r) => r.completed).length;
@@ -338,20 +367,18 @@ export const useAppStore = create<AppState>()(
       initializeDay: (date) => {
         const state = get();
         if (state.days[date]) return;
-        
-        const reminders = generateReminders(
-          state.wakeTime,
-          state.sleepTime,
-          state.dailyCigarettes
-        );
-        
+
+        const goal = state.dailyCigarettes;
+        const reminders = generateReminders(state.wakeTime, state.sleepTime, goal);
+
         set((s) => ({
+          dailyCigarettes: goal,
           days: {
             ...s.days,
             [date]: {
               date,
               cigarettesSmoked: 0,
-              totalCigarettes: s.dailyCigarettes,
+              totalCigarettes: goal,
               reminders,
             },
           },
@@ -439,6 +466,11 @@ export const useAppStore = create<AppState>()(
         });
       },
       
+      getSuggestedGoal: (date) => {
+        const state = get();
+        return suggestGoal(state.days, date, state.dailyCigarettes);
+      },
+
       getTodayData: () => {
         const state = get();
         const today = getTodayString();

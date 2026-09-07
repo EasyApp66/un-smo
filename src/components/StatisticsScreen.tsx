@@ -1,12 +1,29 @@
 import { motion } from 'framer-motion';
-import { useAppStore } from '../store/appStore';
+import { useAppStore, GOAL_FLOOR, suggestGoal } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingDown, TrendingUp, Minus, Cigarette, Calendar, Target } from 'lucide-react';
 import { useMemo } from 'react';
 
 const StatisticsScreen = () => {
-  const { days, dailyCigarettes } = useAppStore();
+  const { days, dailyCigarettes, setDailyCigarettes } = useAppStore();
+
+  // Empfehlung für morgen
+  const tomorrowDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return formatLocalDate(d);
+  }, []);
+  const suggestion = useMemo(
+    () => suggestGoal(days, tomorrowDate, dailyCigarettes),
+    [days, tomorrowDate, dailyCigarettes]
+  );
+  const todayData = days[formatLocalDate()];
+  const suggestionText = !todayData
+    ? `Halte morgen ${suggestion} Zigaretten – ein kleiner Schritt nach unten.`
+    : todayData.cigarettesSmoked <= todayData.totalCigarettes
+      ? `Heute im Ziel. Morgen ${suggestion} – eine weniger.`
+      : `Heute ${todayData.cigarettesSmoked} statt ${todayData.totalCigarettes}. Nimm morgen wieder ${suggestion} und halte sie durch.`;
 
   // Letzte 7 Tage berechnen
   const weekData = useMemo(() => {
@@ -105,6 +122,31 @@ const StatisticsScreen = () => {
       </div>
 
       <div className="px-4 py-4 space-y-4">
+        {/* Empfehlung */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl p-4 border border-primary/30 shadow-sm"
+        >
+          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+            Ziel für morgen
+          </p>
+          <p className="text-4xl font-bold text-primary tabular-nums leading-none mb-2">
+            {suggestion}
+          </p>
+          <p className="text-sm text-muted-foreground mb-3">{suggestionText}</p>
+          <p className="text-[11px] text-muted-foreground mb-3">
+            Das Ziel sinkt nur nach unten – bis mindestens {GOAL_FLOOR} pro Tag.
+          </p>
+          <button
+            type="button"
+            onClick={() => setDailyCigarettes(suggestion, tomorrowDate)}
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm"
+          >
+            Ziel übernehmen
+          </button>
+        </motion.div>
+
         {/* Wochenübersicht Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
