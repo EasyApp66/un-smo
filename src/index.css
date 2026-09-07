@@ -150,29 +150,27 @@
     @apply text-lg sm:text-xl font-semibold tracking-tight;
   }
 
-  /* Grün Glow Effects */
-  .glow-green {
-    box-shadow: var(--glow-green);
-  }
-
-  .glow-mint {
-    box-shadow: var(--glow-mint);
-  }
-
-  .glow-lime {
-    box-shadow: var(--glow-lime);
-  }
-
+  /* Glow-Effekte entfernt – flache, ruhige Flächen */
+  .glow-green,
+  .glow-mint,
+  .glow-lime,
   .glow-violet {
-    box-shadow: var(--glow-violet);
+    box-shadow: none;
   }
 
-  .text-glow-green {
-    text-shadow: 0 0 20px hsl(152 75% 45% / 0.6);
-  }
-
+  .text-glow-green,
   .text-glow-mint {
-    text-shadow: 0 0 20px hsl(160 60% 50% / 0.6);
+    text-shadow: none;
+  }
+
+  /* Einheitlicher Kartenstil */
+  .surface-card {
+    @apply rounded-[20px] border border-border bg-card;
+    box-shadow: var(--shadow-card);
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
   }
 
   /* Glass morphism */
@@ -198,4 +196,16 @@ html {
 /* Custom selection color */
 ::selection {
   background: hsl(152 75% 45% / 0.3);
+}
+
+/* Weniger Bewegung, wenn das System es wünscht */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
