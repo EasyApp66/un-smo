@@ -144,7 +144,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleSave}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-base shadow-lg glow-green"
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-base"
         >
           {isEditing ? 'Zeitplan aktualisieren' : 'Tag einrichten'}
         </motion.button>

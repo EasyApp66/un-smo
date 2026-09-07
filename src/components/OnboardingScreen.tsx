@@ -16,7 +16,7 @@ const OnboardingScreen = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 safe-top safe-bottom relative overflow-hidden">
       {/* Grüner Gradient Hintergrund */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-accent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary to-primary/80" />
       
       {/* Overlay für besseren Kontrast */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
