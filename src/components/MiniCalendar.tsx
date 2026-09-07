@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDays, addWeeks, format, getISOWeek, startOfWeek } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { useAppStore } from '../store/appStore';
 
 interface MiniCalendarProps {
   selectedDate: string;
@@ -12,6 +13,7 @@ interface MiniCalendarProps {
 const toDateString = (d: Date) => format(d, 'yyyy-MM-dd');
 
 const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
+  const daysData = useAppStore((s) => s.days);
   const [today, setToday] = useState(() => toDateString(new Date()));
   const [weekOffset, setWeekOffset] = useState(0);
   const [direction, setDirection] = useState(0);
@@ -129,7 +131,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
                   key={day.date}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onDateSelect(day.date)}
-                  className={`relative flex flex-col items-center justify-center h-[56px] rounded-xl transition-colors ${
+                  className={`relative flex flex-col items-center justify-center h-[62px] rounded-xl transition-colors ${
                     isSelected ? 'bg-card' : 'bg-transparent'
                   }`}
                 >
@@ -151,12 +153,18 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
                     {day.dayNumber}
                   </span>
                   <span
-                    className={`relative z-10 mt-1 text-[10px] font-medium ${
+                    className={`relative z-10 mt-0.5 text-[10px] font-medium ${
                       day.isToday ? 'text-primary' : 'text-muted-foreground'
                     }`}
                   >
                     {day.weekday}
                   </span>
+                  {daysData[day.date] && (
+                    <span className="relative z-10 mt-0.5 text-[9px] font-semibold tabular-nums text-muted-foreground/80">
+                      {daysData[day.date].reminders.filter((r) => r.completed).length}/
+                      {daysData[day.date].totalCigarettes}
+                    </span>
+                  )}
                 </motion.button>
               );
             })}
