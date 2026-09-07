@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { useAppStore, formatLocalDate } from '@/store/appStore';
 
 // Öffentlicher VAPID-Schlüssel (darf im Code stehen)
 export const VAPID_PUBLIC_KEY =
@@ -19,6 +20,24 @@ const urlBase64ToUint8Array = (base64: string) => {
   const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
   const raw = atob(b64);
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+};
+
+/** Konkrete, noch offene Weckerzeiten der nächsten Tage – exakt wie in der App angezeigt. */
+export const buildPlan = (): Record<string, string[]> => {
+  const { days } = useAppStore.getState();
+  const plan: Record<string, string[]> = {};
+  for (let i = 0; i < 3; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const key = formatLocalDate(d);
+    const day = days[key];
+    if (!day) continue;
+    plan[key] = day.reminders
+      .filter((r) => !r.completed && !r.extra)
+      .map((r) => r.time)
+      .sort();
+  }
+  return plan;
 };
 
 const timezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Zurich';
@@ -60,6 +79,7 @@ export async function enablePush(schedule: PushSchedule): Promise<PushResult> {
     action: 'subscribe',
     subscription: { endpoint: json.endpoint, keys: json.keys, expirationTime: json.expirationTime ?? null },
     ...schedule,
+    plan: buildPlan(),
     timezone: timezone(),
   });
 
@@ -68,7 +88,7 @@ export async function enablePush(schedule: PushSchedule): Promise<PushResult> {
 
 /** Zeitplan an den Server übertragen (wird bei jeder Änderung aufgerufen). */
 export async function syncPushSchedule(endpoint: string, schedule: PushSchedule) {
-  await callFn({ action: 'sync', endpoint, ...schedule, timezone: timezone() });
+  await callFn({ action: 'sync', endpoint, ...schedule, plan: buildPlan(), timezone: timezone() });
 }
 
 export async function disablePush(endpoint: string) {

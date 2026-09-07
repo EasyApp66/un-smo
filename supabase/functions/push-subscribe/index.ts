@@ -4,6 +4,7 @@ import { z } from 'npm:zod@3';
 import webpush from 'npm:web-push@3.6.7';
 
 const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+const planSchema = z.record(z.string(), z.array(z.string().regex(timeRe)).max(80)).optional();
 
 const BodySchema = z.discriminatedUnion('action', [
   z.object({
@@ -16,6 +17,7 @@ const BodySchema = z.discriminatedUnion('action', [
     wakeTime: z.string().regex(timeRe),
     sleepTime: z.string().regex(timeRe),
     dailyCigarettes: z.number().int().min(0).max(60),
+    plan: planSchema,
     timezone: z.string().min(1).max(80),
   }),
   z.object({
@@ -24,6 +26,7 @@ const BodySchema = z.discriminatedUnion('action', [
     wakeTime: z.string().regex(timeRe),
     sleepTime: z.string().regex(timeRe),
     dailyCigarettes: z.number().int().min(0).max(60),
+    plan: planSchema,
     timezone: z.string().min(1).max(80),
   }),
   z.object({
@@ -70,6 +73,7 @@ Deno.serve(async (req) => {
           sleep_time: body.sleepTime,
           daily_cigarettes: body.dailyCigarettes,
           timezone: body.timezone,
+          plan: body.plan ?? {},
           last_sent_slot: null,
           updated_at: new Date().toISOString(),
         },
@@ -87,6 +91,7 @@ Deno.serve(async (req) => {
           sleep_time: body.sleepTime,
           daily_cigarettes: body.dailyCigarettes,
           timezone: body.timezone,
+          plan: body.plan ?? {},
           updated_at: new Date().toISOString(),
         })
         .eq('endpoint', body.endpoint);

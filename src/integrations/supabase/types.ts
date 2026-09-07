@@ -21,6 +21,7 @@ export type Database = {
           endpoint: string
           id: string
           last_sent_slot: string | null
+          plan: Json
           sleep_time: string
           subscription: Json
           timezone: string
@@ -33,6 +34,7 @@ export type Database = {
           endpoint: string
           id?: string
           last_sent_slot?: string | null
+          plan?: Json
           sleep_time?: string
           subscription: Json
           timezone?: string
@@ -45,6 +47,7 @@ export type Database = {
           endpoint?: string
           id?: string
           last_sent_slot?: string | null
+          plan?: Json
           sleep_time?: string
           subscription?: Json
           timezone?: string

@@ -38,7 +38,18 @@ Deno.serve(async (req) => {
 
   for (const sub of subs ?? []) {
     const { date, minutes } = localNow(sub.timezone, now);
-    const slots = reminderSlots(sub.wake_time, sub.sleep_time, sub.daily_cigarettes);
+
+    // Bevorzugt der vom Gerät übertragene, tatsächlich angezeigte Wecker-Plan
+    const plan = (sub.plan ?? {}) as Record<string, string[]>;
+    const planned = Array.isArray(plan[date]) ? plan[date] : null;
+    const slots = planned
+      ? planned
+          .map((t) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+          })
+          .sort((a, b) => a - b)
+      : reminderSlots(sub.wake_time, sub.sleep_time, sub.daily_cigarettes);
 
     // Fälliger Slot: liegt maximal 3 Minuten zurück (Cron-Jitter), noch nicht gesendet
     // Slots > 1440 gehören zum Vortag nach Mitternacht → Datum des Vortags verwenden
