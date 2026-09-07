@@ -20,8 +20,7 @@ const HomeScreen = () => {
 
   const dayData = days[selectedDate];
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
-  const skippedCount = dayData?.reminders.filter((r) => r.skipped && !r.extra).length || 0;
-  const totalCount = Math.max((dayData?.totalCigarettes ?? dailyCigarettes) - skippedCount, 0);
+  const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
   const remainingCount = Math.max(totalCount - completedCount, 0);
 
   const handleComplete = (reminderId: string) => {
