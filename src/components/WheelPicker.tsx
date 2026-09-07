@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import ScrollWheel from './ScrollWheel';
 
 interface WheelPickerProps {
   value: number;
@@ -10,6 +9,8 @@ interface WheelPickerProps {
   formatValue?: (value: number) => string;
   label?: string;
   compact?: boolean;
+  horizontal?: boolean;
+  viewportWidth?: number;
 }
 
 const WheelPicker = ({
@@ -21,122 +22,32 @@ const WheelPicker = ({
   formatValue = (v) => v.toString(),
   label,
   compact = false,
+  horizontal = false,
+  viewportWidth = 280,
 }: WheelPickerProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const programmaticRef = useRef(false);
-  const programmaticTimer = useRef<number | null>(null);
-  const settleTimer = useRef<number | null>(null);
-  const mountedRef = useRef(false);
+  const values: number[] = [];
+  for (let i = min; i <= max; i += step) values.push(i);
 
-  const values = [];
-  for (let i = min; i <= max; i += step) {
-    values.push(i);
-  }
-
-  const currentIndex = values.indexOf(value);
-  const itemHeight = compact ? 45 : 60;
-  const containerHeight = compact ? 135 : 180;
-  const wheelWidth = compact ? 80 : 100;
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || isDragging || currentIndex < 0) return;
-    const target = currentIndex * itemHeight;
-    if (Math.abs(el.scrollTop - target) < 1) return;
-    // Programmatisches Scrollen darf keinen onChange auslösen
-    programmaticRef.current = true;
-    el.scrollTo({ top: target, behavior: mountedRef.current ? 'smooth' : 'auto' });
-    mountedRef.current = true;
-    if (programmaticTimer.current) window.clearTimeout(programmaticTimer.current);
-    programmaticTimer.current = window.setTimeout(() => {
-      programmaticRef.current = false;
-    }, 400);
-  }, [currentIndex, isDragging, itemHeight]);
-
-  const handleScroll = () => {
-    if (programmaticRef.current) {
-      if (programmaticTimer.current) window.clearTimeout(programmaticTimer.current);
-      programmaticTimer.current = window.setTimeout(() => {
-        programmaticRef.current = false;
-      }, 150);
-      return;
-    }
-    // Erst übernehmen, wenn das Scrollen zur Ruhe kommt
-    if (settleTimer.current) window.clearTimeout(settleTimer.current);
-    settleTimer.current = window.setTimeout(() => {
-      const el = containerRef.current;
-      if (!el) return;
-      const newIndex = Math.round(el.scrollTop / itemHeight);
-      const clampedIndex = Math.max(0, Math.min(values.length - 1, newIndex));
-      if (values[clampedIndex] !== value) {
-        onChange(values[clampedIndex]);
-        if ('vibrate' in navigator) navigator.vibrate(5);
-      }
-    }, 120);
-  };
+  const index = Math.max(0, values.indexOf(value));
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full">
       {label && (
         <span className={`font-medium text-muted-foreground mb-2 ${compact ? 'text-xs' : 'text-sm'}`}>
           {label}
         </span>
       )}
-      
-      <div className="relative overflow-hidden" style={{ height: containerHeight, width: wheelWidth }}>
-        {/* Selection indicator */}
-        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-10" style={{ height: itemHeight }}>
-          <div className="absolute inset-0 border-y-2 border-primary/30" />
-          <div className="absolute inset-0 bg-primary/5 rounded-xl" />
-        </div>
-        
-        {/* Gradient overlays */}
-        <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-background to-transparent pointer-events-none z-20" />
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-20" />
-        
-        {/* Scrollable wheel */}
-        <div
-          ref={containerRef}
-          onScroll={handleScroll}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={() => setIsDragging(false)}
-          onMouseDown={() => setIsDragging(true)}
-          onMouseUp={() => setIsDragging(false)}
-          className="h-full overflow-y-scroll hide-scrollbar snap-y snap-mandatory"
-          style={{
-            paddingTop: itemHeight,
-            paddingBottom: itemHeight,
-          }}
-        >
-          {values.map((v, index) => {
-            const isSelected = v === value;
-            const distance = Math.abs(index - currentIndex);
-            const opacity = Math.max(0.3, 1 - distance * 0.3);
-            const scale = Math.max(0.8, 1 - distance * 0.1);
-            
-            return (
-              <motion.div
-                key={v}
-                animate={{
-                  opacity,
-                  scale,
-                }}
-                transition={{ duration: 0.1 }}
-                style={{ height: itemHeight }}
-                className={`flex items-center justify-center snap-center cursor-pointer ${
-                  isSelected ? 'text-primary' : 'text-muted-foreground'
-                }`}
-                onClick={() => onChange(v)}
-              >
-                <span className={compact ? 'text-2xl font-bold' : 'text-brutal-lg'}>
-                  {formatValue(v)}
-                </span>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
+
+      <ScrollWheel
+        values={values}
+        index={index}
+        onIndexChange={(i) => onChange(values[i])}
+        itemSize={horizontal ? 56 : compact ? 45 : 60}
+        viewport={horizontal ? viewportWidth : compact ? 135 : 180}
+        crossSize={horizontal ? 56 : compact ? 80 : 100}
+        horizontal={horizontal}
+        format={formatValue}
+      />
     </div>
   );
 };
