@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Plus, Ban } from 'lucide-react';
+import { Check, Plus, Ban, ChevronDown } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
