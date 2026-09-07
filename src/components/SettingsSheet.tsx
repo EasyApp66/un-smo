@@ -9,14 +9,13 @@ import {
   Smartphone,
   Bell,
   BellOff,
-  KeyRound,
-  LogOut,
+  
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
-import PinLockScreen from './PinLockScreen';
+
 import { enablePush, disablePush, sendTestPush } from '../lib/push';
 import {
   AlertDialog,
@@ -51,19 +50,11 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     setPushEnabled,
     toggleApplyScheduleToAllDays,
     deleteAllData,
-    lock,
   } = useAppStore();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showPinChange, setShowPinChange] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMessage, setPushMessage] = useState<string | null>(null);
-
-  // "Abmelden" sperrt die App wieder (PIN-Eingabe)
-  const handleLogout = () => {
-    onClose();
-    lock();
-  };
 
   const handleDeleteAllData = async () => {
     if (pushToken) await disablePush(pushToken).catch(() => undefined);
@@ -116,17 +107,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
       setPushBusy(false);
     }
   };
-
-  if (showPinChange) {
-    return (
-      <PinLockScreen
-        mode="change"
-        onDone={() => setShowPinChange(false)}
-        onCancel={() => setShowPinChange(false)}
-      />
-    );
-  }
-
 
   return (
     <AnimatePresence>
@@ -330,24 +310,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 </div>
               </section>
 
-              {/* Sicherheit */}
-              <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Sicherheit
-                </h3>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowPinChange(true)}
-                  className="w-full bg-card rounded-xl p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-base font-semibold">PIN ändern</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </motion.button>
-              </section>
-
               {/* Sprache */}
               <section>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">
@@ -398,18 +360,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     </div>
                   </motion.button>
                 </div>
-              </section>
-
-              {/* Abmelden */}
-              <section>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleLogout}
-                  className="w-full p-3 bg-card rounded-xl text-foreground text-center font-semibold flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Abmelden (App sperren)
-                </motion.button>
               </section>
 
               {/* Rechtliches */}

@@ -4,7 +4,6 @@ import HomeScreen from '../components/HomeScreen';
 import StatisticsScreen from '../components/StatisticsScreen';
 import SettingsSheet from '../components/SettingsSheet';
 import BottomTabBar from '../components/BottomTabBar';
-import PinLockScreen from '../components/PinLockScreen';
 import { useEffect, useState } from 'react';
 import { syncPushSchedule } from '../lib/push';
 
@@ -12,9 +11,6 @@ const Index = () => {
   const {
     hasCompletedOnboarding,
     themeMode,
-    pinHash,
-    isLocked,
-    lock,
     pushToken,
     wakeTime,
     sleepTime,
@@ -30,14 +26,6 @@ const Index = () => {
     applyTheme(themeMode);
   }, [themeMode]);
 
-  // App sperren, wenn sie in den Hintergrund geht (iPhone: Home-Bildschirm-App)
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') lock();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [lock]);
 
   // Zeitplan-Änderungen an den Push-Server übertragen (entprellt)
   useEffect(() => {
@@ -68,14 +56,6 @@ const Index = () => {
     return <OnboardingScreen />;
   }
 
-  // Erster Start: PIN festlegen
-  if (!pinHash) {
-    return <PinLockScreen mode="setup" />;
-  }
-
-  if (isLocked) {
-    return <PinLockScreen mode="unlock" />;
-  }
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-background">
