@@ -58,6 +58,7 @@ interface AppState {
   getTodayData: () => DayData | null;
   recalculateReminders: (date: string) => void;
   recalculateAllDays: () => void;
+  getSuggestedGoal: (date: string) => number;
   deleteAllData: () => void;
 }
 
@@ -106,6 +107,32 @@ export const formatLocalDate = (d: Date = new Date()) => {
 };
 
 const getTodayString = () => formatLocalDate();
+
+/** Untergrenze für automatische Ziel-Empfehlungen */
+export const GOAL_FLOOR = 20;
+
+/**
+ * Schlaues Tagesziel: Basis ist der letzte Tag mit Daten vor `date`.
+ * Ziel erreicht -> eine Zigarette weniger. Ziel verfehlt -> Ziel bleibt.
+ * Es geht nie nach oben und nie unter GOAL_FLOOR.
+ */
+export const suggestGoal = (
+  days: Record<string, DayData>,
+  date: string,
+  fallback: number
+): number => {
+  const prevDates = Object.keys(days)
+    .filter((d) => d < date && days[d] && days[d].totalCigarettes > 0)
+    .sort();
+  const prev = prevDates.length ? days[prevDates[prevDates.length - 1]] : null;
+  if (!prev) return Math.max(fallback, GOAL_FLOOR);
+
+  const prevGoal = prev.totalCigarettes;
+  const smoked = prev.cigarettesSmoked;
+  const base = Math.min(prevGoal, smoked > 0 ? smoked : prevGoal);
+  const next = smoked <= prevGoal ? base - 1 : base;
+  return Math.max(GOAL_FLOOR, Math.min(prevGoal, next));
+};
 
 const darkQuery =
   typeof window !== 'undefined' && 'matchMedia' in window
