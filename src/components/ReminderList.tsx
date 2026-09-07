@@ -140,10 +140,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     }
   };
 
-  return (
-    <div className="px-4 pb-48">
-      <AnimatePresence mode="popLayout" initial={false}>
-        {sortedReminders.map((reminder, index) => {
+  const renderRow = (reminder: ReminderTime, index: number) => {
+
           const isNext = index === nextReminderIndex;
           const isSkipped = !!reminder.skipped;
           const isPassed = !reminder.completed && !isSkipped && !isNext && isTimePassed(reminder.time);
