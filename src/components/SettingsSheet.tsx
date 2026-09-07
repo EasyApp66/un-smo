@@ -9,7 +9,7 @@ import {
   Smartphone,
   Bell,
   BellOff,
-  LogOut,
+  
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../store/appStore';
@@ -360,18 +360,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     </div>
                   </motion.button>
                 </div>
-              </section>
-
-              {/* Abmelden */}
-              <section>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleLogout}
-                  className="w-full p-3 bg-card rounded-xl text-foreground text-center font-semibold flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Abmelden (App sperren)
-                </motion.button>
               </section>
 
               {/* Rechtliches */}
