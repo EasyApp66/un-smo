@@ -21,6 +21,8 @@ const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
 const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Live-Tick jede Sekunde für Countdown
   const [now, setNow] = useState(() => Date.now());
+  const [showCompleted, setShowCompleted] = useState(false);
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
