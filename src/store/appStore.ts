@@ -8,6 +8,7 @@ export interface ReminderTime {
   completedAt?: number; // Date.now() beim Abhaken
   timestamp: number;
   extra?: boolean; // Zusätzlich geraucht (ohne eigenen Wecker)
+  skipped?: boolean; // Übersprungen – zählt nicht, kein Wecker
 }
 
 export interface DayData {
@@ -51,6 +52,7 @@ interface AppState {
   markReminderComplete: (date: string, reminderId: string) => void;
   unmarkReminderComplete: (date: string, reminderId: string) => void;
   addExtraCigarette: (date: string) => void;
+  skipReminder: (date: string, reminderId: string) => void;
   deleteReminder: (date: string, reminderId: string) => void;
   initializeDay: (date: string) => void;
   getTodayData: () => DayData | null;
@@ -291,6 +293,24 @@ export const useAppStore = create<AppState>()(
                 reminders,
                 cigarettesSmoked: reminders.filter((r) => r.completed).length,
               },
+            },
+          };
+        });
+      },
+
+      skipReminder: (date, reminderId) => {
+        set((state) => {
+          const dayData = state.days[date];
+          if (!dayData) return state;
+
+          const updatedReminders = dayData.reminders.map((r) =>
+            r.id === reminderId && !r.extra ? { ...r, skipped: !r.skipped } : r
+          );
+
+          return {
+            days: {
+              ...state.days,
+              [date]: { ...dayData, reminders: updatedReminders },
             },
           };
         });
