@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Plus } from 'lucide-react';
+import { Check, Plus, Ban } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
@@ -9,6 +9,7 @@ interface ReminderListProps {
   onComplete: (id: string) => void;
   onUncomplete?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onSkip?: (id: string) => void;
 }
 
 // Abstand vom unteren Bildschirmrand, damit die nächste Zeile leicht oberhalb vom Menü steht
@@ -17,7 +18,7 @@ const BOTTOM_OFFSET = 150;
 const DAY_BREAK = 240;
 const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
 
-const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps) => {
+const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Live-Tick jede Sekunde für Countdown
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -60,10 +61,10 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
     const currentKey = sortKey(nowDate.getHours() * 60 + nowDate.getMinutes());
     for (let i = 0; i < sortedReminders.length; i++) {
       const r = sortedReminders[i];
-      if (!r.completed && !r.extra && sortKey(r.timestamp) >= currentKey) return i;
+      if (!r.completed && !r.extra && !r.skipped && sortKey(r.timestamp) >= currentKey) return i;
     }
     // Sonst: erster noch offener Wecker
-    return sortedReminders.findIndex((r) => !r.completed && !r.extra);
+    return sortedReminders.findIndex((r) => !r.completed && !r.extra && !r.skipped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedReminders, Math.floor(now / 60000)]);
 
@@ -130,6 +131,11 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
   }, [nextReminder?.id, sortedReminders.length, completedCount, scrollToNext]);
 
   const toggle = (reminder: ReminderTime) => {
+    if (reminder.skipped) {
+      onSkip?.(reminder.id);
+      tap();
+      return;
+    }
     if (reminder.completed) {
       onUncomplete?.(reminder.id);
       tap();
@@ -144,7 +150,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
       <AnimatePresence mode="popLayout" initial={false}>
         {sortedReminders.map((reminder, index) => {
           const isNext = index === nextReminderIndex;
-          const isPassed = !reminder.completed && !isNext && isTimePassed(reminder.time);
+          const isSkipped = !!reminder.skipped;
+          const isPassed = !reminder.completed && !isSkipped && !isNext && isTimePassed(reminder.time);
           const timeUntil = getTimeUntil(reminder.time);
 
           return (
@@ -177,6 +184,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
                 className={`relative w-full cursor-pointer select-none text-left flex items-center justify-between p-3 rounded-xl transition-colors duration-300 ${
                   reminder.completed
                     ? 'bg-primary/10 border border-primary/20'
+                    : isSkipped
+                    ? 'bg-muted/20 opacity-60'
                     : isPassed
                     ? 'bg-muted/30 opacity-50'
                     : isNext
@@ -184,12 +193,33 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
                     : 'bg-card'
                 }`}
               >
-                {/* Zeit links */}
+                {/* Zeit links – mit rotem Überspringen-Knopf davor */}
                 <span className="flex items-center gap-2">
+                  {!reminder.extra && (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.85 }}
+                      aria-label={isSkipped ? 'Überspringen rückgängig' : 'Zigarette überspringen'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSkip?.(reminder.id);
+                        tap();
+                      }}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                        isSkipped
+                          ? 'bg-destructive text-destructive-foreground'
+                          : 'bg-destructive/15 text-destructive'
+                      }`}
+                    >
+                      <Ban className="w-3.5 h-3.5" strokeWidth={2.5} />
+                    </motion.button>
+                  )}
                   <span
                     className={`text-2xl font-bold tabular-nums ${
                       reminder.completed
                         ? 'text-primary'
+                        : isSkipped
+                        ? 'text-muted-foreground line-through'
                         : isPassed
                         ? 'text-muted-foreground'
                         : 'text-foreground'
@@ -217,8 +247,11 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
                       {countdown}
                     </motion.span>
                   )}
-                  {!isNext && !isPassed && !reminder.completed && (
+                  {!isNext && !isPassed && !reminder.completed && !isSkipped && (
                     <span className="text-xs font-medium text-muted-foreground">{timeUntil}</span>
+                  )}
+                  {isSkipped && (
+                    <span className="text-xs font-medium text-muted-foreground">übersprungen</span>
                   )}
                 </span>
 

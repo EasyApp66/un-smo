@@ -33,7 +33,7 @@ export const buildPlan = (): Record<string, string[]> => {
     const day = days[key];
     if (!day) continue;
     plan[key] = day.reminders
-      .filter((r) => !r.completed && !r.extra)
+      .filter((r) => !r.completed && !r.extra && !r.skipped)
       .map((r) => r.time)
       .sort();
   }

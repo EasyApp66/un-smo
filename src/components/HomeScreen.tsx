@@ -14,13 +14,15 @@ const HomeScreen = () => {
     markReminderComplete,
     unmarkReminderComplete,
     deleteReminder,
+    skipReminder,
     recalculateReminders,
     dailyCigarettes,
   } = useAppStore();
 
   const dayData = days[selectedDate];
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
-  const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
+  const skippedCount = dayData?.reminders.filter((r) => r.skipped && !r.extra).length || 0;
+  const totalCount = Math.max((dayData?.totalCigarettes ?? dailyCigarettes) - skippedCount, 0);
   const remainingCount = Math.max(totalCount - completedCount, 0);
 
   const handleComplete = (reminderId: string) => {
@@ -41,6 +43,13 @@ const HomeScreen = () => {
     deleteReminder(selectedDate, reminderId);
     if ('vibrate' in navigator) {
       navigator.vibrate(20);
+    }
+  };
+
+  const handleSkip = (reminderId: string) => {
+    skipReminder(selectedDate, reminderId);
+    if ('vibrate' in navigator) {
+      navigator.vibrate(15);
     }
   };
 
@@ -104,6 +113,7 @@ const HomeScreen = () => {
               onComplete={handleComplete}
               onUncomplete={handleUncomplete}
               onDelete={handleDelete}
+              onSkip={handleSkip}
             />
           </>
         )}
