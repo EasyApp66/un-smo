@@ -8,7 +8,14 @@ import DaySetupCard from './DaySetupCard';
 const HomeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(() => formatLocalDate());
 
-  const { days, initializeDay, markReminderComplete, deleteReminder, dailyCigarettes } = useAppStore();
+  const {
+    days,
+    initializeDay,
+    markReminderComplete,
+    unmarkReminderComplete,
+    deleteReminder,
+    dailyCigarettes,
+  } = useAppStore();
 
   const dayData = days[selectedDate];
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
@@ -19,6 +26,13 @@ const HomeScreen = () => {
     markReminderComplete(selectedDate, reminderId);
     if ('vibrate' in navigator) {
       navigator.vibrate([10, 50, 10]);
+    }
+  };
+
+  const handleUncomplete = (reminderId: string) => {
+    unmarkReminderComplete(selectedDate, reminderId);
+    if ('vibrate' in navigator) {
+      navigator.vibrate(12);
     }
   };
 
@@ -83,6 +97,7 @@ const HomeScreen = () => {
             <ReminderList
               reminders={dayData?.reminders || []}
               onComplete={handleComplete}
+              onUncomplete={handleUncomplete}
               onDelete={handleDelete}
             />
           </>

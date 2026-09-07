@@ -1,4 +1,4 @@
-import { useAppStore, applyTheme } from '../store/appStore';
+import { useAppStore, applyTheme, formatLocalDate } from '../store/appStore';
 import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
 import StatisticsScreen from '../components/StatisticsScreen';
@@ -9,8 +9,18 @@ import { useEffect, useState } from 'react';
 import { syncPushSchedule } from '../lib/push';
 
 const Index = () => {
-  const { hasCompletedOnboarding, themeMode, pinHash, isLocked, lock, pushToken, wakeTime, sleepTime, dailyCigarettes } =
-    useAppStore();
+  const {
+    hasCompletedOnboarding,
+    themeMode,
+    pinHash,
+    isLocked,
+    lock,
+    pushToken,
+    wakeTime,
+    sleepTime,
+    dailyCigarettes,
+    addExtraCigarette,
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -73,7 +83,14 @@ const Index = () => {
       {activeTab === 'stats' && <StatisticsScreen />}
 
       {/* Bottom Navigation */}
-      <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+      <BottomTabBar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onAddExtra={() => {
+          addExtraCigarette(formatLocalDate());
+          if ('vibrate' in navigator) navigator.vibrate(12);
+        }}
+      />
 
       {/* Einstellungen Sheet */}
       <SettingsSheet isOpen={isSettingsOpen} onClose={handleSettingsClose} />
