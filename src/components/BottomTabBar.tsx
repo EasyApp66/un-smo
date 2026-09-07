@@ -59,7 +59,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
           whileTap={{ scale: 0.88 }}
           onClick={onAddExtra}
           aria-label="Zusätzliche Zigarette eintragen"
-          className="w-12 h-12 rounded-full bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg flex items-center justify-center text-primary"
+          className="w-12 h-12 rounded-full bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/40 flex items-center justify-center"
         >
           <Plus className="w-[22px] h-[22px]" strokeWidth={2.5} />
         </motion.button>
