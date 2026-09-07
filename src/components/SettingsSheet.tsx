@@ -9,14 +9,13 @@ import {
   Smartphone,
   Bell,
   BellOff,
-  KeyRound,
   LogOut,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
-import PinLockScreen from './PinLockScreen';
+
 import { enablePush, disablePush, sendTestPush } from '../lib/push';
 import {
   AlertDialog,
@@ -51,19 +50,11 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     setPushEnabled,
     toggleApplyScheduleToAllDays,
     deleteAllData,
-    lock,
   } = useAppStore();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showPinChange, setShowPinChange] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMessage, setPushMessage] = useState<string | null>(null);
-
-  // "Abmelden" sperrt die App wieder (PIN-Eingabe)
-  const handleLogout = () => {
-    onClose();
-    lock();
-  };
 
   const handleDeleteAllData = async () => {
     if (pushToken) await disablePush(pushToken).catch(() => undefined);
