@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       }
       const diff = minutes - slotMin;
       if (diff >= 0 && diff <= 3) {
-        due = { key: `${slotDate}#${i}`, index: i, time: slot };
+        due = { key: `${slotDate}#${fmt(slotMin)}`, index: i, time: slot };
       }
     });
 

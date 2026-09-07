@@ -37,9 +37,9 @@ interface AppState {
   days: Record<string, DayData>;
   
   // Aktionen
-  setWakeTime: (time: string) => void;
-  setSleepTime: (time: string) => void;
-  setDailyCigarettes: (count: number) => void;
+  setWakeTime: (time: string, date?: string) => void;
+  setSleepTime: (time: string, date?: string) => void;
+  setDailyCigarettes: (count: number, date?: string) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setPinHash: (hash: string | null) => void;
   lock: () => void;
@@ -144,33 +144,39 @@ export const useAppStore = create<AppState>()(
       pushToken: null,
       days: {},
       
-      setWakeTime: (time) => {
+      setWakeTime: (time, date) => {
         set({ wakeTime: time });
         const state = get();
         if (state.applyScheduleToAllDays) {
           state.recalculateAllDays();
         } else {
-          state.recalculateReminders(getTodayString());
+          const target = date ?? getTodayString();
+          // Nur bereits eingerichtete Tage neu berechnen
+          if (state.days[target]) state.recalculateReminders(target);
         }
       },
       
-      setSleepTime: (time) => {
+      setSleepTime: (time, date) => {
         set({ sleepTime: time });
         const state = get();
         if (state.applyScheduleToAllDays) {
           state.recalculateAllDays();
         } else {
-          state.recalculateReminders(getTodayString());
+          const target = date ?? getTodayString();
+          // Nur bereits eingerichtete Tage neu berechnen
+          if (state.days[target]) state.recalculateReminders(target);
         }
       },
       
-      setDailyCigarettes: (count) => {
+      setDailyCigarettes: (count, date) => {
         set({ dailyCigarettes: count });
         const state = get();
         if (state.applyScheduleToAllDays) {
           state.recalculateAllDays();
         } else {
-          state.recalculateReminders(getTodayString());
+          const target = date ?? getTodayString();
+          // Nur bereits eingerichtete Tage neu berechnen
+          if (state.days[target]) state.recalculateReminders(target);
         }
       },
       

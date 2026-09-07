@@ -110,13 +110,13 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
           <div className="grid grid-cols-2 gap-2">
             <TimePicker
               value={wakeTime}
-              onChange={setWakeTime}
+              onChange={(v) => setWakeTime(v, selectedDate)}
               label="Aufstehzeit"
               compact
             />
             <TimePicker
               value={sleepTime}
-              onChange={setSleepTime}
+              onChange={(v) => setSleepTime(v, selectedDate)}
               label="Schlafenszeit"
               compact
             />
@@ -130,7 +130,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
             min={0}
             max={60}
             step={1}
-            onChange={setDailyCigarettes}
+            onChange={(v) => setDailyCigarettes(v, selectedDate)}
             label="Zigaretten pro Tag"
             compact
             horizontal
