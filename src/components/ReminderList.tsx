@@ -282,11 +282,64 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
                 </span>
               </motion.div>
             </motion.div>
-          );
-        })}
+    );
+  };
+
+  const completedRows = sortedReminders
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => r.completed);
+  const openRows = sortedReminders.map((r, i) => ({ r, i })).filter(({ r }) => !r.completed);
+
+  return (
+    <div className="px-4 pb-48">
+      {completedRows.length > 0 && (
+        <div className="mb-2">
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setShowCompleted((v) => !v);
+              tap();
+            }}
+            aria-expanded={showCompleted}
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-primary/10 border border-primary/20"
+          >
+            <span className="text-sm font-bold text-primary">
+              {completedRows.length} geraucht
+            </span>
+            <ChevronDown
+              className={`w-5 h-5 text-primary transition-transform duration-300 ${
+                showCompleted ? 'rotate-180' : ''
+              }`}
+              strokeWidth={3}
+            />
+          </motion.button>
+
+          <AnimatePresence initial={false}>
+            {showCompleted && (
+              <motion.div
+                key="completed"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-2">
+                  {completedRows.map(({ r, i }) => renderRow(r, i))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      <AnimatePresence mode="popLayout" initial={false}>
+        {openRows.map(({ r, i }) => renderRow(r, i))}
       </AnimatePresence>
     </div>
   );
+
 };
 
 export default ReminderList;
