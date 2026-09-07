@@ -372,12 +372,15 @@ export const useAppStore = create<AppState>()(
         const completedIds = existingDay?.reminders
           .filter((r) => r.completed && !r.extra)
           .map((r) => r.id) || [];
-        
+        const skippedTimes =
+          existingDay?.reminders.filter((r) => r.skipped && !r.extra).map((r) => r.time) || [];
+
         // Behalte den Abschluss-Status für bestehende Erinnerungen
         const updatedReminders = [
           ...reminders.map((r, i) => ({
             ...r,
             completed: i < completedIds.length,
+            skipped: skippedTimes.includes(r.time) ? true : undefined,
           })),
           ...extras,
         ];
@@ -411,11 +414,14 @@ export const useAppStore = create<AppState>()(
           const completedIds = existingDay?.reminders
             .filter((r) => r.completed && !r.extra)
             .map((r) => r.id) || [];
-          
+          const skippedTimes =
+            existingDay?.reminders.filter((r) => r.skipped && !r.extra).map((r) => r.time) || [];
+
           const updatedReminders = [
             ...reminders.map((r, i) => ({
               ...r,
               completed: i < completedIds.length,
+              skipped: skippedTimes.includes(r.time) ? true : undefined,
             })),
             ...extras,
           ];
