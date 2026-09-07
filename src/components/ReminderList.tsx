@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Plus } from 'lucide-react';
+import { Check, Plus, Ban } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
@@ -9,6 +9,7 @@ interface ReminderListProps {
   onComplete: (id: string) => void;
   onUncomplete?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onSkip?: (id: string) => void;
 }
 
 // Abstand vom unteren Bildschirmrand, damit die nächste Zeile leicht oberhalb vom Menü steht
@@ -17,7 +18,7 @@ const BOTTOM_OFFSET = 150;
 const DAY_BREAK = 240;
 const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
 
-const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps) => {
+const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Live-Tick jede Sekunde für Countdown
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -60,10 +61,10 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
     const currentKey = sortKey(nowDate.getHours() * 60 + nowDate.getMinutes());
     for (let i = 0; i < sortedReminders.length; i++) {
       const r = sortedReminders[i];
-      if (!r.completed && !r.extra && sortKey(r.timestamp) >= currentKey) return i;
+      if (!r.completed && !r.extra && !r.skipped && sortKey(r.timestamp) >= currentKey) return i;
     }
     // Sonst: erster noch offener Wecker
-    return sortedReminders.findIndex((r) => !r.completed && !r.extra);
+    return sortedReminders.findIndex((r) => !r.completed && !r.extra && !r.skipped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedReminders, Math.floor(now / 60000)]);
 
@@ -130,6 +131,11 @@ const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps
   }, [nextReminder?.id, sortedReminders.length, completedCount, scrollToNext]);
 
   const toggle = (reminder: ReminderTime) => {
+    if (reminder.skipped) {
+      onSkip?.(reminder.id);
+      tap();
+      return;
+    }
     if (reminder.completed) {
       onUncomplete?.(reminder.id);
       tap();
