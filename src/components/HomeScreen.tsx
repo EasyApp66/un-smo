@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore, formatLocalDate } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
+import CoachCard from './CoachCard';
 
 const HomeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(() => formatLocalDate());
@@ -16,7 +17,20 @@ const HomeScreen = () => {
     skipReminder,
     recalculateReminders,
     dailyCigarettes,
+    setDailyCigarettes,
+    getSuggestedGoal,
   } = useAppStore();
+
+  // Für noch nicht eingerichtete Tage ein schlaues Ziel vorschlagen
+  const suggestedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (days[selectedDate]) return;
+    if (suggestedFor.current === selectedDate) return;
+    suggestedFor.current = selectedDate;
+    const suggestion = getSuggestedGoal(selectedDate);
+    if (suggestion !== dailyCigarettes) setDailyCigarettes(suggestion, selectedDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, days]);
 
   const dayData = days[selectedDate];
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
@@ -93,6 +107,11 @@ const HomeScreen = () => {
           </div>
         ) : (
           <>
+            {dayData && (
+              <div className="px-4 pt-2">
+                <CoachCard dayData={dayData} isToday={selectedDate === formatLocalDate()} />
+              </div>
+            )}
             <div className="px-4 pt-1">
               <DaySetupCard
                 selectedDate={selectedDate}
