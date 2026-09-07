@@ -108,17 +108,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     }
   };
 
-  if (showPinChange) {
-    return (
-      <PinLockScreen
-        mode="change"
-        onDone={() => setShowPinChange(false)}
-        onCancel={() => setShowPinChange(false)}
-      />
-    );
-  }
-
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -319,24 +308,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{pushMessage}</p>
                   )}
                 </div>
-              </section>
-
-              {/* Sicherheit */}
-              <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Sicherheit
-                </h3>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowPinChange(true)}
-                  className="w-full bg-card rounded-xl p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-base font-semibold">PIN ändern</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </motion.button>
               </section>
 
               {/* Sprache */}
