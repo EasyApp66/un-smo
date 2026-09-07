@@ -30,14 +30,20 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
 
   const nextRowRef = useRef<HTMLDivElement | null>(null);
 
-  const getTimeUntil = (timeString: string): string => {
+  /** Zielzeitpunkt – nur Zeiten nach Mitternacht (vor 04:00) zählen zum nächsten Tag */
+  const targetTime = (timeString: string): number => {
     const nowDate = new Date(now);
     const [hours, minutes] = timeString.split(':').map(Number);
     const target = new Date(nowDate);
     target.setHours(hours, minutes, 0, 0);
-    if (target < nowDate) target.setDate(target.getDate() + 1);
+    const slotMin = hours * 60 + minutes;
+    const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
+    if (slotMin < DAY_BREAK && nowMin >= DAY_BREAK) target.setDate(target.getDate() + 1);
+    return target.getTime();
+  };
 
-    const diffMins = Math.floor((target.getTime() - nowDate.getTime()) / 60000);
+  const getTimeUntil = (timeString: string): string => {
+    const diffMins = Math.floor((targetTime(timeString) - now) / 60000);
     if (diffMins <= 0) return 'jetzt';
     if (diffMins < 60) return `in ${diffMins} Min`;
     const h = Math.floor(diffMins / 60);
@@ -45,13 +51,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     return `in ${h}h ${m}m`;
   };
 
-  const isTimePassed = (timeString: string): boolean => {
-    const nowDate = new Date(now);
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const target = new Date(nowDate);
-    target.setHours(hours, minutes, 0, 0);
-    return target < nowDate;
-  };
+  const isTimePassed = (timeString: string): boolean => targetTime(timeString) < now;
 
   const sortedReminders = useMemo(
     () => [...reminders].sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp)),
@@ -74,17 +74,16 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
 
   const countdown = useMemo(() => {
     if (!nextReminder) return null;
-    const [h, m] = nextReminder.time.split(':').map(Number);
-    const target = new Date(now);
-    target.setHours(h, m, 0, 0);
-    if (target.getTime() < now) target.setDate(target.getDate() + 1);
-    const diff = Math.max(0, Math.floor((target.getTime() - now) / 1000));
+    const diff = Math.floor((targetTime(nextReminder.time) - now) / 1000);
+    if (diff <= 0) return 'jetzt';
     const hrs = Math.floor(diff / 3600);
     const mins = Math.floor((diff % 3600) / 60);
     const secs = diff % 60;
     if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nextReminder, now]);
+
 
   // Nächste Zeile langsam nach unten scrollen – immer leicht oberhalb vom Menü
   const scrollToNext = useCallback(() => {
