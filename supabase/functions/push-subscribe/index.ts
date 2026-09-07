@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
     if (body.action === 'test') {
       const priv = Deno.env.get('VAPID_PRIVATE_KEY');
       const pub = Deno.env.get('VAPID_PUBLIC_KEY');
-      if (!priv || !pub) return json({ error: 'VAPID keys not configured' }, 500);
+      if (!priv || !pub) return json({ error: 'Not configured' }, 500);
       webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:push@un-smo.app', pub, priv);
       const { data: sub, error } = await supabase
         .from('push_subscriptions')
@@ -156,6 +156,6 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   } catch (e) {
     console.error('push-subscribe failed', e);
-    return json({ error: 'Database error' }, 500);
+    return json({ error: 'Internal error' }, 500);
   }
 });
