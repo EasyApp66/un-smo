@@ -3,7 +3,7 @@ self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
 self.addEventListener('push', (event) => {
-  let data = { title: 'UN-SMO', body: 'Zeit für deine nächste Zigarette.' };
+  let data = { title: 'UN-SMO', body: 'Du kannst jetzt eine rauchen.' };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch (_) {

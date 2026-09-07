@@ -123,7 +123,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
           </div>
         </div>
 
-        {/* Tagesziel - kompakter */}
+        {/* Tagesziel – horizontal drehbar */}
         <div className="mb-4">
           <WheelPicker
             value={dailyCigarettes}
@@ -133,8 +133,11 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
             onChange={setDailyCigarettes}
             label="Zigaretten pro Tag"
             compact
+            horizontal
+            viewportWidth={280}
           />
         </div>
+
 
         {/* Speichern Button */}
         <motion.button

@@ -7,6 +7,7 @@ export interface ReminderTime {
   completed: boolean;
   completedAt?: number; // Date.now() beim Abhaken
   timestamp: number;
+  extra?: boolean; // Zusätzlich geraucht (ohne eigenen Wecker)
 }
 
 export interface DayData {
@@ -48,6 +49,8 @@ interface AppState {
   toggleApplyScheduleToAllDays: () => void;
   completeOnboarding: () => void;
   markReminderComplete: (date: string, reminderId: string) => void;
+  unmarkReminderComplete: (date: string, reminderId: string) => void;
+  addExtraCigarette: (date: string) => void;
   deleteReminder: (date: string, reminderId: string) => void;
   initializeDay: (date: string) => void;
   getTodayData: () => DayData | null;
@@ -224,6 +227,69 @@ export const useAppStore = create<AppState>()(
         });
       },
       
+      unmarkReminderComplete: (date, reminderId) => {
+        set((state) => {
+          const dayData = state.days[date];
+          if (!dayData) return state;
+
+          const target = dayData.reminders.find((r) => r.id === reminderId);
+          // Zusätzlich eingetragene Zigaretten werden beim Antippen wieder entfernt
+          const updatedReminders = target?.extra
+            ? dayData.reminders.filter((r) => r.id !== reminderId)
+            : dayData.reminders.map((r) =>
+                r.id === reminderId ? { ...r, completed: false, completedAt: undefined } : r
+              );
+
+          return {
+            days: {
+              ...state.days,
+              [date]: {
+                ...dayData,
+                reminders: updatedReminders,
+                cigarettesSmoked: updatedReminders.filter((r) => r.completed).length,
+              },
+            },
+          };
+        });
+      },
+
+      addExtraCigarette: (date) => {
+        set((state) => {
+          const now = new Date();
+          const hh = String(now.getHours()).padStart(2, '0');
+          const mm = String(now.getMinutes()).padStart(2, '0');
+          const base =
+            state.days[date] ??
+            ({
+              date,
+              cigarettesSmoked: 0,
+              totalCigarettes: state.dailyCigarettes,
+              reminders: [],
+            } as DayData);
+
+          const extra: ReminderTime = {
+            id: `extra-${Date.now()}`,
+            time: `${hh}:${mm}`,
+            completed: true,
+            completedAt: Date.now(),
+            timestamp: now.getHours() * 60 + now.getMinutes(),
+            extra: true,
+          };
+
+          const reminders = [...base.reminders, extra];
+          return {
+            days: {
+              ...state.days,
+              [date]: {
+                ...base,
+                reminders,
+                cigarettesSmoked: reminders.filter((r) => r.completed).length,
+              },
+            },
+          };
+        });
+      },
+
       deleteReminder: (date, reminderId) => {
         set((state) => {
           const dayData = state.days[date];
@@ -276,15 +342,19 @@ export const useAppStore = create<AppState>()(
         );
         
         const existingDay = state.days[date];
+        const extras = existingDay?.reminders.filter((r) => r.extra) || [];
         const completedIds = existingDay?.reminders
-          .filter((r) => r.completed)
+          .filter((r) => r.completed && !r.extra)
           .map((r) => r.id) || [];
         
         // Behalte den Abschluss-Status für bestehende Erinnerungen
-        const updatedReminders = reminders.map((r, i) => ({
-          ...r,
-          completed: i < completedIds.length,
-        }));
+        const updatedReminders = [
+          ...reminders.map((r, i) => ({
+            ...r,
+            completed: i < completedIds.length,
+          })),
+          ...extras,
+        ];
         
         set((s) => ({
           days: {
@@ -311,14 +381,18 @@ export const useAppStore = create<AppState>()(
           );
           
           const existingDay = state.days[date];
+          const extras = existingDay?.reminders.filter((r) => r.extra) || [];
           const completedIds = existingDay?.reminders
-            .filter((r) => r.completed)
+            .filter((r) => r.completed && !r.extra)
             .map((r) => r.id) || [];
           
-          const updatedReminders = reminders.map((r, i) => ({
-            ...r,
-            completed: i < completedIds.length,
-          }));
+          const updatedReminders = [
+            ...reminders.map((r, i) => ({
+              ...r,
+              completed: i < completedIds.length,
+            })),
+            ...extras,
+          ];
           
           set((s) => ({
             days: {

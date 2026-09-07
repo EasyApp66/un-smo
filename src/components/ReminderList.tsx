@@ -1,18 +1,23 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { success, tap } from '../lib/haptics';
 
 interface ReminderListProps {
   reminders: ReminderTime[];
   onComplete: (id: string) => void;
+  onUncomplete?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
 // Abstand vom unteren Bildschirmrand, damit die nächste Zeile leicht oberhalb vom Menü steht
 const BOTTOM_OFFSET = 150;
+// Zeiten vor 04:00 gehören zum Vorabend – sie stehen am Ende der Liste
+const DAY_BREAK = 240;
+const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
 
-const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
+const ReminderList = ({ reminders, onComplete, onUncomplete }: ReminderListProps) => {
   // Live-Tick jede Sekunde für Countdown
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -45,20 +50,20 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
     return target < nowDate;
   };
 
-  const sortedReminders = useMemo(() => {
-    return [...reminders].sort((a, b) => a.timestamp - b.timestamp);
-  }, [reminders]);
+  const sortedReminders = useMemo(
+    () => [...reminders].sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp)),
+    [reminders]
+  );
 
   const nextReminderIndex = useMemo(() => {
     const nowDate = new Date(now);
-    const currentMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
+    const currentKey = sortKey(nowDate.getHours() * 60 + nowDate.getMinutes());
     for (let i = 0; i < sortedReminders.length; i++) {
-      if (!sortedReminders[i].completed && sortedReminders[i].timestamp >= currentMinutes) {
-        return i;
-      }
+      const r = sortedReminders[i];
+      if (!r.completed && !r.extra && sortKey(r.timestamp) >= currentKey) return i;
     }
     // Sonst: erster noch offener Wecker
-    return sortedReminders.findIndex((r) => !r.completed);
+    return sortedReminders.findIndex((r) => !r.completed && !r.extra);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedReminders, Math.floor(now / 60000)]);
 
@@ -69,6 +74,7 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
     const [h, m] = nextReminder.time.split(':').map(Number);
     const target = new Date(now);
     target.setHours(h, m, 0, 0);
+    if (target.getTime() < now) target.setDate(target.getDate() + 1);
     const diff = Math.max(0, Math.floor((target.getTime() - now) / 1000));
     const hrs = Math.floor(diff / 3600);
     const mins = Math.floor((diff % 3600) / 60);
@@ -78,32 +84,60 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
   }, [nextReminder, now]);
 
   // Nächste Zeile langsam nach unten scrollen – immer leicht oberhalb vom Menü
-  const scrollToNext = () => {
+  const scrollToNext = useCallback(() => {
     const el = nextRowRef.current;
-    if (!el) return;
+    if (!el) return false;
     const rect = el.getBoundingClientRect();
     const desiredBottom = window.innerHeight - BOTTOM_OFFSET;
     const delta = rect.bottom - desiredBottom;
-    if (Math.abs(delta) > 4) {
-      window.scrollBy({ top: delta, behavior: 'smooth' });
-    }
-  };
+    if (Math.abs(delta) <= 6) return true;
+    window.scrollBy({ top: delta, behavior: 'smooth' });
+    return false;
+  }, []);
+
   const completedCount = sortedReminders.filter((r) => r.completed).length;
+
   useEffect(() => {
-    // Zweimal: einmal nach der Einblend-Animation, einmal nachdem sich das Layout beruhigt hat
-    const t1 = setTimeout(scrollToNext, 500);
-    const t2 = setTimeout(scrollToNext, 1400);
+    // Mehrere Versuche, bis das Layout steht (Animationen, Bilder, Höhenänderungen)
+    let attempts = 0;
+    const timers: number[] = [];
+    const run = () => {
+      const done = scrollToNext();
+      attempts += 1;
+      if (!done && attempts < 8) timers.push(window.setTimeout(run, 300));
+    };
+    timers.push(window.setTimeout(run, 250));
+
     const onVisible = () => {
-      if (document.visibilityState === 'visible') setTimeout(scrollToNext, 300);
+      if (document.visibilityState === 'visible') {
+        attempts = 0;
+        timers.push(window.setTimeout(run, 300));
+      }
     };
     document.addEventListener('visibilitychange', onVisible);
+
+    const ro = new ResizeObserver(() => {
+      window.clearTimeout(timers[0]);
+      timers.push(window.setTimeout(scrollToNext, 200));
+    });
+    ro.observe(document.body);
+
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
+      timers.forEach((t) => window.clearTimeout(t));
       document.removeEventListener('visibilitychange', onVisible);
+      ro.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nextReminder?.id, sortedReminders.length, completedCount]);
+  }, [nextReminder?.id, sortedReminders.length, completedCount, scrollToNext]);
+
+  const toggle = (reminder: ReminderTime) => {
+    if (reminder.completed) {
+      onUncomplete?.(reminder.id);
+      tap();
+    } else {
+      onComplete(reminder.id);
+      success();
+    }
+  };
 
   return (
     <div className="px-4 pb-48">
@@ -128,13 +162,19 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
               }}
               className="relative mb-2"
             >
-              {/* Ganze Zeile klickbar */}
-              <motion.button
-                type="button"
-                whileTap={!reminder.completed ? { scale: 0.98 } : undefined}
-                onClick={() => !reminder.completed && onComplete(reminder.id)}
-                disabled={reminder.completed}
-                className={`relative w-full text-left flex items-center justify-between p-3 rounded-xl transition-colors duration-300 ${
+              {/* Ganze Zeile antippbar */}
+              <motion.div
+                role="button"
+                tabIndex={0}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => toggle(reminder)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggle(reminder);
+                  }
+                }}
+                className={`relative w-full cursor-pointer select-none text-left flex items-center justify-between p-3 rounded-xl transition-colors duration-300 ${
                   reminder.completed
                     ? 'bg-primary/10 border border-primary/20'
                     : isPassed
@@ -145,16 +185,24 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
                 }`}
               >
                 {/* Zeit links */}
-                <span
-                  className={`text-2xl font-bold tabular-nums ${
-                    reminder.completed
-                      ? 'text-primary'
-                      : isPassed
-                      ? 'text-muted-foreground'
-                      : 'text-foreground'
-                  }`}
-                >
-                  {reminder.time}
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`text-2xl font-bold tabular-nums ${
+                      reminder.completed
+                        ? 'text-primary'
+                        : isPassed
+                        ? 'text-muted-foreground'
+                        : 'text-foreground'
+                    }`}
+                  >
+                    {reminder.time}
+                  </span>
+                  {reminder.extra && (
+                    <span className="flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                      <Plus className="w-3 h-3" strokeWidth={3} />
+                      Extra
+                    </span>
+                  )}
                 </span>
 
                 {/* Mitte: Countdown bei der nächsten Zeile, sonst kleine Restzeit */}
@@ -174,8 +222,15 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
                   )}
                 </span>
 
-                {/* Rechts: Status-Kreis (nur Anzeige) */}
-                <span
+                {/* Rechts: Haken – Antippen setzt zurück */}
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.85 }}
+                  aria-label={reminder.completed ? 'Zurücksetzen' : 'Als geraucht markieren'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggle(reminder);
+                  }}
                   className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-300 ${
                     reminder.completed
                       ? 'bg-primary'
@@ -197,8 +252,8 @@ const ReminderList = ({ reminders, onComplete }: ReminderListProps) => {
                       </motion.span>
                     )}
                   </AnimatePresence>
-                </span>
-              </motion.button>
+                </motion.button>
+              </motion.div>
             </motion.div>
           );
         })}

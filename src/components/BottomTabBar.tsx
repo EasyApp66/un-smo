@@ -1,13 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Settings, BarChart3, ArrowUp } from 'lucide-react';
+import { Home, Settings, BarChart3, ArrowUp, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface BottomTabBarProps {
   activeTab: 'home' | 'stats' | 'settings';
   onTabChange: (tab: 'home' | 'stats' | 'settings') => void;
+  onAddExtra?: () => void;
 }
 
-const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
+const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps) => {
   const tabs = [
     { id: 'home' as const, icon: Home, label: 'Home' },
     { id: 'stats' as const, icon: BarChart3, label: 'Statistik' },
@@ -52,6 +53,17 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
           </motion.button>
         )}
       </AnimatePresence>
+
+      {onAddExtra && (
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={onAddExtra}
+          aria-label="Zusätzliche Zigarette eintragen"
+          className="w-12 h-12 rounded-full bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg flex items-center justify-center text-primary"
+        >
+          <Plus className="w-[22px] h-[22px]" strokeWidth={2.5} />
+        </motion.button>
+      )}
 
       <div className="bg-card/95 backdrop-blur-xl rounded-full border border-border/50 shadow-lg px-1.5 py-1.5">
         <div className="flex items-center gap-1.5">
