@@ -1,7 +1,6 @@
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { addDays, addWeeks, format, getISOWeek, startOfWeek } from 'date-fns';
+import { motion, useMotionValue, animate, PanInfo } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { addDays, addWeeks, format, startOfWeek } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useAppStore } from '../store/appStore';
 
@@ -11,12 +10,129 @@ interface MiniCalendarProps {
 }
 
 const toDateString = (d: Date) => format(d, 'yyyy-MM-dd');
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+interface DayCell {
+  date: string;
+  dayNumber: number;
+  weekday: string;
+  isToday: boolean;
+  isFuture: boolean;
+  progress: number | null;
+}
+
+const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>): DayCell[] =>
+  Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(weekStart, i);
+    const dateString = toDateString(date);
+    const data = daysData[dateString];
+    let progress: number | null = null;
+    if (data && data.totalCigarettes > 0) {
+      const done = data.reminders.filter((r: any) => r.completed).length;
+      progress = Math.min(1, done / data.totalCigarettes);
+    }
+    return {
+      date: dateString,
+      dayNumber: date.getDate(),
+      weekday: format(date, 'EEEEEE', { locale: de }),
+      isToday: dateString === today,
+      isFuture: dateString > today,
+      progress,
+    };
+  });
+
+const RING = 34; // Durchmesser des Fortschrittsrings
+const R = (RING - 3) / 2;
+const C = 2 * Math.PI * R;
+
+const DayButton = ({
+  day,
+  isSelected,
+  onSelect,
+}: {
+  day: DayCell;
+  isSelected: boolean;
+  onSelect: (d: string) => void;
+}) => (
+  <button
+    type="button"
+    onClick={() => onSelect(day.date)}
+    aria-label={day.date}
+    aria-pressed={isSelected}
+    className={`relative flex flex-col items-center justify-center h-[78px] rounded-2xl [transition:background-color_180ms_ease,opacity_180ms_ease] ${
+      isSelected ? 'bg-primary' : 'bg-transparent active:bg-muted/40'
+    } ${!isSelected && day.isFuture ? 'opacity-45' : ''}`}
+  >
+    <span
+      className={`text-[10px] font-semibold uppercase tracking-wide leading-none mb-1 ${
+        isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+      }`}
+    >
+      {day.weekday}
+    </span>
+
+    <span className="relative flex items-center justify-center" style={{ width: RING, height: RING }}>
+      {day.progress !== null && (
+        <svg className="absolute inset-0 -rotate-90" width={RING} height={RING} aria-hidden>
+          <circle
+            cx={RING / 2}
+            cy={RING / 2}
+            r={R}
+            fill="none"
+            strokeWidth={2}
+            className={isSelected ? 'stroke-primary-foreground/25' : 'stroke-muted-foreground/20'}
+          />
+          <circle
+            cx={RING / 2}
+            cy={RING / 2}
+            r={R}
+            fill="none"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeDasharray={C}
+            strokeDashoffset={C * (1 - day.progress)}
+            className={isSelected ? 'stroke-primary-foreground' : 'stroke-primary'}
+          />
+        </svg>
+      )}
+      <span
+        className={`relative text-[25px] font-semibold tabular-nums leading-none ${
+          isSelected ? 'text-primary-foreground' : 'text-foreground'
+        }`}
+      >
+        {day.dayNumber}
+      </span>
+    </span>
+
+    <span
+      className={`mt-1.5 h-1.5 w-1.5 rounded-full ${
+        day.isToday ? (isSelected ? 'bg-primary-foreground' : 'bg-primary') : 'bg-transparent'
+      }`}
+    />
+  </button>
+);
 
 const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   const daysData = useAppStore((s) => s.days);
   const [today, setToday] = useState(() => toDateString(new Date()));
   const [weekOffset, setWeekOffset] = useState(0);
-  const [direction, setDirection] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Datum wechselt automatisch um Mitternacht
   useEffect(() => {
@@ -41,135 +157,93 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
     [weekOffset, today]
   );
 
-  const days = useMemo(
+  const weeks = useMemo(
     () =>
-      Array.from({ length: 7 }, (_, i) => {
-        const date = addDays(weekStart, i);
-        const dateString = toDateString(date);
-        return {
-          date: dateString,
-          dayNumber: date.getDate(),
-          weekday: format(date, 'EEEEEE', { locale: de }),
-          isToday: dateString === today,
-        };
-      }),
-    [weekStart, today]
+      [-1, 0, 1].map((o) => ({
+        key: toDateString(addWeeks(weekStart, o)),
+        days: buildWeek(addWeeks(weekStart, o), today, daysData),
+      })),
+    [weekStart, today, daysData]
   );
 
-  const weekEnd = addDays(weekStart, 6);
-  const monthLabel =
-    weekStart.getMonth() === weekEnd.getMonth()
-      ? format(weekStart, 'MMMM yyyy', { locale: de })
-      : `${format(weekStart, 'MMM', { locale: de })} – ${format(weekEnd, 'MMM yyyy', { locale: de })}`;
+  const monthLabel = format(weekStart, 'MMMM yyyy', { locale: de });
 
-  const changeWeek = (delta: number) => {
-    setDirection(delta);
-    setWeekOffset((w) => w + delta);
+  const goToWeek = (delta: number) => {
     if ('vibrate' in navigator) navigator.vibrate(5);
+    if (!width || prefersReducedMotion()) {
+      x.set(0);
+      setWeekOffset((w) => w + delta);
+      return;
+    }
+    animate(x, -delta * width, {
+      duration: 0.22,
+      ease: EASE,
+      onComplete: () => {
+        x.set(0);
+        setWeekOffset((w) => w + delta);
+      },
+    });
   };
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x < -50 || info.velocity.x < -400) changeWeek(1);
-    else if (info.offset.x > 50 || info.velocity.x > 400) changeWeek(-1);
+    const threshold = width * 0.25;
+    if (info.offset.x < -threshold || info.velocity.x < -400) goToWeek(1);
+    else if (info.offset.x > threshold || info.velocity.x > 400) goToWeek(-1);
+    else animate(x, 0, { duration: 0.22, ease: EASE });
   };
+
+  const showTodayButton = weekOffset !== 0;
 
   return (
     <div className="px-3 py-2 select-none">
-      {/* Monat & Kalenderwoche */}
-      <div className="flex items-center justify-between px-1 mb-1.5">
-        <button
-          onClick={() => changeWeek(-1)}
-          aria-label="Vorherige Woche"
-          className="p-1 rounded-full text-muted-foreground hover:bg-muted/50"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => {
-            if (weekOffset !== 0) {
-              setDirection(weekOffset > 0 ? -1 : 1);
+      <div className="flex items-center justify-between px-1 mb-2 h-8">
+        <span className="text-[17px] font-semibold text-foreground capitalize">{monthLabel}</span>
+        {showTodayButton && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.18, ease: EASE }}
+            type="button"
+            onClick={() => {
               setWeekOffset(0);
-            }
-            onDateSelect(today);
-          }}
-          className="text-center"
-        >
-          <span className="text-sm font-bold text-foreground capitalize">{monthLabel}</span>
-          <span className="ml-2 text-[11px] font-semibold text-muted-foreground">
-            KW {getISOWeek(weekStart)}
-          </span>
-        </button>
-        <button
-          onClick={() => changeWeek(1)}
-          aria-label="Nächste Woche"
-          className="p-1 rounded-full text-muted-foreground hover:bg-muted/50"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+              x.set(0);
+              onDateSelect(today);
+            }}
+            className="px-3 h-8 rounded-full bg-primary/10 text-primary text-[13px] font-semibold"
+          >
+            Heute
+          </motion.button>
+        )}
       </div>
 
-      {/* Wochentage – per Swipe wechseln */}
-      <div className="overflow-hidden">
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.div
-            key={toDateString(weekStart)}
-            custom={direction}
-            initial={{ x: direction * 80, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -direction * 80, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={handleDragEnd}
-            className="grid grid-cols-7 gap-1 touch-pan-y"
-          >
-            {days.map((day) => {
-              const isSelected = selectedDate === day.date;
-              return (
-                <motion.button
+      <div ref={containerRef} className="overflow-hidden" style={{ touchAction: 'pan-y' }}>
+        <motion.div
+          className="flex"
+          style={{ x, width: width ? width * 3 : '300%', marginLeft: width ? -width : '-100%' }}
+          drag="x"
+          dragDirectionLock
+          dragElastic={0.12}
+          dragMomentum={false}
+          dragConstraints={{ left: -width, right: width }}
+          onDragEnd={handleDragEnd}
+        >
+          {weeks.map((week) => (
+            <div
+              key={week.key}
+              className="grid grid-cols-7 gap-1 shrink-0"
+              style={{ width: width || '33.3333%' }}
+            >
+              {week.days.map((day) => (
+                <DayButton
                   key={day.date}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onDateSelect(day.date)}
-                  className={`relative flex flex-col items-center justify-center h-[62px] rounded-xl transition-colors ${
-                    isSelected ? 'bg-card' : 'bg-transparent'
-                  }`}
-                >
-                  {day.isToday && (
-                    <div className="absolute inset-0 rounded-xl border-2 border-primary" />
-                  )}
-                  {isSelected && !day.isToday && (
-                    <motion.div
-                      layoutId="selected-bg"
-                      className="absolute inset-0 rounded-xl bg-muted"
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                  <span
-                    className={`relative z-10 text-xl font-bold leading-none ${
-                      day.isToday ? 'text-primary' : 'text-foreground'
-                    }`}
-                  >
-                    {day.dayNumber}
-                  </span>
-                  <span
-                    className={`relative z-10 mt-0.5 text-[10px] font-medium ${
-                      day.isToday ? 'text-primary' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {day.weekday}
-                  </span>
-                  {daysData[day.date] && (
-                    <span className="relative z-10 mt-0.5 text-[9px] font-semibold tabular-nums text-muted-foreground/80">
-                      {daysData[day.date].reminders.filter((r) => r.completed).length}/
-                      {daysData[day.date].totalCigarettes}
-                    </span>
-                  )}
-                </motion.button>
-              );
-            })}
-          </motion.div>
-        </AnimatePresence>
+                  day={day}
+                  isSelected={selectedDate === day.date}
+                  onSelect={onDateSelect}
+                />
+              ))}
+            </div>
+          ))}
+        </motion.div>
       </div>
     </div>
   );
