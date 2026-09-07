@@ -1,0 +1,161 @@
+import { useEffect, useRef } from 'react';
+import { tick } from '../lib/haptics';
+
+interface ScrollWheelProps {
+  values: number[];
+  index: number;
+  onIndexChange: (index: number) => void;
+  itemSize: number; // Höhe (vertikal) bzw. Breite (horizontal) eines Eintrags
+  viewport: number; // sichtbare Länge in Scrollrichtung
+  crossSize: number; // Breite (vertikal) bzw. Höhe (horizontal)
+  horizontal?: boolean;
+  format?: (value: number) => string;
+  textClass?: string;
+  selectedTextClass?: string;
+}
+
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+/**
+ * Weich rollendes Auswahlrad mit CSS-Snap.
+ * Der Wert wird sofort beim Scrollen übernommen (kein Nachzieh-Effekt).
+ */
+const ScrollWheel = ({
+  values,
+  index,
+  onIndexChange,
+  itemSize,
+  viewport,
+  crossSize,
+  horizontal = false,
+  format = (v) => v.toString(),
+  textClass = 'text-muted-foreground/60',
+  selectedTextClass = 'text-primary',
+}: ScrollWheelProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const interacting = useRef(false);
+  const idleTimer = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const lastIndex = useRef(index);
+  const mounted = useRef(false);
+
+  const pad = Math.max(0, (viewport - itemSize) / 2);
+
+  // Position nachziehen, wenn der Wert von außen geändert wird
+  useEffect(() => {
+    lastIndex.current = index;
+    const el = ref.current;
+    if (!el || interacting.current) return;
+    const target = index * itemSize;
+    const current = horizontal ? el.scrollLeft : el.scrollTop;
+    if (Math.abs(current - target) < 1) return;
+    el.scrollTo({
+      [horizontal ? 'left' : 'top']: target,
+      behavior: mounted.current ? 'smooth' : 'auto',
+    } as ScrollToOptions);
+    mounted.current = true;
+  }, [index, itemSize, horizontal]);
+
+  const handleScroll = () => {
+    interacting.current = true;
+    if (idleTimer.current) window.clearTimeout(idleTimer.current);
+    idleTimer.current = window.setTimeout(() => {
+      interacting.current = false;
+    }, 260);
+
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const el = ref.current;
+      if (!el) return;
+      const offset = horizontal ? el.scrollLeft : el.scrollTop;
+      const i = clamp(Math.round(offset / itemSize), 0, values.length - 1);
+      if (i !== lastIndex.current) {
+        lastIndex.current = i;
+        tick();
+        onIndexChange(i);
+      }
+    });
+  };
+
+  useEffect(
+    () => () => {
+      if (idleTimer.current) window.clearTimeout(idleTimer.current);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    },
+    []
+  );
+
+  return (
+    <div
+      className="relative overflow-hidden"
+      style={{
+        height: horizontal ? crossSize : viewport,
+        width: horizontal ? viewport : crossSize,
+      }}
+    >
+      {/* Auswahl-Markierung */}
+      <div
+        className="absolute pointer-events-none z-10 rounded-xl bg-primary/10 border border-primary/25"
+        style={
+          horizontal
+            ? { left: '50%', transform: 'translateX(-50%)', top: 4, bottom: 4, width: itemSize - 6 }
+            : { top: '50%', transform: 'translateY(-50%)', left: 2, right: 2, height: itemSize - 4 }
+        }
+      />
+
+      {/* Weiche Ränder */}
+      {horizontal ? (
+        <>
+          <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-card to-transparent pointer-events-none z-20" />
+          <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card to-transparent pointer-events-none z-20" />
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-card to-transparent pointer-events-none z-20" />
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card to-transparent pointer-events-none z-20" />
+        </>
+      )}
+
+      <div
+        ref={ref}
+        onScroll={handleScroll}
+        className={`hide-scrollbar h-full w-full ${
+          horizontal
+            ? 'overflow-x-scroll overflow-y-hidden snap-x snap-mandatory flex items-center'
+            : 'overflow-y-scroll overflow-x-hidden snap-y snap-mandatory'
+        }`}
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          ...(horizontal
+            ? { paddingLeft: pad, paddingRight: pad }
+            : { paddingTop: pad, paddingBottom: pad }),
+        }}
+      >
+        {values.map((v, i) => {
+          const isSelected = i === index;
+          return (
+            <div
+              key={v}
+              style={horizontal ? { width: itemSize, flex: '0 0 auto' } : { height: itemSize }}
+              className={`flex items-center justify-center snap-center transition-colors duration-150 ${
+                isSelected ? selectedTextClass : textClass
+              }`}
+            >
+              <span
+                className={`font-bold tabular-nums transition-all duration-150 ${
+                  isSelected ? 'text-2xl' : 'text-lg opacity-70'
+                }`}
+              >
+                {format(v)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default ScrollWheel;
