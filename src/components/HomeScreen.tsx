@@ -14,6 +14,7 @@ const HomeScreen = () => {
     markReminderComplete,
     unmarkReminderComplete,
     deleteReminder,
+    recalculateReminders,
     dailyCigarettes,
   } = useAppStore();
 
@@ -44,7 +45,11 @@ const HomeScreen = () => {
   };
 
   const handleDaySetupComplete = () => {
-    initializeDay(selectedDate);
+    if (days[selectedDate]) {
+      recalculateReminders(selectedDate);
+    } else {
+      initializeDay(selectedDate);
+    }
   };
 
   const needsSetup = !dayData;
