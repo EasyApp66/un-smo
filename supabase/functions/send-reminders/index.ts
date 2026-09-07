@@ -2,6 +2,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 import { reminderSlots, localNow } from '../_shared/schedule.ts';
+import { authenticateCronRequest } from '../_shared/verify-cron.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -15,10 +16,14 @@ const fmt = (m: number) => `${pad(Math.floor((m % 1440) / 60))}:${pad(m % 60)}`;
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  // Nur der geplante Aufruf mit gültigem Geheimnis darf hier weiter
+  const unauthorized = authenticateCronRequest(req);
+  if (unauthorized) return unauthorized;
+
   const priv = Deno.env.get('VAPID_PRIVATE_KEY');
   const pub = Deno.env.get('VAPID_PUBLIC_KEY');
   const subject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:push@un-smo.app';
-  if (!priv || !pub) return json({ error: 'VAPID keys not configured' }, 500);
+  if (!priv || !pub) return json({ error: 'Not configured' }, 500);
   webpush.setVapidDetails(subject, pub, priv);
 
   const supabase = createClient(
@@ -26,11 +31,16 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  // Aufräumen: Geräte, die seit 60 Tagen nichts mehr gemeldet haben, entfernen
+  const cutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  await supabase.from('push_subscriptions').delete().lt('updated_at', cutoff);
+
   const { data: subs, error } = await supabase.from('push_subscriptions').select('*');
   if (error) {
     console.error(error);
-    return json({ error: 'Database error' }, 500);
+    return json({ error: 'Internal error' }, 500);
   }
+
 
   const now = new Date();
   let sent = 0;
