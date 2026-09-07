@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -20,19 +20,18 @@
     --primary: 152 75% 45%;
     --primary-foreground: 0 0% 100%;
 
-    /* Sekundär: Mint-Grün */
-    --secondary: 160 60% 50%;
-    --secondary-foreground: 0 0% 100%;
+    /* Sekundär = ruhige Fläche (kein zweiter Akzent) */
+    --secondary: 140 10% 92%;
+    --secondary-foreground: 150 15% 20%;
 
     --muted: 140 10% 92%;
     --muted-foreground: 140 5% 45%;
 
-    /* Akzent: Lime-Grün */
-    --accent: 85 70% 50%;
-    --accent-foreground: 150 10% 5%;
+    /* Akzent = dieselbe ruhige Fläche */
+    --accent: 140 10% 92%;
+    --accent-foreground: 150 15% 20%;
 
-    /* Violett bleibt als Kontrast */
-    --violet: 263 70% 70%;
+    --violet: 152 75% 40%;
     --violet-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -42,13 +41,10 @@
     --input: 140 10% 90%;
     --ring: 152 75% 45%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
-    /* Grün Glows */
-    --glow-green: 0 0 30px hsl(152 75% 45% / 0.5);
-    --glow-mint: 0 0 30px hsl(160 60% 50% / 0.5);
-    --glow-lime: 0 0 30px hsl(85 70% 50% / 0.5);
-    --glow-violet: 0 0 30px hsl(263 70% 70% / 0.5);
+    /* Ein einziger, sehr weicher Schatten für alle Flächen */
+    --shadow-card: 0 1px 2px hsl(150 15% 8% / 0.04), 0 8px 24px hsl(150 15% 8% / 0.04);
 
     /* Sidebar (keeping for compatibility) */
     --sidebar-background: 140 20% 98%;
@@ -75,17 +71,19 @@
     --primary: 152 75% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 60% 50%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 240 3% 20%;
+    --secondary-foreground: 140 10% 96%;
 
     --muted: 240 3% 20%;
     --muted-foreground: 140 5% 60%;
 
-    --accent: 85 70% 50%;
-    --accent-foreground: 150 10% 5%;
+    --accent: 240 3% 20%;
+    --accent-foreground: 140 10% 96%;
 
-    --violet: 263 70% 70%;
+    --violet: 152 75% 45%;
     --violet-foreground: 0 0% 100%;
+
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.3), 0 8px 24px hsl(0 0% 0% / 0.25);
 
     --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 100%;
@@ -112,7 +110,9 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'ss01' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
