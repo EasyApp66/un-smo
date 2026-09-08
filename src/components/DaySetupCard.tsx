@@ -10,6 +10,9 @@ interface DaySetupCardProps {
   selectedDate: string;
   onComplete: () => void;
   isEditing?: boolean;
+  /** Vorgeschlagenes Ziel für noch nicht eingerichtete Tage (nur lokal) */
+  goalValue?: number;
+  onGoalChange?: (value: number) => void;
 }
 
 const toMin = (t: string) => {
@@ -27,15 +30,25 @@ const fmtGap = (mins: number) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupCardProps) => {
+const DaySetupCard = ({
+  selectedDate,
+  onComplete,
+  isEditing = false,
+  goalValue,
+  onGoalChange,
+}: DaySetupCardProps) => {
   const {
     wakeTime,
     sleepTime,
-    dailyCigarettes,
+    dailyCigarettes: storedGoal,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
   } = useAppStore();
+
+  const dailyCigarettes = goalValue ?? storedGoal;
+  const changeGoal = (v: number) =>
+    onGoalChange ? onGoalChange(v) : setDailyCigarettes(v, selectedDate);
 
   // Beim Bearbeiten standardmäßig eingeklappt
   const [expanded, setExpanded] = useState(!isEditing);
@@ -141,7 +154,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
                 min={0}
                 max={60}
                 step={1}
-                onChange={(v) => setDailyCigarettes(v, selectedDate)}
+                onChange={changeGoal}
                 label="Zigaretten pro Tag"
                 horizontal
                 viewportWidth={280}
