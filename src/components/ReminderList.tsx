@@ -183,6 +183,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showOpen, setShowOpen] = useState(true);
+
   const reduceMotion = !!useReducedMotion();
 
   useEffect(() => {
@@ -257,8 +259,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   }, []);
 
   const rows = sortedReminders.map((r, i) => ({ r, i }));
-  const completedRows = rows.filter(({ r }) => r.completed);
-  const openRows = rows.filter(({ r }) => !r.completed);
+
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
@@ -280,39 +281,82 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     );
   };
 
+  const doneRows = rows.filter(({ r }) => r.completed || r.skipped);
+  const todoRows = rows.filter(({ r }) => !r.completed && !r.skipped);
+
+  const Folder = ({
+    title,
+    count,
+    open,
+    onToggleFolder,
+    tone,
+    children,
+  }: {
+    title: string;
+    count: number;
+    open: boolean;
+    onToggleFolder: () => void;
+    tone: 'primary' | 'muted';
+    children: React.ReactNode;
+  }) => (
+    <div className="mb-3">
+      <button
+        type="button"
+        onClick={() => {
+          onToggleFolder();
+          tap();
+        }}
+        aria-expanded={open}
+        className={`surface-card w-full flex items-center justify-between px-4 py-3 ${
+          tone === 'primary' ? 'bg-primary/[0.06]' : 'bg-muted/40'
+        }`}
+      >
+        <span
+          className={`text-sm font-medium ${
+            tone === 'primary' ? 'text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          {title} · {count}
+        </span>
+        <ChevronDown
+          className={`w-5 h-5 transition-transform duration-150 ${
+            tone === 'primary' ? 'text-primary' : 'text-muted-foreground'
+          } ${open ? 'rotate-180' : ''}`}
+          strokeWidth={2.5}
+        />
+      </button>
+      {open && <div className="pt-2">{children}</div>}
+    </div>
+  );
+
   return (
-    <div className="px-4 pb-48">
-      {completedRows.length > 0 && (
-        <div className="mb-2">
-          <button
-            type="button"
-            onClick={() => {
-              setShowCompleted((v) => !v);
-              tap();
-            }}
-            aria-expanded={showCompleted}
-            className="surface-card w-full flex items-center justify-between px-4 py-3 bg-primary/[0.06]"
-          >
-            <span className="text-sm font-medium text-primary">
-              {completedRows.length} geraucht
-            </span>
-            <ChevronDown
-              className={`w-5 h-5 text-primary transition-transform duration-150 ${
-                showCompleted ? 'rotate-180' : ''
-              }`}
-              strokeWidth={2.5}
-            />
-          </button>
+    <div className="w-full max-w-full overflow-x-hidden px-4 pb-48">
+      <Folder
+        title="Offen"
+        count={todoRows.length}
+        open={showOpen}
+        onToggleFolder={() => setShowOpen((v) => !v)}
+        tone="primary"
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          {todoRows.map(renderRow)}
+        </AnimatePresence>
+      </Folder>
 
-          {showCompleted && <div className="pt-2">{completedRows.map(renderRow)}</div>}
-        </div>
+      {doneRows.length > 0 && (
+        <Folder
+          title="Erledigt"
+          count={doneRows.length}
+          open={showCompleted}
+          onToggleFolder={() => setShowCompleted((v) => !v)}
+          tone="muted"
+        >
+          {doneRows.map(renderRow)}
+        </Folder>
       )}
-
-      <AnimatePresence mode="popLayout" initial={false}>
-        {openRows.map(renderRow)}
-      </AnimatePresence>
     </div>
   );
 };
+
 
 export default ReminderList;
