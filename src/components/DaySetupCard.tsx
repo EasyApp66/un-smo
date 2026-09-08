@@ -10,6 +10,9 @@ interface DaySetupCardProps {
   selectedDate: string;
   onComplete: () => void;
   isEditing?: boolean;
+  /** Vorgeschlagenes Ziel für noch nicht eingerichtete Tage (nur lokal) */
+  goalValue?: number;
+  onGoalChange?: (value: number) => void;
 }
 
 const toMin = (t: string) => {
