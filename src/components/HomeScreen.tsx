@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppStore, formatLocalDate } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
@@ -21,20 +21,22 @@ const HomeScreen = () => {
     getSuggestedGoal,
   } = useAppStore();
 
-  // Für noch nicht eingerichtete Tage ein schlaues Ziel vorschlagen
-  const suggestedFor = useRef<string | null>(null);
-  useEffect(() => {
-    if (days[selectedDate]) return;
-    if (suggestedFor.current === selectedDate) return;
-    suggestedFor.current = selectedDate;
-    const suggestion = getSuggestedGoal(selectedDate);
-    if (suggestion !== dailyCigarettes) setDailyCigarettes(suggestion, selectedDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, days]);
-
   const dayData = days[selectedDate];
+
+  // Vorschlag für noch nicht eingerichtete Tage – nur lokal, ändert das
+  // gespeicherte Tagesziel erst beim Speichern.
+  const suggestedGoal = useMemo(
+    () => (dayData ? null : getSuggestedGoal(selectedDate)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate, dayData]
+  );
+  const [draftGoal, setDraftGoal] = useState<number | null>(null);
+  const [draftFor, setDraftFor] = useState<string | null>(null);
+  const activeDraft =
+    dayData ? null : draftFor === selectedDate && draftGoal !== null ? draftGoal : suggestedGoal;
+
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
-  const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
+  const totalCount = dayData?.totalCigarettes ?? activeDraft ?? dailyCigarettes;
   const remainingCount = Math.max(totalCount - completedCount, 0);
 
   const handleComplete = (reminderId: string) => {
