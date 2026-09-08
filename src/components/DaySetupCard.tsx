@@ -30,15 +30,25 @@ const fmtGap = (mins: number) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupCardProps) => {
+const DaySetupCard = ({
+  selectedDate,
+  onComplete,
+  isEditing = false,
+  goalValue,
+  onGoalChange,
+}: DaySetupCardProps) => {
   const {
     wakeTime,
     sleepTime,
-    dailyCigarettes,
+    dailyCigarettes: storedGoal,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
   } = useAppStore();
+
+  const dailyCigarettes = goalValue ?? storedGoal;
+  const changeGoal = (v: number) =>
+    onGoalChange ? onGoalChange(v) : setDailyCigarettes(v, selectedDate);
 
   // Beim Bearbeiten standardmäßig eingeklappt
   const [expanded, setExpanded] = useState(!isEditing);
