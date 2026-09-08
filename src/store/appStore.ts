@@ -108,6 +108,28 @@ export const formatLocalDate = (d: Date = new Date()) => {
 
 const getTodayString = () => formatLocalDate();
 
+/** Verteilt `count` Zeiten gleichmäßig zwischen `startMin` und der Schlafenszeit */
+const spreadTimes = (startMin: number, sleepTime: string, count: number) => {
+  if (count <= 0) return [] as { time: string; timestamp: number }[];
+  const [sh, sm] = sleepTime.split(':').map(Number);
+  let sleepMinutes = sh * 60 + sm;
+  if (sleepMinutes <= startMin) sleepMinutes += 24 * 60;
+
+  const span = Math.max(sleepMinutes - startMin, count);
+  const interval = span / count;
+
+  return Array.from({ length: count }, (_, i) => {
+    const raw = startMin + interval * i + interval / 2;
+    const norm = Math.floor(raw) % (24 * 60);
+    const h = Math.floor(norm / 60);
+    const m = norm % 60;
+    return {
+      time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+      timestamp: norm,
+    };
+  });
+};
+
 /** Untergrenze für automatische Ziel-Empfehlungen */
 export const GOAL_FLOOR = 20;
 
@@ -295,6 +317,7 @@ export const useAppStore = create<AppState>()(
           const now = new Date();
           const hh = String(now.getHours()).padStart(2, '0');
           const mm = String(now.getMinutes()).padStart(2, '0');
+          const nowMin = now.getHours() * 60 + now.getMinutes();
           const base =
             state.days[date] ??
             ({
@@ -309,11 +332,35 @@ export const useAppStore = create<AppState>()(
             time: `${hh}:${mm}`,
             completed: true,
             completedAt: Date.now(),
-            timestamp: now.getHours() * 60 + now.getMinutes(),
+            timestamp: nowMin,
             extra: true,
           };
 
-          const reminders = [...base.reminders, extra];
+          let reminders = [...base.reminders, extra];
+
+          // Jede zweite Extra-Zigarette kostet einen noch offenen Wecker.
+          // Die verbleibenden Wecker werden über die Restzeit neu verteilt,
+          // damit die Abstände größer werden statt kürzer.
+          const extraCount = reminders.filter((r) => r.extra).length;
+          if (extraCount % 2 === 0 && date === getTodayString()) {
+            const open = reminders
+              .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
+              .sort((a, b) => a.timestamp - b.timestamp);
+
+            if (open.length > 0) {
+              const dropId = open[open.length - 1].id;
+              const keep = open.slice(0, -1);
+              const times = spreadTimes(nowMin, state.sleepTime, keep.length);
+              const byId = new Map(keep.map((r, i) => [r.id, times[i]]));
+              reminders = reminders
+                .filter((r) => r.id !== dropId)
+                .map((r) => {
+                  const t = byId.get(r.id);
+                  return t ? { ...r, timestamp: t.timestamp, time: t.time } : r;
+                });
+            }
+          }
+
           return {
             days: {
               ...state.days,
@@ -326,6 +373,7 @@ export const useAppStore = create<AppState>()(
           };
         });
       },
+
 
       skipReminder: (date, reminderId) => {
         set((state) => {
