@@ -54,35 +54,40 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
       className="fixed left-1/2 -translate-x-1/2 z-50"
       style={{ bottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
     >
-      <div className="relative">
-        {/* Absolut positioniert – verschiebt die Pille nie */}
-        <AnimatePresence>
-          {showTop && (
-            <motion.button
-              key="top"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              whileTap={{ scale: 0.9 }}
-              aria-label="Nach oben"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="absolute right-full mr-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg flex items-center justify-center text-muted-foreground"
-            >
-              <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-            </motion.button>
-          )}
-        </AnimatePresence>
+      <div className="relative flex items-center">
+        {/* Linker Steckplatz – ohne Transform, per Flex zentriert */}
+        <div className="absolute inset-y-0 right-full mr-2 flex items-center pointer-events-none">
+          <AnimatePresence>
+            {showTop && (
+              <motion.button
+                key="top"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                whileTap={{ scale: 0.9 }}
+                aria-label="Nach oben"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="pointer-events-auto w-12 h-12 rounded-full bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg flex items-center justify-center text-muted-foreground"
+              >
+                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
 
+        {/* Rechter Steckplatz */}
         {onAddExtra && (
-          <motion.button
-            whileTap={{ scale: 0.88 }}
-            onClick={onAddExtra}
-            aria-label="Zusätzliche Zigarette eintragen"
-            className="absolute left-full ml-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/40 flex items-center justify-center"
-          >
-            <Plus className="w-[22px] h-[22px]" strokeWidth={2.5} />
-          </motion.button>
+          <div className="absolute inset-y-0 left-full ml-2 flex items-center pointer-events-none">
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              onClick={onAddExtra}
+              aria-label="Zusätzliche Zigarette eintragen"
+              className="pointer-events-auto w-12 h-12 rounded-full bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/40 flex items-center justify-center"
+            >
+              <Plus className="w-[22px] h-[22px]" strokeWidth={2.5} />
+            </motion.button>
+          </div>
         )}
 
         <div
@@ -103,7 +108,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
                   whileTap={{ scale: 0.9 }}
                   onClick={() => onTabChange(tab.id)}
                   aria-label={tab.label}
-                  className={`flex items-center justify-center w-12 h-12 rounded-full [transition:background-color_180ms_ease,color_180ms_ease,transform_180ms_ease] ${
+                  className={`flex items-center justify-center w-12 h-12 rounded-full [transition:background-color_180ms_ease,color_180ms_ease] ${
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted/50'
