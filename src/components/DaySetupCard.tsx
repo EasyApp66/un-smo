@@ -154,7 +154,7 @@ const DaySetupCard = ({
                 min={0}
                 max={60}
                 step={1}
-                onChange={(v) => setDailyCigarettes(v, selectedDate)}
+                onChange={changeGoal}
                 label="Zigaretten pro Tag"
                 horizontal
                 viewportWidth={280}
