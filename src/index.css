@@ -123,12 +123,6 @@
     @apply border-border;
   }
 
-  html,
-  body {
-    overflow-x: hidden;
-    max-width: 100%;
-  }
-
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
@@ -137,7 +131,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-
 
   /* iOS-like scrollbar hiding */
   .hide-scrollbar {
