@@ -1,10 +1,11 @@
 import { useAppStore, applyTheme, formatLocalDate } from '../store/appStore';
 import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
-import StatisticsScreen from '../components/StatisticsScreen';
-import SettingsSheet from '../components/SettingsSheet';
 import BottomTabBar from '../components/BottomTabBar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
+
+const StatisticsScreen = lazy(() => import('../components/StatisticsScreen'));
+const SettingsSheet = lazy(() => import('../components/SettingsSheet'));
 import { syncPushSchedule } from '../lib/push';
 
 const Index = () => {
@@ -61,7 +62,11 @@ const Index = () => {
     <div className="max-w-md mx-auto min-h-screen bg-background">
       {activeTab === 'home' && <HomeScreen />}
 
-      {activeTab === 'stats' && <StatisticsScreen />}
+      {activeTab === 'stats' && (
+        <Suspense fallback={<div className="min-h-screen" />}>
+          <StatisticsScreen />
+        </Suspense>
+      )}
 
       {/* Bottom Navigation */}
       <BottomTabBar
@@ -74,7 +79,9 @@ const Index = () => {
       />
 
       {/* Einstellungen Sheet */}
-      <SettingsSheet isOpen={isSettingsOpen} onClose={handleSettingsClose} />
+      <Suspense fallback={null}>
+        {isSettingsOpen && <SettingsSheet isOpen={isSettingsOpen} onClose={handleSettingsClose} />}
+      </Suspense>
     </div>
   );
 };
