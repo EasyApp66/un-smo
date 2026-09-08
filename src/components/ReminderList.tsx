@@ -183,6 +183,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showOpen, setShowOpen] = useState(true);
+
   const reduceMotion = !!useReducedMotion();
 
   useEffect(() => {
@@ -257,8 +259,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   }, []);
 
   const rows = sortedReminders.map((r, i) => ({ r, i }));
-  const completedRows = rows.filter(({ r }) => r.completed);
-  const openRows = rows.filter(({ r }) => !r.completed);
+
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
