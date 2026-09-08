@@ -67,11 +67,21 @@ const HomeScreen = () => {
     }
   };
 
+  const handleGoalDraft = (value: number) => {
+    setDraftFor(selectedDate);
+    setDraftGoal(value);
+  };
+
   const handleDaySetupComplete = () => {
     if (days[selectedDate]) {
       recalculateReminders(selectedDate);
     } else {
+      if (activeDraft !== null && activeDraft !== dailyCigarettes) {
+        setDailyCigarettes(activeDraft, selectedDate);
+      }
       initializeDay(selectedDate);
+      setDraftGoal(null);
+      setDraftFor(null);
     }
   };
 
@@ -105,7 +115,12 @@ const HomeScreen = () => {
       <div className="flex-1">
         {needsSetup ? (
           <div className="pt-1">
-            <DaySetupCard selectedDate={selectedDate} onComplete={handleDaySetupComplete} />
+            <DaySetupCard
+              selectedDate={selectedDate}
+              onComplete={handleDaySetupComplete}
+              goalValue={activeDraft ?? undefined}
+              onGoalChange={handleGoalDraft}
+            />
           </div>
         ) : (
           <>
