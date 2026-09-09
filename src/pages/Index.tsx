@@ -3,6 +3,7 @@ import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
 import BottomTabBar from '../components/BottomTabBar';
 import { useEffect, useState, lazy, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const StatisticsScreen = lazy(() => import('../components/StatisticsScreen'));
 const SettingsSheet = lazy(() => import('../components/SettingsSheet'));
