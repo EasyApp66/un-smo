@@ -22,6 +22,7 @@ const Index = () => {
   } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [extraFeedback, setExtraFeedback] = useState<string | null>(null);
 
   // Theme anwenden (Hell / Dunkel / System)
   useEffect(() => {
