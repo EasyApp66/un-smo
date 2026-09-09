@@ -74,18 +74,23 @@ const Index = () => {
       <AnimatePresence>
         {extraFeedback && (
           <motion.div
-            initial={{ opacity: 0, y: -16, scale: 0.96 }}
+            initial={{ opacity: 0, y: -12, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, y: -8, scale: 0.92 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
             className="fixed left-1/2 z-[60]"
-            style={{ top: 'max(env(safe-area-inset-top), 0.75rem)' }}
+            style={{ top: 'max(env(safe-area-inset-top), 0.5rem)' }}
           >
             <div
-              className="-translate-x-1/2 px-4 py-2 rounded-full bg-card/95 backdrop-blur-xl border border-primary/40 shadow-lg"
-              style={{ boxShadow: '0 0 0 3px hsl(var(--primary) / 0.06), 0 8px 24px hsl(150 15% 8% / 0.08)' }}
+              className="-translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/95 backdrop-blur-xl border border-primary/40 shadow-md"
+              style={{ boxShadow: '0 0 0 2px hsl(var(--primary) / 0.06), 0 6px 20px hsl(150 15% 8% / 0.06)' }}
             >
-              <span className="text-[13px] font-semibold text-foreground">{extraFeedback}</span>
+              <span className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-primary-foreground">
+                  <path d="M2 5L4 7L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="text-[12px] font-semibold text-foreground whitespace-nowrap">{extraFeedback}</span>
             </div>
           </motion.div>
         )}
