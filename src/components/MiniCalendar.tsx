@@ -99,7 +99,13 @@ const DayButton = ({
             strokeLinecap="round"
             strokeDasharray={C}
             strokeDashoffset={C * (1 - day.progress)}
-            className={isSelected ? 'stroke-primary-foreground' : 'stroke-primary'}
+            className={
+              day.overGoal
+                ? 'stroke-destructive'
+                : isSelected
+                  ? 'stroke-primary-foreground'
+                  : 'stroke-primary'
+            }
           />
         </svg>
       )}
