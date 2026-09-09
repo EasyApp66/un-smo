@@ -23,6 +23,7 @@ interface DayCell {
   isToday: boolean;
   isFuture: boolean;
   progress: number | null;
+  overGoal: boolean;
 }
 
 const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>): DayCell[] =>
