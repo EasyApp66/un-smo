@@ -32,9 +32,11 @@ const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>
     const dateString = toDateString(date);
     const data = daysData[dateString];
     let progress: number | null = null;
+    let overGoal = false;
     if (data && data.totalCigarettes > 0) {
       const done = data.reminders.filter((r: any) => r.completed).length;
       progress = Math.min(1, done / data.totalCigarettes);
+      overGoal = done > data.totalCigarettes;
     }
     return {
       date: dateString,
@@ -43,6 +45,7 @@ const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>
       isToday: dateString === today,
       isFuture: dateString > today,
       progress,
+      overGoal,
     };
   });
 
