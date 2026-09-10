@@ -343,6 +343,8 @@ export const useAppStore = create<AppState>()(
               date,
               cigarettesSmoked: 0,
               totalCigarettes: state.dailyCigarettes,
+              wakeTime: state.wakeTime,
+              sleepTime: state.sleepTime,
               reminders: [],
             } as DayData);
 
@@ -369,7 +371,7 @@ export const useAppStore = create<AppState>()(
             if (open.length > 0) {
               const dropId = open[open.length - 1].id;
               const keep = open.slice(0, -1);
-              const times = spreadTimes(nowMin, state.sleepTime, keep.length);
+              const times = spreadTimes(nowMin, base.sleepTime ?? state.sleepTime, keep.length);
               const byId = new Map(keep.map((r, i) => [r.id, times[i]]));
               reminders = reminders
                 .filter((r) => r.id !== dropId)
@@ -523,6 +525,8 @@ export const useAppStore = create<AppState>()(
                 date,
                 cigarettesSmoked: updatedReminders.filter((r) => r.completed).length,
                 totalCigarettes: s.dailyCigarettes,
+                wakeTime: s.wakeTime,
+                sleepTime: s.sleepTime,
                 reminders: updatedReminders,
               },
             },
