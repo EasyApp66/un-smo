@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useAppStore, GOAL_FLOOR, suggestGoal } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingDown, TrendingUp, Minus, Cigarette, Calendar, Target } from 'lucide-react';
+import { TrendingDown, Cigarette, Calendar, Target } from 'lucide-react';
 import { useMemo } from 'react';
 
 const StatisticsScreen = () => {
@@ -107,20 +107,9 @@ const StatisticsScreen = () => {
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   };
 
-  const TrendIcon = stats.trend === 'down' ? TrendingDown : stats.trend === 'up' ? TrendingUp : Minus;
-  const trendColor = stats.trend === 'down' ? 'text-green-500' : stats.trend === 'up' ? 'text-red-500' : 'text-muted-foreground';
-  const trendText = stats.trend === 'down' ? 'Weniger geraucht' : stats.trend === 'up' ? 'Mehr geraucht' : 'Stabil';
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border safe-top">
-        <div className="px-4 py-4">
-          <h1 className="text-xl font-bold text-foreground">Statistik</h1>
-          <p className="text-sm text-muted-foreground">Letzte 7 Tage</p>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-background pb-28 safe-top">
       <div className="px-4 py-4 space-y-4">
         {/* Empfehlung */}
         <motion.div
@@ -181,24 +170,6 @@ const StatisticsScreen = () => {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* Trend Karte */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-card rounded-2xl p-4 border border-border shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Dein Trend</p>
-              <p className={`text-lg font-semibold ${trendColor}`}>{trendText}</p>
-            </div>
-            <div className={`p-3 rounded-full bg-muted/50 ${trendColor}`}>
-              <TrendIcon className="w-6 h-6" />
-            </div>
           </div>
         </motion.div>
 
@@ -270,7 +241,7 @@ const StatisticsScreen = () => {
           transition={{ delay: 0.4 }}
           className="bg-card rounded-2xl p-4 border border-border shadow-sm"
         >
-          <h2 className="text-sm font-semibold text-foreground mb-3">Tagesdetails</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">Ziel &amp; erreicht pro Tag</h2>
           
           <div className="space-y-2">
             {weekData.map((day, index) => (
@@ -279,8 +250,8 @@ const StatisticsScreen = () => {
                 className="flex items-center justify-between py-2 border-b border-border last:border-0"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-foreground w-6">{day.day}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(day.date)}</span>
+                  <span className="text-base font-bold text-foreground w-8">{day.day}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">{formatDate(day.date)}</span>
                 </div>
                 
                 {day.hasData ? (
@@ -293,10 +264,13 @@ const StatisticsScreen = () => {
                         style={{ width: `${Math.min((day.smoked / day.goal) * 100, 100)}%` }}
                       />
                     </div>
-                    <span className={`text-sm font-medium ${
-                      day.smoked <= day.goal ? 'text-foreground' : 'text-destructive'
-                    }`}>
-                      {day.smoked}/{day.goal}
+                    <span className="flex items-baseline gap-1 tabular-nums">
+                      <span className={`text-base font-bold ${
+                        day.smoked <= day.goal ? 'text-foreground' : 'text-destructive'
+                      }`}>
+                        {day.smoked}
+                      </span>
+                      <span className="text-sm text-muted-foreground">/ {day.goal} Ziel</span>
                     </span>
                   </div>
                 ) : (
