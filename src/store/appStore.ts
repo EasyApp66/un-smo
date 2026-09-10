@@ -203,40 +203,51 @@ export const useAppStore = create<AppState>()(
       pushToken: null,
       days: {},
       
+      // Wird ein konkreter Tag angegeben, verändert sich ausschließlich dieser Tag.
+      // Ohne Datum ändert sich nur der Standardwert für neue Tage.
       setWakeTime: (time, date) => {
+        const state = get();
+        if (date && state.days[date]) {
+          const day = state.days[date];
+          state.configureDay(date, {
+            wakeTime: time,
+            sleepTime: day.sleepTime ?? state.sleepTime,
+            goal: day.totalCigarettes,
+          });
+          return;
+        }
         set({ wakeTime: time });
-        const state = get();
-        if (state.applyScheduleToAllDays) {
-          state.recalculateAllDays();
-        } else {
-          const target = date ?? getTodayString();
-          // Nur bereits eingerichtete Tage neu berechnen
-          if (state.days[target]) state.recalculateReminders(target);
-        }
+        if (get().applyScheduleToAllDays) get().recalculateAllDays();
       },
-      
+
       setSleepTime: (time, date) => {
+        const state = get();
+        if (date && state.days[date]) {
+          const day = state.days[date];
+          state.configureDay(date, {
+            wakeTime: day.wakeTime ?? state.wakeTime,
+            sleepTime: time,
+            goal: day.totalCigarettes,
+          });
+          return;
+        }
         set({ sleepTime: time });
-        const state = get();
-        if (state.applyScheduleToAllDays) {
-          state.recalculateAllDays();
-        } else {
-          const target = date ?? getTodayString();
-          // Nur bereits eingerichtete Tage neu berechnen
-          if (state.days[target]) state.recalculateReminders(target);
-        }
+        if (get().applyScheduleToAllDays) get().recalculateAllDays();
       },
-      
+
       setDailyCigarettes: (count, date) => {
-        set({ dailyCigarettes: count });
         const state = get();
-        if (state.applyScheduleToAllDays) {
-          state.recalculateAllDays();
-        } else {
-          const target = date ?? getTodayString();
-          // Nur bereits eingerichtete Tage neu berechnen
-          if (state.days[target]) state.recalculateReminders(target);
+        if (date && state.days[date]) {
+          const day = state.days[date];
+          state.configureDay(date, {
+            wakeTime: day.wakeTime ?? state.wakeTime,
+            sleepTime: day.sleepTime ?? state.sleepTime,
+            goal: count,
+          });
+          return;
         }
+        set({ dailyCigarettes: count });
+        if (get().applyScheduleToAllDays) get().recalculateAllDays();
       },
       
       setThemeMode: (mode) => {
