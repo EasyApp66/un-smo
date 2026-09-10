@@ -12,6 +12,8 @@ interface ScrollWheelProps {
   format?: (value: number) => string;
   textClass?: string;
   selectedTextClass?: string;
+  /** Endlos-Rad: Werte wiederholen sich in beide Richtungen */
+  loop?: boolean;
 }
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
