@@ -86,8 +86,7 @@ Deno.serve(async (req) => {
 
     const remaining = slots.length - d.index - 1;
     const payload = JSON.stringify({
-      title: 'UN-SMO',
-      body: 'Du kannst jetzt eine rauchen.',
+      title: 'Du kannst jetzt eine rauchen.',
       tag: `un-smo-${d.key}`,
     });
 
