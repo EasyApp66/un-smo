@@ -93,7 +93,7 @@ const Index = () => {
               <div className="flex items-baseline gap-1">
                 <span className="text-[18px] font-bold text-foreground leading-none">{extraFeedback}</span>
                 <span className="text-[11px] font-semibold text-muted-foreground leading-none">
-                  Extra{extraFeedback !== 1 ? 's' : ''}
+                  Extra-Zigarette{extraFeedback !== 1 ? 'n' : ''}
                 </span>
               </div>
             </div>
