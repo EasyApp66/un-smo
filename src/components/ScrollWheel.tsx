@@ -164,11 +164,12 @@ const ScrollWheel = ({
             : { paddingTop: pad, paddingBottom: pad }),
         }}
       >
-        {values.map((v, i) => {
-          const isSelected = i === index;
+        {items.map((v, i) => {
+          const isSelected = loop ? ((i % len) + len) % len === index : i === index;
           return (
             <div
-              key={v}
+              key={i}
+
               style={horizontal ? { width: itemSize, flex: '0 0 auto' } : { height: itemSize }}
               className={`flex items-center justify-center snap-center transition-colors duration-150 ${
                 isSelected ? selectedTextClass : textClass
