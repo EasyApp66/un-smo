@@ -424,60 +424,57 @@ export const useAppStore = create<AppState>()(
         const state = get();
         if (state.days[date]) return;
 
-        const goal = state.dailyCigarettes;
-        const reminders = generateReminders(state.wakeTime, state.sleepTime, goal);
-
-        set((s) => ({
-          dailyCigarettes: goal,
-          days: {
-            ...s.days,
-            [date]: {
-              date,
-              cigarettesSmoked: 0,
-              totalCigarettes: goal,
-              reminders,
-            },
-          },
-        }));
+        state.configureDay(date, {
+          wakeTime: state.wakeTime,
+          sleepTime: state.sleepTime,
+          goal: state.dailyCigarettes,
+        });
       },
-      
+
+      configureDay: (date, cfg) => {
+        set((s) => {
+          const existingDay = s.days[date];
+          const generated = generateReminders(cfg.wakeTime, cfg.sleepTime, cfg.goal);
+
+          const extras = existingDay?.reminders.filter((r) => r.extra) || [];
+          const completedCount =
+            existingDay?.reminders.filter((r) => r.completed && !r.extra).length || 0;
+          const skippedTimes =
+            existingDay?.reminders.filter((r) => r.skipped && !r.extra).map((r) => r.time) || [];
+
+          const updatedReminders = [
+            ...generated.map((r, i) => ({
+              ...r,
+              completed: i < completedCount,
+              skipped: skippedTimes.includes(r.time) ? true : undefined,
+            })),
+            ...extras,
+          ];
+
+          return {
+            days: {
+              ...s.days,
+              [date]: {
+                date,
+                cigarettesSmoked: updatedReminders.filter((r) => r.completed).length,
+                totalCigarettes: cfg.goal,
+                wakeTime: cfg.wakeTime,
+                sleepTime: cfg.sleepTime,
+                reminders: updatedReminders,
+              },
+            },
+          };
+        });
+      },
+
       recalculateReminders: (date) => {
         const state = get();
-        const reminders = generateReminders(
-          state.wakeTime,
-          state.sleepTime,
-          state.dailyCigarettes
-        );
-        
-        const existingDay = state.days[date];
-        const extras = existingDay?.reminders.filter((r) => r.extra) || [];
-        const completedIds = existingDay?.reminders
-          .filter((r) => r.completed && !r.extra)
-          .map((r) => r.id) || [];
-        const skippedTimes =
-          existingDay?.reminders.filter((r) => r.skipped && !r.extra).map((r) => r.time) || [];
-
-        // Behalte den Abschluss-Status für bestehende Erinnerungen
-        const updatedReminders = [
-          ...reminders.map((r, i) => ({
-            ...r,
-            completed: i < completedIds.length,
-            skipped: skippedTimes.includes(r.time) ? true : undefined,
-          })),
-          ...extras,
-        ];
-        
-        set((s) => ({
-          days: {
-            ...s.days,
-            [date]: {
-              date,
-              cigarettesSmoked: updatedReminders.filter((r) => r.completed).length,
-              totalCigarettes: s.dailyCigarettes,
-              reminders: updatedReminders,
-            },
-          },
-        }));
+        const day = state.days[date];
+        state.configureDay(date, {
+          wakeTime: day?.wakeTime ?? state.wakeTime,
+          sleepTime: day?.sleepTime ?? state.sleepTime,
+          goal: day?.totalCigarettes ?? state.dailyCigarettes,
+        });
       },
 
       recalculateAllDays: () => {
