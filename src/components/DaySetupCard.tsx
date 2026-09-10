@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
 import TimePicker from './TimePicker';
@@ -10,9 +10,6 @@ interface DaySetupCardProps {
   selectedDate: string;
   onComplete: () => void;
   isEditing?: boolean;
-  /** Vorgeschlagenes Ziel für noch nicht eingerichtete Tage (nur lokal) */
-  goalValue?: number;
-  onGoalChange?: (value: number) => void;
 }
 
 const toMin = (t: string) => {
@@ -30,48 +27,65 @@ const fmtGap = (mins: number) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-const DaySetupCard = ({
-  selectedDate,
-  onComplete,
-  isEditing = false,
-  goalValue,
-  onGoalChange,
-}: DaySetupCardProps) => {
+const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupCardProps) => {
   const {
-    wakeTime,
-    sleepTime,
-    dailyCigarettes: storedGoal,
-    setWakeTime,
-    setSleepTime,
-    setDailyCigarettes,
+    wakeTime: defaultWake,
+    sleepTime: defaultSleep,
+    days,
+    configureDay,
+    getSuggestedGoal,
   } = useAppStore();
 
-  const dailyCigarettes = goalValue ?? storedGoal;
-  const changeGoal = (v: number) =>
-    onGoalChange ? onGoalChange(v) : setDailyCigarettes(v, selectedDate);
+  const dayData = days[selectedDate];
+
+  // Jeder Tag hat seinen eigenen Entwurf – andere Tage bleiben unberührt.
+  const initial = useMemo(
+    () => ({
+      wake: dayData?.wakeTime ?? defaultWake,
+      sleep: dayData?.sleepTime ?? defaultSleep,
+      goal: dayData?.totalCigarettes ?? getSuggestedGoal(selectedDate),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate, dayData?.wakeTime, dayData?.sleepTime, dayData?.totalCigarettes]
+  );
+
+  const [wake, setWake] = useState(initial.wake);
+  const [sleep, setSleep] = useState(initial.sleep);
+  const [goal, setGoal] = useState(initial.goal);
+
+  useEffect(() => {
+    setWake(initial.wake);
+    setSleep(initial.sleep);
+    setGoal(initial.goal);
+  }, [initial]);
 
   // Beim Bearbeiten standardmäßig eingeklappt
   const [expanded, setExpanded] = useState(!isEditing);
   const isOpen = !isEditing || expanded;
 
+  useEffect(() => {
+    if (isEditing) setExpanded(false);
+  }, [selectedDate, isEditing]);
+
   const handleSave = () => {
+    configureDay(selectedDate, { wakeTime: wake, sleepTime: sleep, goal });
     onComplete();
     if (isEditing) setExpanded(false);
   };
 
   const schedule = useMemo(() => {
-    const wake = toMin(wakeTime);
-    let sleep = toMin(sleepTime);
-    if (sleep <= wake) sleep += 1440;
-    const awake = sleep - wake;
-    if (dailyCigarettes <= 0) return { interval: 0, first: null as string | null, last: null as string | null };
-    const interval = awake / dailyCigarettes;
+    const w = toMin(wake);
+    let s = toMin(sleep);
+    if (s <= w) s += 1440;
+    const awake = s - w;
+    if (goal <= 0) return { interval: 0, first: null as string | null, last: null as string | null };
+    const interval = awake / goal;
     return {
       interval,
-      first: fmt(wake + interval / 2),
-      last: fmt(wake + interval * (dailyCigarettes - 1) + interval / 2),
+      first: fmt(w + interval / 2),
+      last: fmt(w + interval * (goal - 1) + interval / 2),
     };
-  }, [wakeTime, sleepTime, dailyCigarettes]);
+  }, [wake, sleep, goal]);
 
   const formatDate = (dateString: string) => {
     const today = new Date();
@@ -114,8 +128,8 @@ const DaySetupCard = ({
               </h3>
             )}
             <div className="grid grid-cols-[1.5fr_0.7fr_1fr] gap-2 items-end">
-              <Stat value={`${wakeTime} – ${sleepTime}`} label="Wach" />
-              <Stat value={`${dailyCigarettes}`} label="Ziel" />
+              <Stat value={`${wake} – ${sleep}`} label="Wach" />
+              <Stat value={`${goal}`} label="Ziel" />
               <Stat value={schedule.interval ? fmtGap(schedule.interval) : '–'} label="Abstand" />
             </div>
           </div>
@@ -145,24 +159,24 @@ const DaySetupCard = ({
           <div className="overflow-hidden min-h-0">
             <div className="pt-5">
               <div className="grid grid-cols-2 gap-3 mb-5">
-                <TimePicker value={wakeTime} onChange={(v) => setWakeTime(v, selectedDate)} label="Aufstehzeit" />
-                <TimePicker value={sleepTime} onChange={(v) => setSleepTime(v, selectedDate)} label="Schlafenszeit" />
+                <TimePicker value={wake} onChange={setWake} label="Aufstehzeit" />
+                <TimePicker value={sleep} onChange={setSleep} label="Schlafenszeit" />
               </div>
 
               <WheelPicker
-                value={dailyCigarettes}
+                value={goal}
                 min={0}
                 max={60}
                 step={1}
-                onChange={changeGoal}
+                onChange={setGoal}
                 label="Zigaretten pro Tag"
                 horizontal
                 viewportWidth={280}
               />
 
               <p className="mt-3 mb-5 text-center text-[13px] text-muted-foreground tabular-nums">
-                {dailyCigarettes > 0 && schedule.first
-                  ? `${dailyCigarettes} Zigaretten · alle ${fmtGap(schedule.interval)} · erste um ${schedule.first}, letzte um ${schedule.last}`
+                {goal > 0 && schedule.first
+                  ? `${goal} Zigaretten · alle ${fmtGap(schedule.interval)} · erste um ${schedule.first}, letzte um ${schedule.last}`
                   : 'Kein Tagesziel gesetzt'}
               </p>
 
