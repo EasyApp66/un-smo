@@ -15,6 +15,9 @@ export interface DayData {
   date: string; // YYYY-MM-DD
   cigarettesSmoked: number;
   totalCigarettes: number;
+  /** Eigener Zeitplan des Tages – unabhängig von allen anderen Tagen */
+  wakeTime?: string;
+  sleepTime?: string;
   reminders: ReminderTime[];
 }
 
@@ -55,6 +58,11 @@ interface AppState {
   skipReminder: (date: string, reminderId: string) => void;
   deleteReminder: (date: string, reminderId: string) => void;
   initializeDay: (date: string) => void;
+  /** Richtet genau einen Tag ein bzw. aktualisiert ihn – ohne andere Tage zu verändern */
+  configureDay: (
+    date: string,
+    cfg: { wakeTime: string; sleepTime: string; goal: number }
+  ) => void;
   getTodayData: () => DayData | null;
   recalculateReminders: (date: string) => void;
   recalculateAllDays: () => void;
