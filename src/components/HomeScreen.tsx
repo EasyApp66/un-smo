@@ -84,12 +84,7 @@ const HomeScreen = () => {
       <div className="flex-1">
         {needsSetup ? (
           <div className="pt-1">
-            <DaySetupCard
-              selectedDate={selectedDate}
-              onComplete={handleDaySetupComplete}
-              goalValue={activeDraft ?? undefined}
-              onGoalChange={handleGoalDraft}
-            />
+            <DaySetupCard selectedDate={selectedDate} onComplete={handleDaySetupComplete} />
           </div>
         ) : (
           <>
