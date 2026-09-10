@@ -1,5 +1,5 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Check, Plus, Ban, ChevronDown } from 'lucide-react';
+import { Check, Ban, ChevronDown } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
@@ -108,14 +108,8 @@ const ReminderRow = memo(
                 isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'
               }`}
             >
-              {reminder.time}
+            {reminder.time}
             </span>
-            {reminder.extra && (
-              <span className="flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                <Plus className="w-3 h-3" strokeWidth={2.5} />
-                Extra
-              </span>
-            )}
           </span>
 
           {/* Restzeit rechts neben den Knöpfen */}
