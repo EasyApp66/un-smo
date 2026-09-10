@@ -15,24 +15,23 @@ const ExtraCounterCard = ({ dayData }: ExtraCounterCardProps) => {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="surface-card px-4 py-3 flex items-center justify-center gap-5"
+      className="surface-card px-5 py-4 flex items-center justify-center gap-6"
     >
       <span className="flex items-baseline gap-2">
-        <span className="num text-2xl font-extrabold leading-none text-destructive">{extras}</span>
-        <span className="text-[13px] font-medium text-muted-foreground">
-          {extras === 1 ? 'Extra' : 'Extras'}
-        </span>
+        <span className="num t-32 text-destructive">{extras}</span>
+        <span className="t-14 text-subtle">{extras === 1 ? 'Extra' : 'Extras'}</span>
       </span>
 
-      <span className="h-5 w-px bg-border" aria-hidden />
+      <span className="h-6 w-px bg-border" aria-hidden />
 
       <span className="flex items-baseline gap-2">
-        <span className="num text-2xl font-extrabold leading-none text-primary">{skipped}</span>
-        <span className="text-[13px] font-medium text-muted-foreground">übersprungen</span>
+        <span className="num t-32" style={{ color: 'hsl(var(--success))' }}>
+          {skipped}
+        </span>
+        <span className="t-14 text-subtle">übersprungen</span>
       </span>
     </motion.div>
   );
 };
-
 
 export default ExtraCounterCard;

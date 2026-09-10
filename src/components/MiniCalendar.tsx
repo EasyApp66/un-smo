@@ -67,14 +67,17 @@ const DayButton = ({
     onClick={() => onSelect(day.date)}
     aria-label={day.date}
     aria-pressed={isSelected}
-    className={`relative flex flex-col items-center justify-center h-[78px] rounded-2xl [transition:background-color_180ms_ease,opacity_180ms_ease] bg-transparent active:bg-muted/40 ${
-      !isSelected && day.isFuture ? 'opacity-45' : ''
-    }`}
+    className={`relative flex flex-col items-center justify-center h-[78px] rounded-md [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+      isSelected ? 'bg-primary' : 'bg-transparent'
+    } ${!isSelected && day.isFuture ? 'opacity-45' : ''}`}
   >
-    <span className="text-[13px] font-bold uppercase tracking-wide leading-none mb-1 text-foreground/70">
+    <span
+      className={`t-12 uppercase leading-none mb-1 ${
+        isSelected ? 'text-primary-foreground/70' : 'text-subtle'
+      }`}
+    >
       {day.weekday}
     </span>
-
 
     <span className="relative flex items-center justify-center" style={{ width: RING, height: RING }}>
       {day.progress !== null && (
@@ -85,7 +88,7 @@ const DayButton = ({
             r={R}
             fill="none"
             strokeWidth={2}
-            className="stroke-muted-foreground/20"
+            stroke="hsl(var(--border) / 0.6)"
           />
           <circle
             cx={RING / 2}
@@ -96,22 +99,26 @@ const DayButton = ({
             strokeLinecap="round"
             strokeDasharray={C}
             strokeDashoffset={C * (1 - day.progress)}
-            className={day.overGoal ? 'stroke-destructive' : 'stroke-primary'}
+            stroke={day.overGoal ? 'hsl(var(--destructive))' : 'hsl(var(--success))'}
           />
         </svg>
       )}
-      <span className="relative text-[25px] font-semibold tabular-nums leading-none text-foreground">
+      <span
+        className={`relative t-20 num leading-none ${
+          isSelected ? 'text-primary-foreground' : 'text-foreground'
+        }`}
+      >
         {day.dayNumber}
       </span>
     </span>
 
     <span
-      className={`mt-1.5 rounded-full ${
-        isSelected
-          ? 'h-2 w-2 bg-primary'
-          : day.isToday
-            ? 'h-1.5 w-1.5 bg-primary'
-            : 'h-1.5 w-1.5 bg-transparent'
+      className={`mt-1.5 h-1.5 w-1.5 rounded-pill ${
+        day.isToday
+          ? isSelected
+            ? 'bg-primary-foreground'
+            : 'bg-primary'
+          : 'bg-transparent'
       }`}
     />
   </button>
@@ -196,13 +203,13 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   const showTodayButton = weekOffset !== 0;
 
   return (
-    <div className="px-3 py-2 select-none">
-      <div className="flex items-center justify-between px-1 mb-2 h-8">
-        <span className="text-[17px] font-semibold text-foreground capitalize">{monthLabel}</span>
+    <div className="px-3 py-4 select-none">
+      <div className="flex items-center justify-between px-1 mb-3 h-8">
+        <span className="t-16 font-medium text-foreground capitalize">{monthLabel}</span>
         {showTodayButton && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.18, ease: EASE }}
             type="button"
             onClick={() => {
@@ -210,7 +217,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
               x.set(0);
               onDateSelect(today);
             }}
-            className="px-3 h-8 rounded-full bg-primary/10 text-primary text-[13px] font-semibold"
+            className="px-4 h-8 rounded-pill bg-primary/12 text-primary t-12 font-medium"
           >
             Heute
           </motion.button>
