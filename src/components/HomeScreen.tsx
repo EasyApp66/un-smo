@@ -126,7 +126,7 @@ const HomeScreen = () => {
           <>
             {dayData && (
               <div className="px-4 pt-2">
-                <CoachCard dayData={dayData} isToday={selectedDate === formatLocalDate()} />
+                <CoachCard dayData={dayData} />
               </div>
             )}
             <div className="px-4 pt-1">
