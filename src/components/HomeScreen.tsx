@@ -51,23 +51,8 @@ const HomeScreen = () => {
     }
   };
 
-  const handleGoalDraft = (value: number) => {
-    setDraftFor(selectedDate);
-    setDraftGoal(value);
-  };
-
-  const handleDaySetupComplete = () => {
-    if (days[selectedDate]) {
-      recalculateReminders(selectedDate);
-    } else {
-      if (activeDraft !== null && activeDraft !== dailyCigarettes) {
-        setDailyCigarettes(activeDraft, selectedDate);
-      }
-      initializeDay(selectedDate);
-      setDraftGoal(null);
-      setDraftFor(null);
-    }
-  };
+  // Das Speichern übernimmt DaySetupCard – nur für diesen einen Tag.
+  const handleDaySetupComplete = () => {};
 
   const needsSetup = !dayData;
 
