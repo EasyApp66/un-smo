@@ -153,7 +153,7 @@ const ReminderRow = memo(
               >
                 <span
                   className={`w-9 h-9 rounded-pill flex items-center justify-center [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
-                    isSkipped ? 'bg-muted text-muted-foreground' : 'border border-border/60'
+                    isSkipped ? 'bg-muted text-muted-foreground' : 'border border-subtle/40'
                   }`}
                 >
                   {isSkipped && <Ban className="w-4 h-4" strokeWidth={1.75} />}
@@ -175,7 +175,7 @@ const ReminderRow = memo(
                 style={
                   reminder.completed
                     ? { backgroundColor: 'hsl(var(--success))' }
-                    : { border: '1px solid hsl(var(--border) / 0.6)' }
+                    : { border: '1px solid hsl(var(--subtle) / 0.4)' }
                 }
               >
                 {reminder.completed && (

@@ -247,7 +247,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                       disabled={pushBusy}
                       onClick={handleTogglePush}
                       aria-label="Push-Meldungen umschalten"
-                      className={pushBusy ? 'opacity-60' : ''}
+                      className={`shrink-0 flex items-center ${pushBusy ? 'opacity-60' : ''}`}
                     >
                       <Toggle on={pushEnabled} />
                     </button>
