@@ -258,7 +258,9 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
 
   const rows = sortedReminders.map((r, i) => ({ r, i }));
   const completedRows = rows.filter(({ r }) => r.completed);
-  const openRows = rows.filter(({ r }) => !r.completed);
+  const skippedRows = rows.filter(({ r }) => !r.completed && r.skipped);
+  const openRows = rows.filter(({ r }) => !r.completed && !r.skipped);
+
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
