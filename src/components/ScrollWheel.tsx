@@ -12,6 +12,8 @@ interface ScrollWheelProps {
   format?: (value: number) => string;
   textClass?: string;
   selectedTextClass?: string;
+  /** Endlos-Rad: Werte wiederholen sich in beide Richtungen */
+  loop?: boolean;
 }
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -31,6 +33,7 @@ const ScrollWheel = ({
   format = (v) => v.toString(),
   textClass = 'text-muted-foreground/60',
   selectedTextClass = 'text-primary',
+  loop = false,
 }: ScrollWheelProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const interacting = useRef(false);
@@ -41,20 +44,36 @@ const ScrollWheel = ({
 
   const pad = Math.max(0, (viewport - itemSize) / 2);
 
+  const len = values.length;
+  const repeats = loop
+    ? Math.max(9, Math.ceil((viewport / itemSize) * 3 / Math.max(1, len)) * 2 + 1)
+    : 1;
+  const items = loop
+    ? Array.from({ length: len * repeats }, (_, i) => values[i % len])
+    : values;
+  const midStart = loop ? Math.floor(repeats / 2) * len : 0;
+
   // Position nachziehen, wenn der Wert von außen geändert wird
   useEffect(() => {
     lastIndex.current = index;
     const el = ref.current;
     if (!el || interacting.current) return;
-    const target = index * itemSize;
     const current = horizontal ? el.scrollLeft : el.scrollTop;
+    let targetIndex = index;
+    if (loop) {
+      const cIdx = mounted.current ? Math.round(current / itemSize) : midStart;
+      let delta = (((index - (((cIdx % len) + len) % len)) % len) + len) % len;
+      if (delta > len / 2) delta -= len;
+      targetIndex = cIdx + delta;
+    }
+    const target = targetIndex * itemSize;
     if (Math.abs(current - target) < 1) return;
     el.scrollTo({
       [horizontal ? 'left' : 'top']: target,
       behavior: mounted.current ? 'smooth' : 'auto',
     } as ScrollToOptions);
     mounted.current = true;
-  }, [index, itemSize, horizontal]);
+  }, [index, itemSize, horizontal, loop, len, midStart]);
 
   const handleScroll = () => {
     interacting.current = true;
@@ -69,7 +88,18 @@ const ScrollWheel = ({
       const el = ref.current;
       if (!el) return;
       const offset = horizontal ? el.scrollLeft : el.scrollTop;
-      const i = clamp(Math.round(offset / itemSize), 0, values.length - 1);
+      const raw = Math.round(offset / itemSize);
+      const i = loop ? ((raw % len) + len) % len : clamp(raw, 0, len - 1);
+
+      // Endlos: zurück in den mittleren Block springen, wenn die Ränder nahen
+      if (loop && (raw < len || raw >= len * (repeats - 1))) {
+        const shift = (midStart - Math.floor(raw / len) * len) * itemSize;
+        if (shift !== 0) {
+          if (horizontal) el.scrollLeft = offset + shift;
+          else el.scrollTop = offset + shift;
+        }
+      }
+
       if (i !== lastIndex.current) {
         lastIndex.current = i;
         tick();
@@ -77,6 +107,7 @@ const ScrollWheel = ({
       }
     });
   };
+
 
   useEffect(
     () => () => {
@@ -133,11 +164,12 @@ const ScrollWheel = ({
             : { paddingTop: pad, paddingBottom: pad }),
         }}
       >
-        {values.map((v, i) => {
-          const isSelected = i === index;
+        {items.map((v, i) => {
+          const isSelected = loop ? ((i % len) + len) % len === index : i === index;
           return (
             <div
-              key={v}
+              key={i}
+
               style={horizontal ? { width: itemSize, flex: '0 0 auto' } : { height: itemSize }}
               className={`flex items-center justify-center snap-center transition-colors duration-150 ${
                 isSelected ? selectedTextClass : textClass

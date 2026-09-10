@@ -71,9 +71,10 @@ const DayButton = ({
       !isSelected && day.isFuture ? 'opacity-45' : ''
     }`}
   >
-    <span className="text-[10px] font-semibold uppercase tracking-wide leading-none mb-1 text-muted-foreground">
+    <span className="text-[13px] font-bold uppercase tracking-wide leading-none mb-1 text-foreground/70">
       {day.weekday}
     </span>
+
 
     <span className="relative flex items-center justify-center" style={{ width: RING, height: RING }}>
       {day.progress !== null && (

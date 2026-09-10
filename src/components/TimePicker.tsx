@@ -44,6 +44,7 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
           viewport={viewport}
           crossSize={crossSize}
           format={(v) => pad(v)}
+          loop
         />
         <span className={`font-bold text-muted-foreground ${compact ? 'text-lg' : 'text-2xl'}`}>:</span>
         <ScrollWheel
@@ -54,7 +55,9 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
           viewport={viewport}
           crossSize={crossSize}
           format={(v) => pad(v)}
+          loop
         />
+
       </div>
     </motion.div>
   );

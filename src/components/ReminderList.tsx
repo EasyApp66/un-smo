@@ -183,6 +183,8 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showSkipped, setShowSkipped] = useState(false);
+
   const reduceMotion = !!useReducedMotion();
 
   useEffect(() => {
@@ -258,7 +260,9 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
 
   const rows = sortedReminders.map((r, i) => ({ r, i }));
   const completedRows = rows.filter(({ r }) => r.completed);
-  const openRows = rows.filter(({ r }) => !r.completed);
+  const skippedRows = rows.filter(({ r }) => !r.completed && r.skipped);
+  const openRows = rows.filter(({ r }) => !r.completed && !r.skipped);
+
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
@@ -307,6 +311,33 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
           {showCompleted && <div className="pt-2">{completedRows.map(renderRow)}</div>}
         </div>
       )}
+
+      {skippedRows.length > 0 && (
+        <div className="mb-2">
+          <button
+            type="button"
+            onClick={() => {
+              setShowSkipped((v) => !v);
+              tap();
+            }}
+            aria-expanded={showSkipped}
+            className="surface-card w-full flex items-center justify-between px-4 py-3"
+          >
+            <span className="text-sm font-medium text-muted-foreground">
+              {skippedRows.length} übersprungen
+            </span>
+            <ChevronDown
+              className={`w-5 h-5 text-muted-foreground transition-transform duration-150 ${
+                showSkipped ? 'rotate-180' : ''
+              }`}
+              strokeWidth={2.5}
+            />
+          </button>
+
+          {showSkipped && <div className="pt-2">{skippedRows.map(renderRow)}</div>}
+        </div>
+      )}
+
 
       <AnimatePresence mode="popLayout" initial={false}>
         {openRows.map(renderRow)}
