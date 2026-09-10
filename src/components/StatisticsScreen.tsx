@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
 import { useAppStore, GOAL_FLOOR, suggestGoal } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingDown, Cigarette, Calendar, Target } from 'lucide-react';
 import { useMemo } from 'react';
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 const StatisticsScreen = () => {
   const { days, dailyCigarettes, setDailyCigarettes } = useAppStore();
@@ -29,15 +31,15 @@ const StatisticsScreen = () => {
   const weekData = useMemo(() => {
     const data = [];
     const today = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateString = formatLocalDate(date);
       const dayData = days[dateString];
-      
+
       const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-      
+
       data.push({
         day: dayNames[date.getDay()],
         date: dateString,
@@ -46,14 +48,14 @@ const StatisticsScreen = () => {
         hasData: !!dayData,
       });
     }
-    
+
     return data;
   }, [days, dailyCigarettes]);
 
   // Statistiken berechnen
   const stats = useMemo(() => {
-    const daysWithData = weekData.filter(d => d.hasData);
-    
+    const daysWithData = weekData.filter((d) => d.hasData);
+
     if (daysWithData.length === 0) {
       return {
         totalSmoked: 0,
@@ -68,23 +70,25 @@ const StatisticsScreen = () => {
     const totalSmoked = daysWithData.reduce((sum, d) => sum + d.smoked, 0);
     const totalGoal = daysWithData.reduce((sum, d) => sum + d.goal, 0);
     const avgPerDay = totalSmoked / daysWithData.length;
-    
-    const bestDay = daysWithData.reduce((best, d) => 
-      d.smoked < (best?.smoked ?? Infinity) ? d : best, daysWithData[0]);
-    const worstDay = daysWithData.reduce((worst, d) => 
-      d.smoked > (worst?.smoked ?? -1) ? d : worst, daysWithData[0]);
+
+    const bestDay = daysWithData.reduce(
+      (best, d) => (d.smoked < (best?.smoked ?? Infinity) ? d : best),
+      daysWithData[0]
+    );
+    const worstDay = daysWithData.reduce(
+      (worst, d) => (d.smoked > (worst?.smoked ?? -1) ? d : worst),
+      daysWithData[0]
+    );
 
     // Trend berechnen (erste Hälfte vs zweite Hälfte)
     const half = Math.floor(daysWithData.length / 2);
     const firstHalf = daysWithData.slice(0, half);
     const secondHalf = daysWithData.slice(half);
-    
-    const firstAvg = firstHalf.length > 0 
-      ? firstHalf.reduce((s, d) => s + d.smoked, 0) / firstHalf.length 
-      : 0;
-    const secondAvg = secondHalf.length > 0 
-      ? secondHalf.reduce((s, d) => s + d.smoked, 0) / secondHalf.length 
-      : 0;
+
+    const firstAvg =
+      firstHalf.length > 0 ? firstHalf.reduce((s, d) => s + d.smoked, 0) / firstHalf.length : 0;
+    const secondAvg =
+      secondHalf.length > 0 ? secondHalf.reduce((s, d) => s + d.smoked, 0) / secondHalf.length : 0;
 
     let trend: 'up' | 'down' | 'neutral' = 'neutral';
     if (secondAvg < firstAvg - 0.5) trend = 'down';
@@ -107,30 +111,51 @@ const StatisticsScreen = () => {
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   };
 
+  const Metric = ({
+    icon: Icon,
+    label,
+    children,
+    delay,
+  }: {
+    icon: typeof Cigarette;
+    label: string;
+    children: React.ReactNode;
+    delay: number;
+  }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: EASE, delay }}
+      className="surface-card p-4"
+    >
+      <span className="icon-tile mb-3">
+        <Icon className="w-6 h-6" strokeWidth={1.5} />
+      </span>
+      <p className="t-14 text-subtle">{label}</p>
+      {children}
+    </motion.div>
+  );
 
   return (
-    <div className="min-h-screen bg-background pb-28 safe-top">
-      <div className="px-4 py-4 space-y-4">
+    <div className="min-h-screen bg-background pb-48 safe-top">
+      <div className="px-4 py-4 space-y-[10px]">
         {/* Empfehlung */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl p-4 border border-primary/30 shadow-sm"
+          transition={{ duration: 0.2, ease: EASE }}
+          className="surface-card surface-card-lg p-5"
         >
-          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-            Ziel für morgen
-          </p>
-          <p className="text-4xl font-bold text-primary tabular-nums leading-none mb-2">
-            {suggestion}
-          </p>
-          <p className="text-sm text-muted-foreground mb-3">{suggestionText}</p>
-          <p className="text-[11px] text-muted-foreground mb-3">
+          <p className="t-12 uppercase tracking-[0.08em] text-subtle mb-1">Ziel für morgen</p>
+          <p className="t-36 num text-foreground mb-2">{suggestion}</p>
+          <p className="t-14 text-muted-foreground mb-2">{suggestionText}</p>
+          <p className="t-12 text-subtle mb-4">
             Das Ziel sinkt nur nach unten – bis mindestens {GOAL_FLOOR} pro Tag.
           </p>
           <button
             type="button"
             onClick={() => setDailyCigarettes(suggestion, tomorrowDate)}
-            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm"
+            className="btn-pill btn-primary w-full"
           >
             Ziel übernehmen
           </button>
@@ -138,33 +163,40 @@ const StatisticsScreen = () => {
 
         {/* Wochenübersicht Chart */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl p-4 border border-border shadow-sm"
+          transition={{ duration: 0.2, ease: EASE, delay: 0.02 }}
+          className="surface-card p-5"
         >
-          <h2 className="text-sm font-semibold text-foreground mb-4">Wochenübersicht</h2>
-          
+          <h2 className="t-18 text-foreground mb-4">Wochenübersicht</h2>
+
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weekData} barCategoryGap="20%">
-                <XAxis 
-                  dataKey="day" 
-                  axisLine={false} 
+              <BarChart data={weekData} barCategoryGap="30%">
+                <CartesianGrid
+                  vertical={false}
+                  stroke="hsl(var(--border) / 0.2)"
+                  strokeWidth={1}
+                />
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
                   tickLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  tick={{ fill: 'hsl(var(--subtle))', fontSize: 12 }}
                 />
                 <YAxis hide />
-                <Bar dataKey="smoked" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="smoked" radius={[8, 8, 0, 0]}>
                   {weekData.map((entry, index) => (
-                    <Cell 
+                    <Cell
                       key={`cell-${index}`}
-                      fill={entry.hasData 
-                        ? entry.smoked <= entry.goal 
-                          ? 'hsl(var(--primary))' 
-                          : 'hsl(var(--destructive))'
-                        : 'hsl(var(--muted))'
+                      fill={
+                        entry.hasData
+                          ? entry.smoked <= entry.goal
+                            ? 'hsl(var(--success))'
+                            : 'hsl(var(--primary))'
+                          : 'hsl(var(--border))'
                       }
-                      opacity={entry.hasData ? 1 : 0.3}
+                      opacity={entry.hasData ? 1 : 0.4}
                     />
                   ))}
                 </Bar>
@@ -173,108 +205,85 @@ const StatisticsScreen = () => {
           </div>
         </motion.div>
 
-        {/* Statistik Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-card rounded-2xl p-4 border border-border shadow-sm"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Cigarette className="w-4 h-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Gesamt geraucht</p>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stats.totalSmoked}</p>
-          </motion.div>
+        {/* Kennzahlen im Bento-Raster */}
+        <div className="grid grid-cols-2 gap-[10px]">
+          <Metric icon={Cigarette} label="Gesamt geraucht" delay={0.04}>
+            <p className="t-32 num text-foreground">{stats.totalSmoked}</p>
+          </Metric>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="bg-card rounded-2xl p-4 border border-border shadow-sm"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Ø pro Tag</p>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stats.avgPerDay}</p>
-          </motion.div>
+          <Metric icon={Calendar} label="Ø pro Tag" delay={0.06}>
+            <p className="t-32 num text-foreground">{stats.avgPerDay}</p>
+          </Metric>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-card rounded-2xl p-4 border border-border shadow-sm"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="w-4 h-4 text-green-500" />
-              <p className="text-xs text-muted-foreground">Eingespart</p>
-            </div>
-            <p className="text-2xl font-bold text-green-500">{stats.savedCigarettes}</p>
-          </motion.div>
+          <Metric icon={Target} label="Eingespart" delay={0.08}>
+            <p className="t-32 num" style={{ color: 'hsl(var(--success))' }}>
+              {stats.savedCigarettes}
+            </p>
+          </Metric>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="bg-card rounded-2xl p-4 border border-border shadow-sm"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown className="w-4 h-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Bester Tag</p>
-            </div>
+          <Metric icon={TrendingDown} label="Bester Tag" delay={0.1}>
             {stats.bestDay ? (
-              <p className="text-lg font-bold text-foreground">
-                {stats.bestDay.smoked} <span className="text-sm font-normal text-muted-foreground">({formatDate(stats.bestDay.date)})</span>
+              <p className="flex items-baseline gap-1">
+                <span className="t-32 num text-foreground">{stats.bestDay.smoked}</span>
+                <span className="t-14 num text-subtle">({formatDate(stats.bestDay.date)})</span>
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground">Keine Daten</p>
+              <p className="t-14 text-subtle">Keine Daten</p>
             )}
-          </motion.div>
+          </Metric>
         </div>
 
         {/* Tägliche Details */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-card rounded-2xl p-4 border border-border shadow-sm"
+          transition={{ duration: 0.2, ease: EASE, delay: 0.12 }}
+          className="surface-card p-5"
         >
-          <h2 className="text-sm font-semibold text-foreground mb-3">Ziel &amp; erreicht pro Tag</h2>
-          
-          <div className="space-y-2">
-            {weekData.map((day, index) => (
-              <div 
+          <h2 className="t-18 text-foreground mb-3">Ziel &amp; erreicht pro Tag</h2>
+
+          <div>
+            {weekData.map((day) => (
+              <div
                 key={day.date}
-                className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                className="flex items-center justify-between py-3 border-b border-border/60 last:border-0"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-base font-bold text-foreground w-8">{day.day}</span>
-                  <span className="text-xs text-muted-foreground tabular-nums">{formatDate(day.date)}</span>
+                  <span className="t-16 font-medium text-foreground w-8">{day.day}</span>
+                  <span className="t-12 num text-subtle">{formatDate(day.date)}</span>
                 </div>
-                
+
                 {day.hasData ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all ${
-                          day.smoked <= day.goal ? 'bg-primary' : 'bg-destructive'
-                        }`}
-                        style={{ width: `${Math.min((day.smoked / day.goal) * 100, 100)}%` }}
+                  <div className="flex items-center gap-3">
+                    <div className="w-20 h-1.5 bg-border rounded-pill overflow-hidden">
+                      <div
+                        className="h-full rounded-pill"
+                        style={{
+                          width: `${Math.min((day.smoked / day.goal) * 100, 100)}%`,
+                          backgroundColor:
+                            day.smoked <= day.goal
+                              ? 'hsl(var(--success))'
+                              : 'hsl(var(--destructive))',
+                        }}
                       />
                     </div>
-                    <span className="flex items-baseline gap-1 tabular-nums">
-                      <span className={`text-base font-bold ${
-                        day.smoked <= day.goal ? 'text-foreground' : 'text-destructive'
-                      }`}>
+                    <span className="flex items-baseline gap-1 num">
+                      <span
+                        className="t-16 font-medium"
+                        style={{
+                          color:
+                            day.smoked <= day.goal
+                              ? 'hsl(var(--foreground))'
+                              : 'hsl(var(--destructive))',
+                        }}
+                      >
                         {day.smoked}
                       </span>
-                      <span className="text-sm text-muted-foreground">/ {day.goal} Ziel</span>
+                      <span className="t-14 text-subtle">/ {day.goal} Ziel</span>
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs text-muted-foreground">Keine Daten</span>
+                  <span className="t-12 text-subtle">Keine Daten</span>
                 )}
               </div>
             ))}
