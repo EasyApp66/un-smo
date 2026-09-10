@@ -177,7 +177,7 @@ export const applyTheme = (mode: ThemeMode) => {
   const dark = resolveIsDark(mode);
   document.documentElement.classList.toggle('dark', dark);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', dark ? '#1C1C1E' : '#FAFCFA');
+  if (meta) meta.setAttribute('content', dark ? '#000000' : '#F5F4F9');
 };
 
 // Systemwechsel live übernehmen
