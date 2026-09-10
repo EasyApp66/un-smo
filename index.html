@@ -8,24 +8,46 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="UN-SMO" />
-    <meta name="theme-color" content="#FAFCFA" />
+    <meta name="theme-color" content="#F5F4F9" />
     <title>UN-SMO</title>
     <meta name="description" content="Private Anwendung." />
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
     <meta name="googlebot" content="noindex, nofollow" />
 
 
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/instrument-sans-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/outfit-300.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/outfit-400.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/outfit-500.woff2" crossorigin />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script>
+      // Theme vor dem ersten Zeichnen setzen – kein Aufblitzen
+      (function () {
+        try {
+          var mode = 'system';
+          var raw = localStorage.getItem('smoke-storage');
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            mode = (parsed && parsed.state && parsed.state.themeMode) || 'system';
+          }
+          var dark =
+            mode === 'dark' ||
+            (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.style.backgroundColor = dark ? '#000000' : '#F5F4F9';
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <style>
-    html, body { background-color: #FAFCFA; }
+    html, body { background-color: #F5F4F9; }
     @media (prefers-color-scheme: dark) {
-      html, body { background-color: #1C1C1E; }
+      html, body { background-color: #000000; }
     }
+    html.dark, html.dark body { background-color: #000000; }
   </style>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
