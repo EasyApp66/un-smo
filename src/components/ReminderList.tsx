@@ -69,7 +69,13 @@ const ReminderRow = memo(
     rowRef,
   }: RowProps) => {
     const isSkipped = !!reminder.skipped;
-    const dimmed = isSkipped ? 'opacity-45' : isPassed ? 'opacity-40' : '';
+    const dimmed = isSkipped
+      ? 'opacity-30'
+      : reminder.completed
+        ? 'opacity-100'
+        : isPassed
+          ? 'opacity-45'
+          : '';
 
     return (
       <motion.div
@@ -84,7 +90,7 @@ const ReminderRow = memo(
           delay: index < 6 ? index * 0.02 : 0,
           layout: { duration: reduceMotion ? 0 : 0.2, ease: EASE },
         }}
-        className="mb-2"
+        className="mb-[10px]"
       >
         <div
           role="button"
@@ -96,22 +102,26 @@ const ReminderRow = memo(
               onToggle(reminder);
             }
           }}
-          className={`surface-card relative w-full cursor-pointer select-none text-left flex items-center justify-between gap-3 active:scale-[0.995] transition-transform duration-150 ${
-            isNext ? 'px-4 py-5 bg-primary/10 border-primary/30' : 'px-4 py-3'
-          } ${reminder.completed ? 'bg-primary/[0.06]' : ''} ${dimmed}`}
-          style={{ transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
+          className={`relative w-full cursor-pointer select-none text-left flex items-center justify-between gap-3 rounded-card [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${
+            isNext ? 'px-4 py-5' : 'surface-card px-4 py-4'
+          } ${dimmed}`}
+          style={
+            isNext
+              ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
+              : undefined
+          }
         >
           {/* Zeit links */}
           <span className="flex items-center gap-2 min-w-0">
             <span
-              className={`num font-semibold ${isNext ? 'text-3xl' : 'text-xl'} ${
-                isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'
+              className={`num t-18 ${isSkipped ? 'line-through' : ''} ${
+                isNext ? '' : reminder.completed ? 'text-foreground/45' : 'text-foreground'
               }`}
             >
-            {reminder.time}
+              {reminder.time}
             </span>
             {reminder.extra && (
-              <span className="shrink-0 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-destructive">
+              <span className="shrink-0 rounded-pill border border-destructive/40 px-2 py-0.5 t-12 uppercase text-destructive">
                 Extra
               </span>
             )}
@@ -120,11 +130,11 @@ const ReminderRow = memo(
           {/* Restzeit rechts neben den Knöpfen */}
           <span className="ml-auto text-right">
             {isNext ? (
-              <Countdown target={target} className="num text-2xl font-semibold text-primary" />
+              <Countdown target={target} className="num t-20" />
             ) : isSkipped ? (
-              <span className="text-[13px] text-muted-foreground">übersprungen</span>
+              <span className="t-14 text-subtle">übersprungen</span>
             ) : !isPassed && !reminder.completed ? (
-              <span className="num text-[13px] text-muted-foreground">{timeUntil}</span>
+              <span className="num t-14 text-subtle">{timeUntil}</span>
             ) : null}
           </span>
 
@@ -139,14 +149,14 @@ const ReminderRow = memo(
                   onSkip?.(reminder.id);
                   tap();
                 }}
-                className="w-11 h-11 rounded-full flex items-center justify-center"
+                className="w-11 h-11 rounded-pill flex items-center justify-center"
               >
                 <span
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-150 ${
-                    isSkipped ? 'bg-muted text-muted-foreground' : 'border border-border'
+                  className={`w-9 h-9 rounded-pill flex items-center justify-center [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+                    isSkipped ? 'bg-muted text-muted-foreground' : 'border border-border/60'
                   }`}
                 >
-                  {isSkipped && <Ban className="w-4 h-4" strokeWidth={2.5} />}
+                  {isSkipped && <Ban className="w-4 h-4" strokeWidth={1.75} />}
                 </span>
               </button>
             )}
@@ -158,15 +168,18 @@ const ReminderRow = memo(
                 e.stopPropagation();
                 onToggle(reminder);
               }}
-              className="w-11 h-11 rounded-full flex items-center justify-center"
+              className="w-11 h-11 rounded-pill flex items-center justify-center"
             >
               <span
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-150 ${
-                  reminder.completed ? 'bg-primary' : 'bg-muted border border-border'
-                }`}
+                className="w-11 h-11 rounded-pill flex items-center justify-center [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1)]"
+                style={
+                  reminder.completed
+                    ? { backgroundColor: 'hsl(var(--success))' }
+                    : { border: '1px solid hsl(var(--border) / 0.6)' }
+                }
               >
                 {reminder.completed && (
-                  <Check className="w-5 h-5 text-primary-foreground" strokeWidth={2.75} />
+                  <Check className="w-5 h-5" strokeWidth={1.75} style={{ color: 'hsl(var(--primary-foreground))' }} />
                 )}
               </span>
             </button>
@@ -263,7 +276,6 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   const smokedCount = doneRows.filter(({ r }) => r.completed).length;
   const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
 
-
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
     const target = targetTime(r.time, minuteTick);
@@ -285,9 +297,9 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   };
 
   return (
-    <div className="px-4 pb-48">
+    <div className="px-4 pt-[10px] pb-48">
       {doneRows.length > 0 && (
-        <div className="mb-2">
+        <div className="mb-[10px]">
           <button
             type="button"
             onClick={() => {
@@ -295,23 +307,21 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
               tap();
             }}
             aria-expanded={showCompleted}
-            className="surface-card w-full flex items-center justify-between px-4 py-3 bg-primary/[0.06]"
+            className="surface-card w-full flex items-center justify-between px-4 py-4"
           >
-            <span className="text-sm font-medium text-primary">
+            <span className="t-14 text-muted-foreground">
               {smokedCount} geraucht
-              {skippedCount > 0 && (
-                <span className="text-muted-foreground"> · {skippedCount} übersprungen</span>
-              )}
+              {skippedCount > 0 && <span className="text-subtle"> · {skippedCount} übersprungen</span>}
             </span>
             <ChevronDown
-              className={`w-5 h-5 text-primary transition-transform duration-150 ${
+              className={`w-5 h-5 text-subtle [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1)] ${
                 showCompleted ? 'rotate-180' : ''
               }`}
-              strokeWidth={2.5}
+              strokeWidth={1.75}
             />
           </button>
 
-          {showCompleted && <div className="pt-2">{doneRows.map(renderRow)}</div>}
+          {showCompleted && <div className="pt-[10px]">{doneRows.map(renderRow)}</div>}
         </div>
       )}
 

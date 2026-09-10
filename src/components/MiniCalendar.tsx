@@ -217,7 +217,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
               x.set(0);
               onDateSelect(today);
             }}
-            className="px-4 h-8 rounded-pill bg-primary/12 text-primary t-12 font-medium"
+            className="px-4 h-8 rounded-pill bg-primary/[0.12] text-primary t-12 font-medium"
           >
             Heute
           </motion.button>
