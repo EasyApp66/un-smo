@@ -1,16 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X,
-  ChevronRight,
-  AlertTriangle,
-  Globe,
-  Sun,
-  Moon,
-  Smartphone,
-  Bell,
-  BellOff,
-  
-} from 'lucide-react';
+import { X, ChevronRight, AlertTriangle, Globe, Sun, Moon, Smartphone, Bell, BellOff } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
@@ -33,6 +22,25 @@ interface SettingsSheetProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+const GroupTitle = ({ children }: { children: React.ReactNode }) => (
+  <h3 className="t-12 font-medium uppercase tracking-[0.08em] text-subtle mb-3">{children}</h3>
+);
+
+const Toggle = ({ on }: { on: boolean }) => (
+  <span
+    className={`w-12 h-7 rounded-pill p-1 shrink-0 [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+      on ? 'bg-primary' : 'bg-border'
+    }`}
+  >
+    <span
+      className="block w-5 h-5 rounded-pill bg-card [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1)]"
+      style={{ transform: on ? 'translateX(20px)' : 'none' }}
+    />
+  </span>
+);
 
 const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   const {
@@ -117,94 +125,65 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: EASE }}
             onClick={onClose}
             className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
           />
-          
+
           {/* Sheet */}
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl z-50 max-h-[90vh] overflow-hidden"
+            transition={{ duration: 0.22, ease: EASE }}
+            className="fixed bottom-0 left-0 right-0 bg-background rounded-t-[32px] z-50 max-h-[90vh] overflow-hidden"
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+              <div className="w-10 h-1 bg-subtle/40 rounded-pill" />
             </div>
-            
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-xl font-bold">Einstellungen</h2>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+
+            {/* Kopfbereich */}
+            <div className="flex items-center justify-between px-4 py-3">
+              <h2 className="t-24 text-foreground">Einstellungen</h2>
+              <button
                 onClick={onClose}
-                className="w-9 h-9 rounded-full bg-muted flex items-center justify-center"
+                aria-label="Schließen"
+                className="w-12 h-12 rounded-md bg-card flex items-center justify-center text-subtle"
               >
-                <X className="w-4 h-4" />
-              </motion.button>
+                <X className="w-5 h-5" strokeWidth={1.75} />
+              </button>
             </div>
-            
-            {/* Content */}
-            <div className="overflow-y-auto px-4 py-4 space-y-5 max-h-[70vh] hide-scrollbar safe-bottom">
-              {/* NEU: Zeitplan für alle Tage Toggle */}
+
+            {/* Inhalt */}
+            <div className="overflow-y-auto px-4 py-4 space-y-6 max-h-[70vh] hide-scrollbar safe-bottom">
+              {/* Zeitplan für alle Tage */}
               <section>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={toggleApplyScheduleToAllDays}
-                  className="w-full flex items-center justify-between p-3 bg-card rounded-xl border border-primary/20"
+                  className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
                 >
-                  <div className="text-left">
-                    <span className="text-sm font-semibold block">
-                      Zeitplan für alle Tage
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Änderungen auf alle Tage anwenden
-                    </span>
-                  </div>
-                  <div
-                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 ${
-                      applyScheduleToAllDays ? 'bg-primary' : 'bg-muted'
-                    }`}
-                  >
-                    <motion.div
-                      animate={{ x: applyScheduleToAllDays ? 20 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="w-5 h-5 rounded-full bg-background shadow-lg"
-                    />
-                  </div>
-                </motion.button>
+                  <span>
+                    <span className="t-16 block text-foreground">Zeitplan für alle Tage</span>
+                    <span className="t-12 text-subtle">Änderungen auf alle Tage anwenden</span>
+                  </span>
+                  <Toggle on={applyScheduleToAllDays} />
+                </button>
               </section>
 
               {/* Aufsteh- & Schlafenszeiten */}
               <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Dein Zeitplan
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <TimePicker
-                    value={wakeTime}
-                    onChange={setWakeTime}
-                    label="Aufstehzeit"
-                    compact
-                  />
-                  <TimePicker
-                    value={sleepTime}
-                    onChange={setSleepTime}
-                    label="Schlafenszeit"
-                    compact
-                  />
+                <GroupTitle>Dein Zeitplan</GroupTitle>
+                <div className="grid grid-cols-2 gap-[10px]">
+                  <TimePicker value={wakeTime} onChange={setWakeTime} label="Aufstehzeit" compact />
+                  <TimePicker value={sleepTime} onChange={setSleepTime} label="Schlafenszeit" compact />
                 </div>
               </section>
-              
+
               {/* Tagesziel Zigaretten */}
               <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Tagesziel
-                </h3>
-                <div className="bg-card rounded-xl p-4">
+                <GroupTitle>Tagesziel</GroupTitle>
+                <div className="surface-card p-5">
                   <WheelPicker
                     value={dailyCigarettes}
                     min={0}
@@ -214,18 +193,16 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     label="Zigaretten pro Tag"
                     compact
                   />
-                  <p className="text-center text-xs text-muted-foreground mt-3">
+                  <p className="text-center t-12 text-subtle mt-3">
                     Weniger = längere Pausen = mehr Stärke
                   </p>
                 </div>
               </section>
-              
-              {/* Theme Umschalter */}
+
+              {/* Darstellung */}
               <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Darstellung
-                </h3>
-                <div className="bg-card rounded-xl p-1.5 grid grid-cols-3 gap-1">
+                <GroupTitle>Darstellung</GroupTitle>
+                <div className="surface-card p-1.5 grid grid-cols-3 gap-1">
                   {(
                     [
                       { id: 'light', label: 'Hell', Icon: Sun },
@@ -235,24 +212,16 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   ).map(({ id, label, Icon }) => {
                     const active = themeMode === id;
                     return (
-                      <motion.button
+                      <button
                         key={id}
-                        whileTap={{ scale: 0.96 }}
                         onClick={() => setThemeMode(id)}
-                        className={`relative h-11 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors ${
-                          active ? 'text-primary-foreground' : 'text-muted-foreground'
+                        className={`h-12 rounded-md flex items-center justify-center gap-1.5 t-14 font-medium [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+                          active ? 'bg-primary text-primary-foreground' : 'text-subtle'
                         }`}
                       >
-                        {active && (
-                          <motion.div
-                            layoutId="theme-pill"
-                            className="absolute inset-0 rounded-lg bg-primary"
-                            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                          />
-                        )}
-                        <Icon className="w-4 h-4 relative z-10" />
-                        <span className="relative z-10">{label}</span>
-                      </motion.button>
+                        <Icon className="w-4 h-4" strokeWidth={1.75} />
+                        <span>{label}</span>
+                      </button>
                     );
                   })}
                 </div>
@@ -260,154 +229,113 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
 
               {/* Push-Meldungen */}
               <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Erinnerungen
-                </h3>
-                <div className="bg-card rounded-xl p-4">
+                <GroupTitle>Erinnerungen</GroupTitle>
+                <div className="surface-card p-5">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {pushEnabled ? (
-                        <Bell className="w-4 h-4 text-primary" />
+                        <Bell className="w-5 h-5 text-primary" strokeWidth={1.75} />
                       ) : (
-                        <BellOff className="w-4 h-4 text-muted-foreground" />
+                        <BellOff className="w-5 h-5 text-subtle" strokeWidth={1.75} />
                       )}
                       <div>
-                        <span className="text-base font-semibold block">Push-Meldungen</span>
-                        <span className="text-xs text-muted-foreground">
-                          Auch bei geschlossener App
-                        </span>
+                        <span className="t-16 block text-foreground">Push-Meldungen</span>
+                        <span className="t-12 text-subtle">Auch bei geschlossener App</span>
                       </div>
                     </div>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       disabled={pushBusy}
                       onClick={handleTogglePush}
                       aria-label="Push-Meldungen umschalten"
-                      className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 ${
-                        pushEnabled ? 'bg-primary' : 'bg-muted'
-                      } ${pushBusy ? 'opacity-60' : ''}`}
+                      className={`shrink-0 flex items-center ${pushBusy ? 'opacity-60' : ''}`}
                     >
-                      <motion.div
-                        animate={{ x: pushEnabled ? 20 : 0 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className="w-5 h-5 rounded-full bg-background shadow-lg"
-                      />
-                    </motion.button>
+                      <Toggle on={pushEnabled} />
+                    </button>
                   </div>
                   {pushEnabled && pushToken && (
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
+                    <button
                       disabled={pushBusy}
                       onClick={handleTestPush}
-                      className="mt-3 w-full rounded-lg bg-primary/10 text-primary text-sm font-semibold py-2 disabled:opacity-60"
+                      className="btn-pill btn-secondary w-full mt-4 disabled:opacity-60"
                     >
                       Test-Meldung senden
-                    </motion.button>
+                    </button>
                   )}
-                  {pushMessage && (
-                    <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{pushMessage}</p>
-                  )}
+                  {pushMessage && <p className="t-12 text-subtle mt-3">{pushMessage}</p>}
                 </div>
               </section>
 
               {/* Sprache */}
               <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Sprache
-                </h3>
-                <div className="bg-card rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-base font-semibold">Deutsch</span>
-                  </div>
-                  <span className="text-xs text-primary font-medium">Aktiv</span>
+                <GroupTitle>Sprache</GroupTitle>
+                <div className="surface-card px-4 min-h-[56px] flex items-center justify-between">
+                  <span className="flex items-center gap-3">
+                    <Globe className="w-5 h-5 text-subtle" strokeWidth={1.75} />
+                    <span className="t-16 text-foreground">Deutsch</span>
+                  </span>
+                  <span className="t-12 text-primary">Aktiv</span>
                 </div>
               </section>
-              
+
               {/* Premium */}
               <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Mehr freischalten
-                </h3>
-                <div className="space-y-2">
-                  <motion.button
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    className="w-full p-4 bg-primary rounded-2xl"
-                  >
-                    <div className="text-left">
-                      <p className="text-base font-bold text-primary-foreground">
-                        Lebenslanger Zugang
-                      </p>
-                      <p className="text-xs text-primary-foreground/80">
-                        Einmaliger Kauf • 20 CHF
-                      </p>
-                    </div>
-                  </motion.button>
-                  
-                  <motion.button
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    className="w-full p-4 bg-card border border-border rounded-2xl"
-                  >
-                    <div className="text-left">
-                      <p className="text-base font-bold">
-                        Abonnieren
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        1 CHF / Monat • Eigene Themes, Statistiken & mehr
-                      </p>
-                    </div>
-                  </motion.button>
+                <GroupTitle>Mehr freischalten</GroupTitle>
+                <div className="space-y-[10px]">
+                  <button className="w-full p-5 rounded-card bg-primary text-left">
+                    <p className="t-16 font-medium text-primary-foreground">Lebenslanger Zugang</p>
+                    <p className="t-12 text-primary-foreground/70">Einmaliger Kauf • 20 CHF</p>
+                  </button>
+
+                  <button className="surface-card w-full p-5 text-left">
+                    <p className="t-16 font-medium text-foreground">Abonnieren</p>
+                    <p className="t-12 text-subtle">
+                      1 CHF / Monat • Eigene Themes, Statistiken &amp; mehr
+                    </p>
+                  </button>
                 </div>
               </section>
 
               {/* Rechtliches */}
               <section>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Rechtliches
-                </h3>
-                <div className="bg-card rounded-xl overflow-hidden">
-                  <button className="w-full p-3 flex items-center justify-between border-b border-border hover:bg-muted/50 transition-colors">
-                    <span className="text-sm font-medium">AGB</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                <GroupTitle>Rechtliches</GroupTitle>
+                <div className="surface-card overflow-hidden">
+                  <button className="w-full px-4 min-h-[56px] flex items-center justify-between border-b border-border/60">
+                    <span className="t-16 text-foreground">AGB</span>
+                    <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
                   </button>
-                  <button className="w-full p-3 flex items-center justify-between border-b border-border hover:bg-muted/50 transition-colors">
-                    <span className="text-sm font-medium">Datenschutzerklärung</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <button className="w-full px-4 min-h-[56px] flex items-center justify-between border-b border-border/60">
+                    <span className="t-16 text-foreground">Datenschutzerklärung</span>
+                    <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
                   </button>
-                  <button className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                    <span className="text-sm font-medium">Nutzungsbedingungen</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <button className="w-full px-4 min-h-[56px] flex items-center justify-between">
+                    <span className="t-16 text-foreground">Nutzungsbedingungen</span>
+                    <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
                   </button>
                 </div>
               </section>
-              
+
               {/* Gefahrenzone */}
-              <section className="pb-4">
+              <section className="pb-6">
                 <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
                   <AlertDialogTrigger asChild>
-                    <motion.button
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full p-3 text-destructive text-center font-semibold flex items-center justify-center gap-2 text-sm"
-                    >
-                      <AlertTriangle className="w-4 h-4" />
+                    <button className="btn-pill w-full text-destructive gap-2">
+                      <AlertTriangle className="w-4 h-4" strokeWidth={1.75} />
                       Alle Daten löschen
-                    </motion.button>
+                    </button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="max-w-sm mx-4">
+                  <AlertDialogContent className="max-w-sm mx-4 rounded-card">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Wirklich alle Daten löschen?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Einstellungen, 
+                      <AlertDialogTitle className="t-20">Wirklich alle Daten löschen?</AlertDialogTitle>
+                      <AlertDialogDescription className="t-14 text-subtle">
+                        Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Einstellungen,
                         Erinnerungen und Fortschritte werden dauerhaft gelöscht.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogCancel className="rounded-pill">Abbrechen</AlertDialogCancel>
+                      <AlertDialogAction
                         onClick={handleDeleteAllData}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="rounded-pill bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Ja, alle löschen
                       </AlertDialogAction>

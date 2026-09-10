@@ -176,7 +176,7 @@ const ScrollWheel = ({
               }`}
             >
               <span
-                className={`font-bold tabular-nums transition-all duration-150 ${
+                className={`font-light tabular-nums [transition:font-size_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1)] ${
                   isSelected
                     ? itemSize >= 64
                       ? 'text-[32px]'

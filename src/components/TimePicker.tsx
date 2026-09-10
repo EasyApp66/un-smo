@@ -28,14 +28,12 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
       className="flex flex-col items-center"
     >
       <span
-        className={`font-semibold text-muted-foreground mb-2 uppercase tracking-wide ${
-          compact ? 'text-[10px]' : 'text-xs'
-        }`}
+        className="t-12 font-medium uppercase tracking-[0.08em] text-subtle mb-2"
       >
         {label}
       </span>
 
-      <div className={`flex items-center gap-0.5 bg-card rounded-xl ${compact ? 'p-2' : 'p-3'}`}>
+      <div className={`flex items-center gap-0.5 bg-muted rounded-inner ${compact ? 'p-2' : 'p-3'}`}>
         <ScrollWheel
           values={hourValues}
           index={hours}
@@ -46,7 +44,7 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
           format={(v) => pad(v)}
           loop
         />
-        <span className={`font-bold text-muted-foreground ${compact ? 'text-lg' : 'text-2xl'}`}>:</span>
+        <span className={`text-subtle ${compact ? 't-16' : 't-24'}`}>:</span>
         <ScrollWheel
           values={minuteValues}
           index={minuteIndex}

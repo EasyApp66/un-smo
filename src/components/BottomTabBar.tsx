@@ -52,25 +52,25 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
   return (
     <div
       className="fixed left-1/2 -translate-x-1/2 z-50"
-      style={{ bottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
+      style={{ bottom: 'max(env(safe-area-inset-bottom), 12px)' }}
     >
       <div className="relative flex items-center">
-        {/* Linker Steckplatz – ohne Transform, per Flex zentriert */}
-        <div className="absolute inset-y-0 right-full mr-2 flex items-center pointer-events-none">
+        {/* Linker Steckplatz */}
+        <div className="absolute inset-y-0 right-full mr-[10px] flex items-center pointer-events-none">
           <AnimatePresence>
             {showTop && (
               <motion.button
                 key="top"
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.92 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
+                exit={{ opacity: 0, scale: 0.92 }}
                 transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                whileTap={{ scale: 0.9 }}
+                whileTap={{ scale: 0.94 }}
                 aria-label="Nach oben"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="pointer-events-auto w-[60px] h-[60px] rounded-full bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg flex items-center justify-center text-muted-foreground"
+                className="surface-float pointer-events-auto w-16 h-16 rounded-pill backdrop-blur-xl flex items-center justify-center text-subtle"
               >
-                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+                <ArrowUp className="w-5 h-5" strokeWidth={1.75} />
               </motion.button>
             )}
           </AnimatePresence>
@@ -78,27 +78,21 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
 
         {/* Rechter Steckplatz */}
         {onAddExtra && (
-          <div className="absolute inset-y-0 left-full ml-2 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-full ml-[10px] flex items-center pointer-events-none">
             <motion.button
-              whileTap={{ scale: 0.88 }}
+              whileTap={{ scale: 0.94 }}
+              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               onClick={onAddExtra}
               aria-label="Zusätzliche Zigarette eintragen"
-              className="pointer-events-auto w-[60px] h-[60px] rounded-full bg-card text-foreground border border-primary shadow-lg flex items-center justify-center"
-              style={{ boxShadow: '0 0 0 3px hsl(var(--primary) / 0.06), 0 8px 24px hsl(var(--primary) / 0.12)' }}
+              className="surface-float pointer-events-auto w-16 h-16 rounded-pill backdrop-blur-xl flex items-center justify-center text-foreground"
             >
-              <Plus className="w-[22px] h-[22px]" strokeWidth={2.5} />
+              <Plus className="w-6 h-6" strokeWidth={1.75} />
             </motion.button>
           </div>
         )}
 
-        <div
-          className="bg-card/95 backdrop-blur-xl rounded-full px-1.5 py-1.5"
-          style={{
-            border: '1.5px solid hsl(var(--primary) / 0.45)',
-            boxShadow: '0 0 0 4px hsl(var(--primary) / 0.06), 0 8px 24px hsl(var(--primary) / 0.12)',
-          }}
-        >
-          <div className="flex items-center gap-1.5">
+        <div className="surface-float rounded-pill h-16 px-1 backdrop-blur-xl flex items-center">
+          <div className="flex items-center gap-1">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               const Icon = tab.icon;
@@ -106,16 +100,15 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
               return (
                 <motion.button
                   key={tab.id}
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ scale: 0.94 }}
+                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
                   onClick={() => onTabChange(tab.id)}
                   aria-label={tab.label}
-                  className={`flex items-center justify-center w-12 h-12 rounded-full [transition:background-color_180ms_ease,color_180ms_ease] ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted/50'
+                  className={`flex items-center justify-center w-14 h-14 rounded-[24px] [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+                    isActive ? 'bg-primary text-primary-foreground' : 'text-subtle'
                   }`}
                 >
-                  <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2 : 1.75} />
                 </motion.button>
               );
             })}

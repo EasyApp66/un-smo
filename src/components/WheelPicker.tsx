@@ -33,7 +33,7 @@ const WheelPicker = ({
   return (
     <div className="flex flex-col items-center w-full">
       {label && (
-        <span className={`font-medium text-muted-foreground mb-2 ${compact ? 'text-xs' : 'text-sm'}`}>
+        <span className="t-12 font-medium uppercase tracking-[0.08em] text-subtle mb-2">
           {label}
         </span>
       )}

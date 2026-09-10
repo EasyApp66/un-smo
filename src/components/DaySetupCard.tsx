@@ -103,29 +103,23 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
 
   const Stat = ({ value, label }: { value: string; label: string }) => (
     <div className="flex flex-col items-start min-w-0">
-      <span className="text-[17px] font-semibold tabular-nums text-foreground leading-tight whitespace-nowrap">
-        {value}
-      </span>
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
+      <span className="t-16 num text-foreground whitespace-nowrap">{value}</span>
+      <span className="t-12 text-subtle">{label}</span>
     </div>
   );
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className={isEditing ? 'px-0 pb-2' : 'flex-1 px-4 pb-8 overflow-y-auto'}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className={isEditing ? 'px-0' : 'flex-1 px-4 pb-8 overflow-y-auto'}
     >
-      <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
+      <div className="surface-card p-5">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
             {!isEditing && (
-              <h3 className="text-lg font-bold text-foreground leading-tight mb-2">
-                {formatDate(selectedDate)} einrichten
-              </h3>
+              <h3 className="t-18 text-foreground mb-3">{formatDate(selectedDate)} einrichten</h3>
             )}
             <div className="grid grid-cols-[1.5fr_0.7fr_1fr] gap-2 items-end">
               <Stat value={`${wake} – ${sleep}`} label="Wach" />
@@ -140,10 +134,11 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
               onClick={() => setExpanded((e) => !e)}
               aria-expanded={isOpen}
               aria-label="Zeitplan auf- oder zuklappen"
-              className="w-11 h-11 shrink-0 rounded-full bg-muted flex items-center justify-center"
+              className="w-11 h-11 shrink-0 rounded-pill bg-muted flex items-center justify-center"
             >
               <ChevronDown
-                className="w-5 h-5 text-muted-foreground [transition:transform_200ms_ease]"
+                className="w-5 h-5 text-subtle [transition:transform_200ms_cubic-bezier(0.22,1,0.36,1)]"
+                strokeWidth={1.75}
                 style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }}
               />
             </button>
@@ -152,7 +147,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
 
         {/* Grid-Trick: animiert nur grid-template-rows/opacity, keine Höhenmessung */}
         <div
-          className="grid [transition:grid-template-rows_240ms_cubic-bezier(0.22,1,0.36,1),opacity_200ms_ease]"
+          className="grid [transition:grid-template-rows_220ms_cubic-bezier(0.22,1,0.36,1),opacity_200ms_cubic-bezier(0.22,1,0.36,1)]"
           style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', opacity: isOpen ? 1 : 0 }}
           aria-hidden={!isOpen}
         >
@@ -174,19 +169,15 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
                 viewportWidth={280}
               />
 
-              <p className="mt-3 mb-5 text-center text-[13px] text-muted-foreground tabular-nums">
+              <p className="mt-3 mb-5 text-center t-12 num text-subtle">
                 {goal > 0 && schedule.first
                   ? `${goal} Zigaretten · alle ${fmtGap(schedule.interval)} · erste um ${schedule.first}, letzte um ${schedule.last}`
                   : 'Kein Tagesziel gesetzt'}
               </p>
 
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={handleSave}
-                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-base"
-              >
+              <button type="button" onClick={handleSave} className="btn-pill btn-primary w-full">
                 {isEditing ? 'Zeitplan aktualisieren' : 'Tag einrichten'}
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>
