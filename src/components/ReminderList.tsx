@@ -110,6 +110,11 @@ const ReminderRow = memo(
             >
             {reminder.time}
             </span>
+            {reminder.extra && (
+              <span className="shrink-0 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-destructive">
+                Extra
+              </span>
+            )}
           </span>
 
           {/* Restzeit rechts neben den Knöpfen */}
@@ -177,7 +182,6 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
-  const [showSkipped, setShowSkipped] = useState(false);
 
   const reduceMotion = !!useReducedMotion();
 
@@ -253,9 +257,11 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   }, []);
 
   const rows = sortedReminders.map((r, i) => ({ r, i }));
-  const completedRows = rows.filter(({ r }) => r.completed);
-  const skippedRows = rows.filter(({ r }) => !r.completed && r.skipped);
+  // Erledigte, Extra- und übersprungene Zigaretten liegen in einer gemeinsamen Mappe
+  const doneRows = rows.filter(({ r }) => r.completed || r.skipped);
   const openRows = rows.filter(({ r }) => !r.completed && !r.skipped);
+  const smokedCount = doneRows.filter(({ r }) => r.completed).length;
+  const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
 
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
@@ -280,7 +286,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
 
   return (
     <div className="px-4 pb-48">
-      {completedRows.length > 0 && (
+      {doneRows.length > 0 && (
         <div className="mb-2">
           <button
             type="button"
@@ -292,7 +298,10 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
             className="surface-card w-full flex items-center justify-between px-4 py-3 bg-primary/[0.06]"
           >
             <span className="text-sm font-medium text-primary">
-              {completedRows.length} geraucht
+              {smokedCount} geraucht
+              {skippedCount > 0 && (
+                <span className="text-muted-foreground"> · {skippedCount} übersprungen</span>
+              )}
             </span>
             <ChevronDown
               className={`w-5 h-5 text-primary transition-transform duration-150 ${
@@ -302,36 +311,9 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
             />
           </button>
 
-          {showCompleted && <div className="pt-2">{completedRows.map(renderRow)}</div>}
+          {showCompleted && <div className="pt-2">{doneRows.map(renderRow)}</div>}
         </div>
       )}
-
-      {skippedRows.length > 0 && (
-        <div className="mb-2">
-          <button
-            type="button"
-            onClick={() => {
-              setShowSkipped((v) => !v);
-              tap();
-            }}
-            aria-expanded={showSkipped}
-            className="surface-card w-full flex items-center justify-between px-4 py-3"
-          >
-            <span className="text-sm font-medium text-muted-foreground">
-              {skippedRows.length} übersprungen
-            </span>
-            <ChevronDown
-              className={`w-5 h-5 text-muted-foreground transition-transform duration-150 ${
-                showSkipped ? 'rotate-180' : ''
-              }`}
-              strokeWidth={2.5}
-            />
-          </button>
-
-          {showSkipped && <div className="pt-2">{skippedRows.map(renderRow)}</div>}
-        </div>
-      )}
-
 
       <AnimatePresence mode="popLayout" initial={false}>
         {openRows.map(renderRow)}
