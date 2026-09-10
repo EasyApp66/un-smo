@@ -67,15 +67,11 @@ const DayButton = ({
     onClick={() => onSelect(day.date)}
     aria-label={day.date}
     aria-pressed={isSelected}
-    className={`relative flex flex-col items-center justify-center h-[78px] rounded-2xl [transition:background-color_180ms_ease,opacity_180ms_ease] ${
-      isSelected ? 'bg-primary' : 'bg-transparent active:bg-muted/40'
-    } ${!isSelected && day.isFuture ? 'opacity-45' : ''}`}
+    className={`relative flex flex-col items-center justify-center h-[78px] rounded-2xl [transition:background-color_180ms_ease,opacity_180ms_ease] bg-transparent active:bg-muted/40 ${
+      !isSelected && day.isFuture ? 'opacity-45' : ''
+    }`}
   >
-    <span
-      className={`text-[10px] font-semibold uppercase tracking-wide leading-none mb-1 ${
-        isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
-      }`}
-    >
+    <span className="text-[10px] font-semibold uppercase tracking-wide leading-none mb-1 text-muted-foreground">
       {day.weekday}
     </span>
 
@@ -88,7 +84,7 @@ const DayButton = ({
             r={R}
             fill="none"
             strokeWidth={2}
-            className={isSelected ? 'stroke-primary-foreground/25' : 'stroke-muted-foreground/20'}
+            className="stroke-muted-foreground/20"
           />
           <circle
             cx={RING / 2}
@@ -99,28 +95,22 @@ const DayButton = ({
             strokeLinecap="round"
             strokeDasharray={C}
             strokeDashoffset={C * (1 - day.progress)}
-            className={
-              day.overGoal
-                ? 'stroke-destructive'
-                : isSelected
-                  ? 'stroke-primary-foreground'
-                  : 'stroke-primary'
-            }
+            className={day.overGoal ? 'stroke-destructive' : 'stroke-primary'}
           />
         </svg>
       )}
-      <span
-        className={`relative text-[25px] font-semibold tabular-nums leading-none ${
-          isSelected ? 'text-primary-foreground' : 'text-foreground'
-        }`}
-      >
+      <span className="relative text-[25px] font-semibold tabular-nums leading-none text-foreground">
         {day.dayNumber}
       </span>
     </span>
 
     <span
-      className={`mt-1.5 h-1.5 w-1.5 rounded-full ${
-        day.isToday ? (isSelected ? 'bg-primary-foreground' : 'bg-primary') : 'bg-transparent'
+      className={`mt-1.5 rounded-full ${
+        isSelected
+          ? 'h-2 w-2 bg-primary'
+          : day.isToday
+            ? 'h-1.5 w-1.5 bg-primary'
+            : 'h-1.5 w-1.5 bg-transparent'
       }`}
     />
   </button>

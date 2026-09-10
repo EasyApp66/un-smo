@@ -25,7 +25,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     const evaluate = () => {
       frame = 0;
       const scrollable = scrollHeight - viewport;
-      setShowTop(scrollable > 200 && window.scrollY > scrollable - 160 && window.scrollY > 300);
+      setShowTop(scrollable > 200 && window.scrollY > scrollable * 0.5 && window.scrollY > 200);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(evaluate);
@@ -68,7 +68,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
                 whileTap={{ scale: 0.9 }}
                 aria-label="Nach oben"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="pointer-events-auto w-12 h-12 rounded-full bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg flex items-center justify-center text-muted-foreground"
+                className="pointer-events-auto w-[60px] h-[60px] rounded-full bg-card/95 backdrop-blur-xl border border-border/50 shadow-lg flex items-center justify-center text-muted-foreground"
               >
                 <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
               </motion.button>
@@ -83,7 +83,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
               whileTap={{ scale: 0.88 }}
               onClick={onAddExtra}
               aria-label="Zusätzliche Zigarette eintragen"
-              className="pointer-events-auto w-12 h-12 rounded-full bg-card text-foreground border border-primary shadow-lg flex items-center justify-center"
+              className="pointer-events-auto w-[60px] h-[60px] rounded-full bg-card text-foreground border border-primary shadow-lg flex items-center justify-center"
               style={{ boxShadow: '0 0 0 3px hsl(var(--primary) / 0.06), 0 8px 24px hsl(var(--primary) / 0.12)' }}
             >
               <Plus className="w-[22px] h-[22px]" strokeWidth={2.5} />

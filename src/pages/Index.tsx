@@ -22,7 +22,7 @@ const Index = () => {
   } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [extraFeedback, setExtraFeedback] = useState<string | null>(null);
+  const [extraFeedback, setExtraFeedback] = useState<number | null>(null);
 
   // Theme anwenden (Hell / Dunkel / System)
   useEffect(() => {
@@ -82,15 +82,20 @@ const Index = () => {
             style={{ top: 'max(env(safe-area-inset-top), 0.5rem)' }}
           >
             <div
-              className="-translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/95 backdrop-blur-xl border border-primary/40 shadow-md"
+              className="-translate-x-1/2 flex items-center gap-2 px-3 py-2 rounded-full bg-card/95 backdrop-blur-xl border border-primary/40 shadow-md"
               style={{ boxShadow: '0 0 0 2px hsl(var(--primary) / 0.06), 0 6px 20px hsl(150 15% 8% / 0.06)' }}
             >
-              <span className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-primary-foreground">
+              <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <svg width="12" height="12" viewBox="0 0 10 10" fill="none" className="text-primary-foreground">
                   <path d="M2 5L4 7L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </span>
-              <span className="text-[12px] font-semibold text-foreground whitespace-nowrap">{extraFeedback}</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-[18px] font-bold text-foreground leading-none">{extraFeedback}</span>
+                <span className="text-[11px] font-semibold text-muted-foreground leading-none">
+                  Extra{extraFeedback !== 1 ? 's' : ''}
+                </span>
+              </div>
             </div>
           </motion.div>
         )}
@@ -103,7 +108,9 @@ const Index = () => {
         onAddExtra={() => {
           addExtraCigarette(formatLocalDate());
           if ('vibrate' in navigator) navigator.vibrate(12);
-          setExtraFeedback('Zusätzliche Zigarette eingetragen');
+          const extraCount =
+            useAppStore.getState().days[formatLocalDate()]?.reminders.filter((r) => r.extra).length || 0;
+          setExtraFeedback(extraCount);
           setTimeout(() => setExtraFeedback(null), 2200);
         }}
       />
