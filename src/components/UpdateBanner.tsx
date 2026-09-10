@@ -73,30 +73,30 @@ const UpdateBanner = () => {
     <AnimatePresence>
       {updateAvailable && (
         <motion.div
-          initial={{ y: -80, opacity: 0 }}
+          initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -80, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          exit={{ y: -40, opacity: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="fixed top-0 left-0 right-0 z-[60] px-3 safe-top"
         >
-          <div className="max-w-md mx-auto bg-card/95 backdrop-blur-xl border border-primary/30 rounded-2xl shadow-lg p-3 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <RefreshCw className="w-4 h-4 text-primary" />
+          <div className="surface-float max-w-md mx-auto backdrop-blur-xl rounded-card p-4 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-icon bg-primary/[0.12] flex items-center justify-center shrink-0">
+              <RefreshCw className="w-5 h-5 text-primary" strokeWidth={1.75} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-foreground">Neue Version verfügbar</p>
-              <p className="text-xs text-muted-foreground">Bitte aktualisieren, um weiterzumachen.</p>
+              <p className="t-16 font-medium text-foreground">Neue Version verfügbar</p>
+              <p className="t-12 text-subtle">Bitte aktualisieren, um weiterzumachen.</p>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={handleReload}
               disabled={reloading}
-              className="px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold shrink-0 disabled:opacity-60"
+              className="btn-pill btn-primary px-4 shrink-0 disabled:opacity-60"
             >
               {reloading ? '…' : 'Aktualisieren'}
-            </motion.button>
+            </button>
           </div>
         </motion.div>
+
       )}
     </AnimatePresence>
   );
