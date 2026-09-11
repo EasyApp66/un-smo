@@ -126,8 +126,10 @@ const spreadTimes = (startMin: number, sleepTime: string, count: number) => {
   const span = Math.max(sleepMinutes - startMin, count);
   const interval = span / count;
 
+  // Die restliche Zeit wird gleichmäßig aufgeteilt: die letzte Zigarette
+  // liegt am Ende des Tages, die übrigen genau dazwischen.
   return Array.from({ length: count }, (_, i) => {
-    const raw = startMin + interval * i + interval / 2;
+    const raw = startMin + interval * (i + 1);
     const norm = Math.floor(raw) % (24 * 60);
     const h = Math.floor(norm / 60);
     const m = norm % 60;
