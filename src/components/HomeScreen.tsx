@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore, formatLocalDate } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
@@ -38,6 +38,13 @@ const HomeScreen = () => {
 
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
   const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
+
+  // Minutentakt, damit die nächste Zigarette weiterwandert, auch ohne Antippen
+  const [minuteTick, setMinuteTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setMinuteTick((t) => t + 1), 15000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Nächste anstehende Zigarette – nur zur Anzeige
   const nextTarget = useMemo(() => {
