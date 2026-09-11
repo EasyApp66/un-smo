@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { durableStorage } from '../lib/persistentStorage';
 
 export interface ReminderTime {
   id: string;
