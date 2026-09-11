@@ -573,6 +573,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'smoke-storage',
+      storage: createJSONStorage(() => durableStorage),
       version: 3,
       migrate: (persisted: unknown, version: number) => {
         const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
