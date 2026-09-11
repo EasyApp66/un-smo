@@ -201,6 +201,11 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   <p className="text-center t-12 text-subtle mt-3">
                     Weniger = längere Pausen = mehr Stärke
                   </p>
+                  <p className="text-center t-12 text-subtle mt-1">
+                    {applyScheduleToAllDays
+                      ? 'Gilt für alle Tage.'
+                      : 'Standard für neue Tage.'}
+                  </p>
                 </div>
               </section>
 
