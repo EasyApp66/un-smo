@@ -365,14 +365,18 @@ export const useAppStore = create<AppState>()(
           // Die verbleibenden Wecker werden über die Restzeit neu verteilt,
           // damit die Abstände größer werden statt kürzer.
           const extraCount = reminders.filter((r) => r.extra).length;
-          if (extraCount % 2 === 0 && date === getTodayString()) {
+          if (date === getTodayString()) {
             const open = reminders
               .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
               .sort((a, b) => a.timestamp - b.timestamp);
 
             if (open.length > 0) {
-              const dropId = open[open.length - 1].id;
-              const keep = open.slice(0, -1);
+              // Jede zweite Extra-Zigarette kostet einen noch offenen Wecker.
+              const dropsOne = extraCount % 2 === 0;
+              const dropId = dropsOne ? open[open.length - 1].id : null;
+              const keep = dropsOne ? open.slice(0, -1) : open;
+              // Die verbleibende Zeit bis zum Schlafengehen wird gleichmäßig
+              // auf die übrigen Zigaretten aufgeteilt.
               const times = spreadTimes(nowMin, base.sleepTime ?? state.sleepTime, keep.length);
               const byId = new Map(keep.map((r, i) => [r.id, times[i]]));
               reminders = reminders
