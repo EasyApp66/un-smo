@@ -137,7 +137,7 @@ const StatisticsScreen = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-48 safe-top">
+    <div className="min-h-[100dvh] bg-background pb-48 safe-top">
       <div className="px-4 py-4 space-y-[10px]">
         {/* Empfehlung */}
         <motion.div
