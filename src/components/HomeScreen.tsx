@@ -57,7 +57,7 @@ const HomeScreen = () => {
       .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
     const next = open.find((r) => sortKey(r.timestamp) >= currentKey) ?? open[0];
     return next ? targetTime(next.time, now) : null;
-  }, [dayData, selectedDate]);
+  }, [dayData, selectedDate, minuteTick]);
 
   const handleComplete = (reminderId: string) => {
     markReminderComplete(selectedDate, reminderId);

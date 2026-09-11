@@ -178,6 +178,11 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   <TimePicker value={wakeTime} onChange={setWakeTime} label="Aufstehzeit" compact />
                   <TimePicker value={sleepTime} onChange={setSleepTime} label="Schlafenszeit" compact />
                 </div>
+                <p className="t-12 text-subtle mt-3 px-1">
+                  {applyScheduleToAllDays
+                    ? 'Gilt für alle Tage.'
+                    : 'Standard für neue Tage. Bereits eingerichtete Tage änderst du direkt auf der Startseite.'}
+                </p>
               </section>
 
               {/* Tagesziel Zigaretten */}
