@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
-import appIcon from '../assets/app-icon.png';
+import Mark from './Mark';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -24,14 +24,15 @@ const OnboardingScreen = () => {
         className="text-center max-w-md w-full"
       >
         <div className="flex flex-col items-center mb-8">
-          <img
-            src={appIcon}
-            alt="UN-SMO Logo"
-            width={112}
-            height={112}
-            className="w-28 h-28 rounded-card mb-6"
-          />
-          <span className="t-24 tracking-[0.14em] text-foreground">UN-SMO</span>
+          <span className="text-primary mb-6 flex items-center justify-center">
+            <Mark size={96} />
+          </span>
+          <span
+            className="text-foreground"
+            style={{ fontSize: '15px', fontWeight: 300, letterSpacing: '0.18em' }}
+          >
+            UN-SMO
+          </span>
         </div>
 
         <div className="space-y-4 mb-8">
