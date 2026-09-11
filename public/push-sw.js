@@ -1,12 +1,14 @@
 // UN-SMO Service Worker: Push-Meldungen + App-Hülle zwischenspeichern.
-const CACHE = 'un-smo-shell-v1';
+const CACHE = 'un-smo-shell-v3';
 const PRECACHE = [
   '/',
   '/manifest.webmanifest',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
-  '/fonts/instrument-sans-latin.woff2',
+  '/icon-v3-192.png',
+  '/icon-v3-512.png',
+  '/apple-touch-icon-v3.png',
+  '/fonts/outfit-300.woff2',
+  '/fonts/outfit-400.woff2',
+  '/fonts/outfit-500.woff2',
 ];
 
 // In Vorschau-/Entwicklungsumgebungen niemals zwischenspeichern.
@@ -85,8 +87,8 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title, {
       body: data.body,
       tag: data.tag,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/icon-v3-192.png',
+      badge: '/icon-v3-192.png',
       vibrate: [10, 50, 10],
       data: { url: '/' },
     }),

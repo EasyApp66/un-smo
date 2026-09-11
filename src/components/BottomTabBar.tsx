@@ -15,6 +15,33 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     { id: 'settings' as const, icon: Settings, label: 'Einstellungen' },
   ];
 
+  // Leiste am sichtbaren Ansichtsfenster ausrichten (Safari-Werkzeugleiste, Tastatur)
+  const [offset, setOffset] = useState(0);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const bottomGap = window.innerHeight - (vv.height + vv.offsetTop);
+      setOffset(Math.max(0, bottomGap));
+      setKeyboardOpen(vv.height < window.innerHeight * 0.75);
+    };
+    const onChange = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    vv.addEventListener('resize', onChange);
+    vv.addEventListener('scroll', onChange);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      vv.removeEventListener('resize', onChange);
+      vv.removeEventListener('scroll', onChange);
+    };
+  }, []);
+
   // „Nach oben“-Knopf nur zeigen, wenn man weit unten auf der Seite ist
   const [showTop, setShowTop] = useState(false);
   useEffect(() => {
@@ -51,8 +78,12 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
 
   return (
     <div
-      className="fixed left-1/2 -translate-x-1/2 z-50"
-      style={{ bottom: 'max(env(safe-area-inset-bottom), 12px)' }}
+      className="fixed left-1/2 z-50"
+      style={{
+        bottom: 'max(env(safe-area-inset-bottom), 12px)',
+        transform: `translate3d(-50%, ${-offset}px, 0)`,
+        visibility: keyboardOpen ? 'hidden' : 'visible',
+      }}
     >
       <div className="relative flex items-center">
         {/* Linker Steckplatz */}

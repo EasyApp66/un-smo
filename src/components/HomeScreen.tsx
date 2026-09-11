@@ -6,6 +6,7 @@ import DaySetupCard from './DaySetupCard';
 import CoachCard from './CoachCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
+import Mark from './Mark';
 
 const DAY_BREAK = 240;
 const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
@@ -85,13 +86,15 @@ const HomeScreen = () => {
   const needsSetup = !dayData;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-[100dvh] bg-background flex flex-col">
       {/* Kopfbereich */}
       <header
         className="flex items-center justify-between px-4 pb-3"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
       >
-        <span className="t-16 font-medium tracking-[0.14em] text-foreground">UN-SMO</span>
+        <span className="text-primary flex items-center">
+          <Mark size={28} />
+        </span>
         <span className="w-12 h-12 rounded-md bg-card flex items-center justify-center text-subtle">
           <Flame className="w-5 h-5" strokeWidth={1.5} />
         </span>

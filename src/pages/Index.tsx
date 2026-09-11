@@ -61,11 +61,11 @@ const Index = () => {
 
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-background">
+    <div className="max-w-md mx-auto min-h-[100dvh] bg-background">
       {activeTab === 'home' && <HomeScreen />}
 
       {activeTab === 'stats' && (
-        <Suspense fallback={<div className="min-h-screen" />}>
+        <Suspense fallback={<div className="min-h-[100dvh]" />}>
           <StatisticsScreen />
         </Suspense>
       )}
