@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { durableStorage } from '../lib/persistentStorage';
 
 export interface ReminderTime {
   id: string;
@@ -126,8 +127,10 @@ const spreadTimes = (startMin: number, sleepTime: string, count: number) => {
   const span = Math.max(sleepMinutes - startMin, count);
   const interval = span / count;
 
+  // Die restliche Zeit wird gleichmäßig aufgeteilt: die letzte Zigarette
+  // liegt am Ende des Tages, die übrigen genau dazwischen.
   return Array.from({ length: count }, (_, i) => {
-    const raw = startMin + interval * i + interval / 2;
+    const raw = startMin + interval * (i + 1);
     const norm = Math.floor(raw) % (24 * 60);
     const h = Math.floor(norm / 60);
     const m = norm % 60;
@@ -363,14 +366,18 @@ export const useAppStore = create<AppState>()(
           // Die verbleibenden Wecker werden über die Restzeit neu verteilt,
           // damit die Abstände größer werden statt kürzer.
           const extraCount = reminders.filter((r) => r.extra).length;
-          if (extraCount % 2 === 0 && date === getTodayString()) {
+          if (date === getTodayString()) {
             const open = reminders
               .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
               .sort((a, b) => a.timestamp - b.timestamp);
 
             if (open.length > 0) {
-              const dropId = open[open.length - 1].id;
-              const keep = open.slice(0, -1);
+              // Jede zweite Extra-Zigarette kostet einen noch offenen Wecker.
+              const dropsOne = extraCount % 2 === 0;
+              const dropId = dropsOne ? open[open.length - 1].id : null;
+              const keep = dropsOne ? open.slice(0, -1) : open;
+              // Die verbleibende Zeit bis zum Schlafengehen wird gleichmäßig
+              // auf die übrigen Zigaretten aufgeteilt.
               const times = spreadTimes(nowMin, base.sleepTime ?? state.sleepTime, keep.length);
               const byId = new Map(keep.map((r, i) => [r.id, times[i]]));
               reminders = reminders
@@ -566,6 +573,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'smoke-storage',
+      storage: createJSONStorage(() => durableStorage),
       version: 3,
       migrate: (persisted: unknown, version: number) => {
         const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
