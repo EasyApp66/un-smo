@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <style>
+    .arc { stroke: #1B2029; }
+    @media (prefers-color-scheme: dark) {
+      .arc { stroke: #D3A991; }
+    }
+  </style>
+  <path class="arc" d="M163.5 95.8 A185 185 0 1 0 348.5 95.8" fill="none" stroke-width="69" stroke-linecap="round"/>
+</svg>
