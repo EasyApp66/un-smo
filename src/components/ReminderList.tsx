@@ -1,5 +1,5 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Check, Ban, ChevronDown } from 'lucide-react';
+import { Check, X, ChevronDown } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
