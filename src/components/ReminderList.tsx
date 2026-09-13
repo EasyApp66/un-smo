@@ -136,36 +136,13 @@ const ReminderRow = memo(
           <span className="ml-auto text-right">
             {isNext ? (
               <Countdown target={target} className="num t-20" />
-            ) : isSkipped ? (
-              <span className="t-14 text-subtle">übersprungen</span>
-            ) : !isPassed && !reminder.completed ? (
+            ) : !isSkipped && !isPassed && !reminder.completed ? (
               <span className="num t-14 text-subtle">{timeUntil}</span>
             ) : null}
           </span>
 
-          {/* Knöpfe */}
+          {/* Knöpfe: links geraucht, rechts überspringen */}
           <span className="flex items-center gap-1 shrink-0">
-            {!reminder.extra && (
-              <button
-                type="button"
-                aria-label={isSkipped ? 'Überspringen rückgängig' : 'Zigarette überspringen'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSkip?.(reminder.id);
-                  tap();
-                }}
-                className="w-11 h-11 rounded-pill flex items-center justify-center"
-              >
-                <span
-                  className={`w-9 h-9 rounded-pill flex items-center justify-center [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
-                    isSkipped ? 'bg-muted text-muted-foreground' : 'border border-subtle/40'
-                  }`}
-                >
-                  {isSkipped && <Ban className="w-4 h-4" strokeWidth={1.75} />}
-                </span>
-              </button>
-            )}
-
             <button
               type="button"
               aria-label={reminder.completed ? 'Zurücksetzen' : 'Als geraucht markieren'}
@@ -183,11 +160,38 @@ const ReminderRow = memo(
                     : { border: '1px solid hsl(var(--subtle) / 0.4)' }
                 }
               >
-                {reminder.completed && (
-                  <Check className="w-5 h-5" strokeWidth={1.75} style={{ color: 'hsl(var(--primary-foreground))' }} />
-                )}
+                <Check
+                  className="w-5 h-5"
+                  strokeWidth={1.75}
+                  style={{
+                    color: reminder.completed
+                      ? 'hsl(var(--primary-foreground))'
+                      : 'hsl(var(--subtle))',
+                  }}
+                />
               </span>
             </button>
+
+            {!reminder.extra && (
+              <button
+                type="button"
+                aria-label={isSkipped ? 'Überspringen rückgängig' : 'Zigarette überspringen'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSkip?.(reminder.id);
+                  tap();
+                }}
+                className="w-11 h-11 rounded-pill flex items-center justify-center"
+              >
+                <span
+                  className={`w-11 h-11 rounded-pill flex items-center justify-center [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+                    isSkipped ? 'bg-muted text-muted-foreground' : 'border border-subtle/40 text-subtle'
+                  }`}
+                >
+                  <X className="w-5 h-5" strokeWidth={1.75} />
+                </span>
+              </button>
+            )}
           </span>
         </div>
       </motion.div>
