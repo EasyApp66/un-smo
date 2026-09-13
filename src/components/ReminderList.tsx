@@ -125,6 +125,11 @@ const ReminderRow = memo(
                 Extra
               </span>
             )}
+            {isSkipped && (
+              <span className="shrink-0 rounded-pill border border-subtle/40 px-2 py-0.5 t-12 uppercase text-subtle">
+                Übersprungen
+              </span>
+            )}
           </span>
 
           {/* Restzeit rechts neben den Knöpfen */}
