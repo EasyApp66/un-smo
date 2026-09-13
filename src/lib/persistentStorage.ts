@@ -1,8 +1,10 @@
 /**
  * Speicher, der die App-Daten doppelt ablegt: im schnellen localStorage und
- * zusätzlich in der Browser-Datenbank (IndexedDB). Falls der Browser nach einem
- * Update oder längerer Pause den localStorage leert, werden die Daten beim
- * nächsten Start automatisch aus der Datenbank zurückgeholt.
+ * zusätzlich in der Browser-Datenbank (IndexedDB). Der normale Lauf bleibt
+ * komplett synchron auf localStorage, damit beim App-Start keine leeren
+ * Standardwerte aufblitzen. Nur wenn der Browser den localStorage geleert hat
+ * (z. B. nach einem Update oder längerer Pause), wird beim Start einmalig aus
+ * der Datenbank wiederhergestellt.
  */
 
 const DB_NAME = 'unsmo-store';
@@ -61,31 +63,19 @@ const idbDel = async (key: string): Promise<void> => {
   }
 };
 
+/**
+ * Synchroner Speicher für den Store: liest/schreibt sofort auf localStorage
+ * und spiegelt jede Änderung im Hintergrund in die Browser-Datenbank.
+ */
 export const durableStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    let local: string | null = null;
+  getItem: (name: string): string | null => {
     try {
-      local = localStorage.getItem(name);
+      return localStorage.getItem(name);
     } catch {
-      local = null;
+      return null;
     }
-    const backup = await idbGet(name);
-    if (local) {
-      // Sicherungskopie auffrischen
-      if (backup !== local) void idbSet(name, local);
-      return local;
-    }
-    if (backup) {
-      try {
-        localStorage.setItem(name, backup);
-      } catch {
-        // ignorieren
-      }
-      return backup;
-    }
-    return null;
   },
-  setItem: async (name: string, value: string): Promise<void> => {
+  setItem: (name: string, value: string): void => {
     try {
       localStorage.setItem(name, value);
     } catch {
@@ -93,7 +83,7 @@ export const durableStorage = {
     }
     void idbSet(name, value);
   },
-  removeItem: async (name: string): Promise<void> => {
+  removeItem: (name: string): void => {
     try {
       localStorage.removeItem(name);
     } catch {
@@ -101,4 +91,24 @@ export const durableStorage = {
     }
     void idbDel(name);
   },
+};
+
+/**
+ * Notfall-Wiederherstellung: nur nötig, wenn localStorage leer ist.
+ * Gibt true zurück, wenn Daten aus der Datenbank zurückgeholt wurden.
+ */
+export const recoverFromBackup = async (name: string): Promise<boolean> => {
+  try {
+    if (localStorage.getItem(name)) return false;
+  } catch {
+    // localStorage blockiert – trotzdem versuchen
+  }
+  const backup = await idbGet(name);
+  if (!backup) return false;
+  try {
+    localStorage.setItem(name, backup);
+  } catch {
+    // ignorieren
+  }
+  return true;
 };
