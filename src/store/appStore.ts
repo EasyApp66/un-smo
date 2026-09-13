@@ -454,19 +454,30 @@ export const useAppStore = create<AppState>()(
       configureDay: (date, cfg) => {
         set((s) => {
           const existingDay = s.days[date];
+
+          // Unveränderter Zeitplan: Tag bleibt exakt so, wie er ist.
+          if (
+            existingDay &&
+            existingDay.totalCigarettes === cfg.goal &&
+            (existingDay.wakeTime ?? s.wakeTime) === cfg.wakeTime &&
+            (existingDay.sleepTime ?? s.sleepTime) === cfg.sleepTime
+          ) {
+            return s;
+          }
+
           const generated = generateReminders(cfg.wakeTime, cfg.sleepTime, cfg.goal);
 
           const extras = existingDay?.reminders.filter((r) => r.extra) || [];
-          const completedCount =
-            existingDay?.reminders.filter((r) => r.completed && !r.extra).length || 0;
-          const skippedTimes =
-            existingDay?.reminders.filter((r) => r.skipped && !r.extra).map((r) => r.time) || [];
+          const previous = (existingDay?.reminders || [])
+            .filter((r) => !r.extra)
+            .sort((a, b) => a.timestamp - b.timestamp);
 
           const updatedReminders = [
             ...generated.map((r, i) => ({
               ...r,
-              completed: i < completedCount,
-              skipped: skippedTimes.includes(r.time) ? true : undefined,
+              completed: !!previous[i]?.completed,
+              completedAt: previous[i]?.completedAt,
+              skipped: previous[i]?.skipped ? true : undefined,
             })),
             ...extras,
           ];
