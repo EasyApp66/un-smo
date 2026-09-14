@@ -337,6 +337,19 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
       <AnimatePresence mode="popLayout" initial={false}>
         {openRows.map(renderRow)}
       </AnimatePresence>
+
+      {openRows.length === 0 && reminders.length > 0 && (
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.2, ease: EASE }}
+          className="surface-card px-5 py-6 text-center"
+        >
+          <p className="t-18 text-foreground">Bleib stark, rauche nicht weiter.</p>
+          <p className="t-14 text-subtle mt-1">Denk an deine Gesundheit.</p>
+        </motion.div>
+      )}
+
     </div>
   );
 };

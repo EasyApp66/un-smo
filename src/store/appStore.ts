@@ -362,9 +362,8 @@ export const useAppStore = create<AppState>()(
 
           let reminders = [...base.reminders, extra];
 
-          // Jede zweite Extra-Zigarette kostet einen noch offenen Wecker.
-          // Die verbleibenden Wecker werden über die Restzeit neu verteilt,
-          // damit die Abstände größer werden statt kürzer.
+          // Eine Extra-Zigarette zählt auf das Tagesziel: ein offener Wecker fällt weg.
+          // Jede zweite Extra-Zigarette kostet zusätzlich einen weiteren Wecker.
           const extraCount = reminders.filter((r) => r.extra).length;
           if (date === getTodayString()) {
             const open = reminders
@@ -372,16 +371,15 @@ export const useAppStore = create<AppState>()(
               .sort((a, b) => a.timestamp - b.timestamp);
 
             if (open.length > 0) {
-              // Jede zweite Extra-Zigarette kostet einen noch offenen Wecker.
-              const dropsOne = extraCount % 2 === 0;
-              const dropId = dropsOne ? open[open.length - 1].id : null;
-              const keep = dropsOne ? open.slice(0, -1) : open;
+              const dropCount = Math.min(open.length, extraCount % 2 === 0 ? 2 : 1);
+              const dropIds = new Set(open.slice(open.length - dropCount).map((r) => r.id));
+              const keep = open.slice(0, open.length - dropCount);
               // Die verbleibende Zeit bis zum Schlafengehen wird gleichmäßig
               // auf die übrigen Zigaretten aufgeteilt.
               const times = spreadTimes(nowMin, base.sleepTime ?? state.sleepTime, keep.length);
               const byId = new Map(keep.map((r, i) => [r.id, times[i]]));
               reminders = reminders
-                .filter((r) => r.id !== dropId)
+                .filter((r) => !dropIds.has(r.id))
                 .map((r) => {
                   const t = byId.get(r.id);
                   return t ? { ...r, timestamp: t.timestamp, time: t.time } : r;
@@ -408,9 +406,35 @@ export const useAppStore = create<AppState>()(
           const dayData = state.days[date];
           if (!dayData) return state;
 
-          const updatedReminders = dayData.reminders.map((r) =>
-            r.id === reminderId && !r.extra ? { ...r, skipped: !r.skipped } : r
+          const target = dayData.reminders.find((r) => r.id === reminderId);
+          if (!target || target.extra) return state;
+          const willSkip = !target.skipped;
+
+          let updatedReminders = dayData.reminders.map((r) =>
+            r.id === reminderId ? { ...r, skipped: willSkip } : r
           );
+
+          // Beim Überspringen wird die Restzeit neu auf die übrigen Zigaretten verteilt.
+          if (willSkip && date === getTodayString()) {
+            const now = new Date();
+            const nowMin = now.getHours() * 60 + now.getMinutes();
+            const open = updatedReminders
+              .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
+              .sort((a, b) => a.timestamp - b.timestamp);
+
+            if (open.length > 0) {
+              const times = spreadTimes(
+                nowMin,
+                dayData.sleepTime ?? state.sleepTime,
+                open.length
+              );
+              const byId = new Map(open.map((r, i) => [r.id, times[i]]));
+              updatedReminders = updatedReminders.map((r) => {
+                const t = byId.get(r.id);
+                return t ? { ...r, timestamp: t.timestamp, time: t.time } : r;
+              });
+            }
+          }
 
           return {
             days: {
@@ -420,6 +444,7 @@ export const useAppStore = create<AppState>()(
           };
         });
       },
+
 
       deleteReminder: (date, reminderId) => {
         set((state) => {
