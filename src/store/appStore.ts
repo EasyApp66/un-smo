@@ -118,29 +118,6 @@ export const formatLocalDate = (d: Date = new Date()) => {
 const getTodayString = () => formatLocalDate();
 
 /** Verteilt `count` Zeiten gleichmäßig zwischen `startMin` und der Schlafenszeit */
-const spreadTimes = (startMin: number, sleepTime: string, count: number) => {
-  if (count <= 0) return [] as { time: string; timestamp: number }[];
-  const [sh, sm] = sleepTime.split(':').map(Number);
-  let sleepMinutes = sh * 60 + sm;
-  if (sleepMinutes <= startMin) sleepMinutes += 24 * 60;
-
-  const span = Math.max(sleepMinutes - startMin, count);
-  const interval = span / count;
-
-  // Die restliche Zeit wird gleichmäßig aufgeteilt: die letzte Zigarette
-  // liegt am Ende des Tages, die übrigen genau dazwischen.
-  return Array.from({ length: count }, (_, i) => {
-    const raw = startMin + interval * (i + 1);
-    const norm = Math.floor(raw) % (24 * 60);
-    const h = Math.floor(norm / 60);
-    const m = norm % 60;
-    return {
-      time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
-      timestamp: norm,
-    };
-  });
-};
-
 /** Untergrenze für automatische Ziel-Empfehlungen */
 export const GOAL_FLOOR = 20;
 
@@ -402,31 +379,11 @@ export const useAppStore = create<AppState>()(
           if (!target || target.extra) return state;
           const willSkip = !target.skipped;
 
-          let updatedReminders = dayData.reminders.map((r) =>
+          // Beim Überspringen bleiben alle übrigen Zeiten unverändert –
+          // es wird nur das Flag umgeschaltet (rückgängig möglich).
+          const updatedReminders = dayData.reminders.map((r) =>
             r.id === reminderId ? { ...r, skipped: willSkip } : r
           );
-
-          // Beim Überspringen wird die Restzeit neu auf die übrigen Zigaretten verteilt.
-          if (willSkip && date === getTodayString()) {
-            const now = new Date();
-            const nowMin = now.getHours() * 60 + now.getMinutes();
-            const open = updatedReminders
-              .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
-              .sort((a, b) => a.timestamp - b.timestamp);
-
-            if (open.length > 0) {
-              const times = spreadTimes(
-                nowMin,
-                dayData.sleepTime ?? state.sleepTime,
-                open.length
-              );
-              const byId = new Map(open.map((r, i) => [r.id, times[i]]));
-              updatedReminders = updatedReminders.map((r) => {
-                const t = byId.get(r.id);
-                return t ? { ...r, timestamp: t.timestamp, time: t.time } : r;
-              });
-            }
-          }
 
           return {
             days: {
