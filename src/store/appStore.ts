@@ -362,8 +362,9 @@ export const useAppStore = create<AppState>()(
 
           let reminders = [...base.reminders, extra];
 
-          // Eine Extra-Zigarette zählt auf das Tagesziel: ein offener Wecker fällt weg.
+          // Eine Extra-Zigarette zählt auf das Tagesziel: der späteste offene Wecker fällt weg.
           // Jede zweite Extra-Zigarette kostet zusätzlich einen weiteren Wecker.
+          // Die Zeiten der übrigen Wecker bleiben unverändert – nichts wird nach hinten geschoben.
           const extraCount = reminders.filter((r) => r.extra).length;
           if (date === getTodayString()) {
             const open = reminders
@@ -373,19 +374,10 @@ export const useAppStore = create<AppState>()(
             if (open.length > 0) {
               const dropCount = Math.min(open.length, extraCount % 2 === 0 ? 2 : 1);
               const dropIds = new Set(open.slice(open.length - dropCount).map((r) => r.id));
-              const keep = open.slice(0, open.length - dropCount);
-              // Die verbleibende Zeit bis zum Schlafengehen wird gleichmäßig
-              // auf die übrigen Zigaretten aufgeteilt.
-              const times = spreadTimes(nowMin, base.sleepTime ?? state.sleepTime, keep.length);
-              const byId = new Map(keep.map((r, i) => [r.id, times[i]]));
-              reminders = reminders
-                .filter((r) => !dropIds.has(r.id))
-                .map((r) => {
-                  const t = byId.get(r.id);
-                  return t ? { ...r, timestamp: t.timestamp, time: t.time } : r;
-                });
+              reminders = reminders.filter((r) => !dropIds.has(r.id));
             }
           }
+
 
           return {
             days: {
