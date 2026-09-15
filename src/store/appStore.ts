@@ -402,31 +402,11 @@ export const useAppStore = create<AppState>()(
           if (!target || target.extra) return state;
           const willSkip = !target.skipped;
 
-          let updatedReminders = dayData.reminders.map((r) =>
+          // Beim Überspringen bleiben alle übrigen Zeiten unverändert –
+          // es wird nur das Flag umgeschaltet (rückgängig möglich).
+          const updatedReminders = dayData.reminders.map((r) =>
             r.id === reminderId ? { ...r, skipped: willSkip } : r
           );
-
-          // Beim Überspringen wird die Restzeit neu auf die übrigen Zigaretten verteilt.
-          if (willSkip && date === getTodayString()) {
-            const now = new Date();
-            const nowMin = now.getHours() * 60 + now.getMinutes();
-            const open = updatedReminders
-              .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
-              .sort((a, b) => a.timestamp - b.timestamp);
-
-            if (open.length > 0) {
-              const times = spreadTimes(
-                nowMin,
-                dayData.sleepTime ?? state.sleepTime,
-                open.length
-              );
-              const byId = new Map(open.map((r, i) => [r.id, times[i]]));
-              updatedReminders = updatedReminders.map((r) => {
-                const t = byId.get(r.id);
-                return t ? { ...r, timestamp: t.timestamp, time: t.time } : r;
-              });
-            }
-          }
 
           return {
             days: {
