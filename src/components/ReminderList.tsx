@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { success, tap } from '../lib/haptics';
 import Countdown from './Countdown';
 
@@ -13,8 +13,6 @@ interface ReminderListProps {
   onSkip?: (id: string) => void;
 }
 
-// Abstand vom unteren Bildschirmrand, damit die nächste Zeile leicht oberhalb vom Menü steht
-const BOTTOM_OFFSET = 150;
 // Zeiten vor 04:00 gehören zum Vorabend – sie stehen am Ende der Liste
 const DAY_BREAK = 240;
 const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
@@ -52,7 +50,6 @@ interface RowProps {
   reduceMotion: boolean;
   onToggle: (reminder: ReminderTime) => void;
   onSkip?: (id: string) => void;
-  rowRef?: (el: HTMLDivElement | null) => void;
 }
 
 const ReminderRow = memo(
@@ -66,7 +63,6 @@ const ReminderRow = memo(
     reduceMotion,
     onToggle,
     onSkip,
-    rowRef,
   }: RowProps) => {
     const isSkipped = !!reminder.skipped;
     const dimmed = isSkipped
@@ -79,7 +75,6 @@ const ReminderRow = memo(
 
     return (
       <motion.div
-        ref={rowRef}
         layout="position"
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -212,54 +207,16 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     return () => window.clearInterval(id);
   }, []);
 
-  const nextRowRef = useRef<HTMLDivElement | null>(null);
-  const userScrolled = useRef(false);
-
   const sortedReminders = useMemo(
     () => [...reminders].sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp)),
     [reminders]
   );
 
   const nextReminderIndex = useMemo(() => {
-    const nowDate = new Date(minuteTick);
-    const currentKey = sortKey(nowDate.getHours() * 60 + nowDate.getMinutes());
-    for (let i = 0; i < sortedReminders.length; i++) {
-      const r = sortedReminders[i];
-      if (!r.completed && !r.extra && !r.skipped && sortKey(r.timestamp) >= currentKey) return i;
-    }
+    // Der erste offene Eintrag bleibt als Nächstes hervorgehoben, auch wenn
+    // seine Uhrzeit bereits verstrichen ist. Alle weiteren bleiben sichtbar.
     return sortedReminders.findIndex((r) => !r.completed && !r.extra && !r.skipped);
-  }, [sortedReminders, minuteTick]);
-
-  const nextReminder = nextReminderIndex >= 0 ? sortedReminders[nextReminderIndex] : null;
-
-  // Sobald der Nutzer selbst scrollt, nicht mehr automatisch springen
-  useEffect(() => {
-    const onScroll = () => {
-      userScrolled.current = true;
-    };
-    window.addEventListener('wheel', onScroll, { passive: true });
-    window.addEventListener('touchmove', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('wheel', onScroll);
-      window.removeEventListener('touchmove', onScroll);
-    };
-  }, []);
-
-  const scrollToNext = useCallback(() => {
-    const el = nextRowRef.current;
-    if (!el || userScrolled.current) return;
-    const rect = el.getBoundingClientRect();
-    const delta = rect.bottom - (window.innerHeight - BOTTOM_OFFSET);
-    if (Math.abs(delta) <= 8) return;
-    window.scrollBy({ top: delta, behavior: reduceMotion ? 'auto' : 'smooth' });
-  }, [reduceMotion]);
-
-  // Genau einmal je nächstem Wecker automatisch scrollen
-  useEffect(() => {
-    if (!nextReminder?.id) return;
-    const t = window.setTimeout(scrollToNext, 250);
-    return () => window.clearTimeout(t);
-  }, [nextReminder?.id, scrollToNext]);
+  }, [sortedReminders]);
 
   const toggle = useCallback(
     (reminder: ReminderTime) => {
@@ -273,10 +230,6 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     },
     [onComplete, onUncomplete]
   );
-
-  const setNextRef = useCallback((el: HTMLDivElement | null) => {
-    nextRowRef.current = el;
-  }, []);
 
   const rows = sortedReminders.map((r, i) => ({ r, i }));
   // Erledigte, Extra- und übersprungene Zigaretten liegen in einer gemeinsamen Mappe
@@ -300,7 +253,6 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
         reduceMotion={reduceMotion}
         onToggle={toggle}
         onSkip={onSkip}
-        rowRef={isNext ? setNextRef : undefined}
       />
     );
   };

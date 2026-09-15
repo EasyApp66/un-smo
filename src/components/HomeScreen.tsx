@@ -50,12 +50,12 @@ const HomeScreen = () => {
   const nextTarget = useMemo(() => {
     if (!dayData) return null;
     const now = Date.now();
-    const nowDate = new Date(now);
-    const currentKey = sortKey(nowDate.getHours() * 60 + nowDate.getMinutes());
     const open = [...dayData.reminders]
       .filter((r) => !r.completed && !r.skipped && !r.extra)
       .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
-    const next = open.find((r) => sortKey(r.timestamp) >= currentKey) ?? open[0];
+    // Eine noch offene, bereits fällige Zigarette bleibt die nächste.
+    // So springt die Anzeige nicht vorzeitig zu einem späteren Wecker.
+    const next = open[0];
     return next ? targetTime(next.time, now) : null;
   }, [dayData, selectedDate, minuteTick]);
 
