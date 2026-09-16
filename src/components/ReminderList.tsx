@@ -237,10 +237,14 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   );
 
   const nextReminderIndex = useMemo(() => {
-    // Der erste offene Eintrag bleibt als Nächstes hervorgehoben, auch wenn
-    // seine Uhrzeit bereits verstrichen ist. Alle weiteren bleiben sichtbar.
-    return sortedReminders.findIndex((r) => !r.completed && !r.extra && !r.skipped);
-  }, [sortedReminders]);
+    // Abgelaufene offene Einträge gelten als „Vorbei“. Der Countdown läuft
+    // beim ersten offenen Eintrag, dessen Zeit noch bevorsteht.
+    const isOpen = (r: ReminderTime) => !r.completed && !r.extra && !r.skipped;
+    const future = sortedReminders.findIndex(
+      (r) => isOpen(r) && targetTime(r.time, minuteTick) > minuteTick
+    );
+    return future >= 0 ? future : sortedReminders.findIndex(isOpen);
+  }, [sortedReminders, minuteTick]);
 
   const toggle = useCallback(
     (reminder: ReminderTime) => {
