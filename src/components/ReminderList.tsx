@@ -154,6 +154,11 @@ const ReminderRow = memo(
                 Übersprungen
               </span>
             )}
+            {isPassed && !isSkipped && !reminder.completed && (
+              <span className="shrink-0 rounded-pill border border-primary/50 px-2 py-0.5 t-12 uppercase text-primary">
+                Vorbei
+              </span>
+            )}
           </span>
 
           {/* Restzeit rechts neben den Knöpfen */}
