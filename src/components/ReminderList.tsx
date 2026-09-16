@@ -95,7 +95,7 @@ const ReminderRow = memo(
       : reminder.completed
         ? 'opacity-100'
         : isPassed
-          ? 'opacity-45'
+          ? 'opacity-70'
           : '';
 
     return (
@@ -129,6 +129,11 @@ const ReminderRow = memo(
           } ${dimmed}`}
         >
           {isNext && <CountdownFill start={progressStart} target={target} />}
+          {isPassed && (
+            <span aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-card">
+              <span className="absolute inset-0 bg-primary/20" />
+            </span>
+          )}
 
           {/* Zeit links */}
           <span className="relative z-10 flex items-center gap-2 min-w-0">
@@ -147,6 +152,11 @@ const ReminderRow = memo(
             {isSkipped && (
               <span className="shrink-0 rounded-pill border border-subtle/40 px-2 py-0.5 t-12 uppercase text-subtle">
                 Übersprungen
+              </span>
+            )}
+            {isPassed && !isSkipped && !reminder.completed && (
+              <span className="shrink-0 rounded-pill border border-primary/50 px-2 py-0.5 t-12 uppercase text-primary">
+                Vorbei
               </span>
             )}
           </span>
@@ -237,10 +247,14 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   );
 
   const nextReminderIndex = useMemo(() => {
-    // Der erste offene Eintrag bleibt als Nächstes hervorgehoben, auch wenn
-    // seine Uhrzeit bereits verstrichen ist. Alle weiteren bleiben sichtbar.
-    return sortedReminders.findIndex((r) => !r.completed && !r.extra && !r.skipped);
-  }, [sortedReminders]);
+    // Abgelaufene offene Einträge gelten als „Vorbei“. Der Countdown läuft
+    // beim ersten offenen Eintrag, dessen Zeit noch bevorsteht.
+    const isOpen = (r: ReminderTime) => !r.completed && !r.extra && !r.skipped;
+    const future = sortedReminders.findIndex(
+      (r) => isOpen(r) && targetTime(r.time, minuteTick) > minuteTick
+    );
+    return future >= 0 ? future : sortedReminders.findIndex(isOpen);
+  }, [sortedReminders, minuteTick]);
 
   const toggle = useCallback(
     (reminder: ReminderTime) => {
