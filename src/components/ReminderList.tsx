@@ -95,7 +95,7 @@ const ReminderRow = memo(
       : reminder.completed
         ? 'opacity-100'
         : isPassed
-          ? 'opacity-45'
+          ? 'opacity-70'
           : '';
 
     return (
