@@ -129,6 +129,11 @@ const ReminderRow = memo(
           } ${dimmed}`}
         >
           {isNext && <CountdownFill start={progressStart} target={target} />}
+          {isPassed && (
+            <span aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-card">
+              <span className="absolute inset-0 bg-primary/20" />
+            </span>
+          )}
 
           {/* Zeit links */}
           <span className="relative z-10 flex items-center gap-2 min-w-0">
