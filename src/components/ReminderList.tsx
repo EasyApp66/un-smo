@@ -19,6 +19,29 @@ const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+const CountdownFill = memo(({ start, target }: { start: number; target: number }) => {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    setNow(Date.now());
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [start, target]);
+
+  const duration = Math.max(1, target - start);
+  const progress = Math.min(1, Math.max(0, (now - start) / duration));
+
+  return (
+    <span aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-card">
+      <span
+        className="absolute inset-y-0 left-0 bg-primary/30 [transition:width_1s_linear]"
+        style={{ width: `${progress * 100}%` }}
+      />
+    </span>
+  );
+});
+CountdownFill.displayName = 'CountdownFill';
+
 /** Zielzeitpunkt – nur Zeiten nach Mitternacht (vor 04:00) zählen zum nächsten Tag */
 const targetTime = (timeString: string, now: number): number => {
   const nowDate = new Date(now);
@@ -47,6 +70,7 @@ interface RowProps {
   isPassed: boolean;
   timeUntil: string;
   target: number;
+  progressStart: number;
   reduceMotion: boolean;
   onToggle: (reminder: ReminderTime) => void;
   onSkip?: (id: string) => void;
@@ -60,6 +84,7 @@ const ReminderRow = memo(
     isPassed,
     timeUntil,
     target,
+    progressStart,
     reduceMotion,
     onToggle,
     onSkip,
@@ -98,16 +123,15 @@ const ReminderRow = memo(
             }
           }}
           className={`relative w-full cursor-pointer select-none text-left flex items-center justify-between gap-3 rounded-card [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${
-            isNext ? 'px-4 py-5' : 'surface-card px-4 py-4'
-          } ${dimmed}`}
-          style={
             isNext
-              ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
-              : undefined
-          }
+              ? 'surface-card countdown-elevation border-primary/70 px-4 py-5'
+              : 'surface-card px-4 py-4'
+          } ${dimmed}`}
         >
+          {isNext && <CountdownFill start={progressStart} target={target} />}
+
           {/* Zeit links */}
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="relative z-10 flex items-center gap-2 min-w-0">
             <span
               className={`num t-18 ${isSkipped ? 'line-through' : ''} ${
                 isNext ? '' : reminder.completed ? 'text-foreground/45' : 'text-foreground'
@@ -128,7 +152,7 @@ const ReminderRow = memo(
           </span>
 
           {/* Restzeit rechts neben den Knöpfen */}
-          <span className="ml-auto text-right">
+          <span className="relative z-10 ml-auto text-right">
             {isNext ? (
               <Countdown target={target} className="num t-20" />
             ) : !isSkipped && !isPassed && !reminder.completed ? (
@@ -137,7 +161,7 @@ const ReminderRow = memo(
           </span>
 
           {/* Knöpfe: links geraucht, rechts überspringen */}
-          <span className="flex items-center gap-1 shrink-0">
+          <span className="relative z-10 flex items-center gap-1 shrink-0">
             <button
               type="button"
               aria-label={reminder.completed ? 'Zurücksetzen' : 'Als geraucht markieren'}
@@ -241,6 +265,16 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
     const target = targetTime(r.time, minuteTick);
+    const planned = sortedReminders.filter((item) => !item.extra);
+    const plannedIndex = planned.findIndex((item) => item.id === r.id);
+    const currentKey = sortKey(r.timestamp);
+    const adjacentGap =
+      plannedIndex > 0
+        ? currentKey - sortKey(planned[plannedIndex - 1].timestamp)
+        : plannedIndex >= 0 && plannedIndex < planned.length - 1
+          ? sortKey(planned[plannedIndex + 1].timestamp) - currentKey
+          : 60;
+    const progressStart = target - Math.max(1, adjacentGap) * 60_000;
     return (
       <ReminderRow
         key={r.id}
@@ -250,6 +284,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
         isPassed={!r.completed && !r.skipped && !isNext && target < minuteTick}
         timeUntil={timeUntilLabel(r.time, minuteTick)}
         target={target}
+        progressStart={progressStart}
         reduceMotion={reduceMotion}
         onToggle={toggle}
         onSkip={onSkip}
