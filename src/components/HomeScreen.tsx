@@ -53,9 +53,9 @@ const HomeScreen = () => {
     const open = [...dayData.reminders]
       .filter((r) => !r.completed && !r.skipped && !r.extra)
       .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
-    // Eine noch offene, bereits fällige Zigarette bleibt die nächste.
-    // So springt die Anzeige nicht vorzeitig zu einem späteren Wecker.
-    const next = open[0];
+    // Abgelaufene Einträge gelten als vorbei – der Countdown läuft für den
+    // ersten noch bevorstehenden Wecker.
+    const next = open.find((r) => targetTime(r.time, now) > now) ?? open[0];
     return next ? targetTime(next.time, now) : null;
   }, [dayData, selectedDate, minuteTick]);
 
