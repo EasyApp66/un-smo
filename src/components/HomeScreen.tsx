@@ -161,6 +161,8 @@ const HomeScreen = () => {
             </div>
             <ReminderList
               reminders={dayData?.reminders || []}
+              wakeTime={dayWakeTime}
+
               onComplete={handleComplete}
               onUncomplete={handleUncomplete}
               onDelete={handleDelete}
