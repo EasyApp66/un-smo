@@ -5,6 +5,12 @@ import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
+import {
+  formatMoney,
+  formatSavedTime,
+  measurementDaysLeft,
+  savedSummary,
+} from '@/lib/reductionPlan';
 
 
 /** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit liegen nach Mitternacht. */
@@ -31,6 +37,7 @@ const HomeScreen = () => {
     skipReminder,
     dailyCigarettes,
     wakeTime,
+    reductionPlan,
   } = useAppStore();
 
   const dayData = days[selectedDate];
@@ -105,6 +112,8 @@ const HomeScreen = () => {
   const handleDaySetupComplete = () => {};
 
   const needsSetup = !dayData;
+  const measurementLeft = measurementDaysLeft(reductionPlan, formatLocalDate());
+  const savings = useMemo(() => savedSummary(days, reductionPlan), [days, reductionPlan]);
 
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col">
@@ -140,6 +149,30 @@ const HomeScreen = () => {
             <p className="t-32 num text-foreground">
               {nextTarget ? <Countdown target={nextTarget} /> : '–'}
             </p>
+          </div>
+        </div>
+      )}
+
+      {!needsSetup && measurementLeft > 0 && (
+        <div className="px-4 pt-[10px]">
+          <div className="surface-card p-4">
+            <p className="t-14 text-foreground">Messwoche</p>
+            <p className="t-12 text-subtle">Noch {measurementLeft} Tag{measurementLeft === 1 ? '' : 'e'}, dann startet dein Abbauplan.</p>
+          </div>
+        </div>
+      )}
+
+      {!needsSetup && (
+        <div className="px-4 pt-[10px]">
+          <div className="surface-card p-4 grid grid-cols-2 gap-3">
+            <div>
+              <p className="t-14 text-subtle">Gespart</p>
+              <p className="t-24 num text-foreground">{formatMoney(savings.savedMoney, reductionPlan.currency)}</p>
+            </div>
+            <div>
+              <p className="t-14 text-subtle">Zeit</p>
+              <p className="t-24 num text-foreground">{formatSavedTime(savings.savedMinutes)}</p>
+            </div>
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import HomeScreen from '../components/HomeScreen';
 import BottomTabBar from '../components/BottomTabBar';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { REQUIRED_ONBOARDING_VERSION } from '@/lib/reductionPlan';
 
 const StatisticsScreen = lazy(() => import('../components/StatisticsScreen'));
 const SettingsSheet = lazy(() => import('../components/SettingsSheet'));
@@ -12,6 +13,7 @@ import { syncPushSchedule } from '../lib/push';
 const Index = () => {
   const {
     hasCompletedOnboarding,
+    onboardingVersion,
     themeMode,
     pushToken,
     wakeTime,
@@ -20,6 +22,7 @@ const Index = () => {
     days,
     addExtraCigarette,
     extraButtonEnabled,
+    completeMeasurementIfNeeded,
   } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -29,6 +32,10 @@ const Index = () => {
   useEffect(() => {
     applyTheme(themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    completeMeasurementIfNeeded(formatLocalDate());
+  }, [completeMeasurementIfNeeded, days]);
 
 
   // Zeitplan-Änderungen an den Push-Server übertragen (entprellt)
@@ -54,9 +61,7 @@ const Index = () => {
     setActiveTab('home');
   };
 
-  // Startseite vorübergehend ausgeblendet (nicht gelöscht) – direkt zur PIN-Seite
-  const SHOW_ONBOARDING = false;
-  if (SHOW_ONBOARDING && !hasCompletedOnboarding) {
+  if (!hasCompletedOnboarding || onboardingVersion < REQUIRED_ONBOARDING_VERSION) {
     return <OnboardingScreen />;
   }
 

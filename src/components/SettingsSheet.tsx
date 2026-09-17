@@ -1,11 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronRight, AlertTriangle, Globe, Sun, Moon, Smartphone, Bell, BellOff } from 'lucide-react';
-import { useState } from 'react';
+import { X, ChevronRight, AlertTriangle, Globe, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
 
 import { enablePush, disablePush, sendTestPush } from '../lib/push';
+import { formatMoney, weeklyActuals, type CurrencyCode, weekKey } from '@/lib/reductionPlan';
+import { defaultAccountStatus, fetchAccountStatus, sendMagicLink, signInWithApple, type AccountStatus } from '@/lib/account';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,10 +56,17 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     pushToken,
     extraButtonEnabled,
     extraReductionEnabled,
+    reductionPlan,
+    days,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
     setThemeMode,
+    resetOnboarding,
+    setPlanMoney,
+    updateReductionPlan,
+    toggleAutomaticReduction,
+    togglePauseThisWeek,
     setPushEnabled,
     toggleExtraButtonEnabled,
     toggleExtraReductionEnabled,
@@ -67,6 +77,21 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMessage, setPushMessage] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [account, setAccount] = useState<AccountStatus>(defaultAccountStatus);
+  const [accountMessage, setAccountMessage] = useState<string | null>(null);
+  const [accountBusy, setAccountBusy] = useState(false);
+
+  useEffect(() => {
+    fetchAccountStatus().then(setAccount).catch(() => setAccount(defaultAccountStatus));
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      fetchAccountStatus().then(setAccount).catch(() => setAccount(defaultAccountStatus));
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const actualRows = useMemo(() => weeklyActuals(days, reductionPlan).slice(0, 12), [days, reductionPlan]);
+  const thisWeekPaused = reductionPlan.pausedWeekKeys.includes(weekKey(new Date().toISOString().slice(0, 10)));
 
   const handleDeleteAllData = async () => {
     if (pushToken) await disablePush(pushToken).catch(() => undefined);
@@ -87,6 +112,39 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     } finally {
       setPushBusy(false);
     }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email.includes('@')) {
+      setAccountMessage('Bitte gib eine gültige E-Mail ein.');
+      return;
+    }
+    setAccountBusy(true);
+    setAccountMessage(null);
+    try {
+      await sendMagicLink(email.trim());
+      setAccountMessage('Link gesendet. Öffne ihn zum Einloggen.');
+    } catch {
+      setAccountMessage('Der Link konnte nicht gesendet werden.');
+    } finally {
+      setAccountBusy(false);
+    }
+  };
+
+  const handleApple = async () => {
+    setAccountBusy(true);
+    setAccountMessage(null);
+    try {
+      await signInWithApple();
+    } catch {
+      setAccountMessage('Apple-Anmeldung ist gerade nicht möglich.');
+      setAccountBusy(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAccount(defaultAccountStatus);
   };
 
   const handleTogglePush = async () => {
@@ -221,6 +279,119 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 </p>
               </section>
 
+              {/* Abbauplan */}
+              <section>
+                <GroupTitle>Abbauplan</GroupTitle>
+                <div className="surface-card p-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <WheelPicker
+                      value={reductionPlan.baselineCigarettes}
+                      min={0}
+                      max={60}
+                      onChange={(value) => updateReductionPlan({ baselineCigarettes: value })}
+                      label="Ausgangswert"
+                      compact
+                    />
+                    <WheelPicker
+                      value={reductionPlan.reductionPerWeek}
+                      min={1}
+                      max={5}
+                      onChange={(value) => updateReductionPlan({ reductionPerWeek: value })}
+                      label="Pro Woche"
+                      compact
+                    />
+                  </div>
+                  <button
+                    onClick={toggleAutomaticReduction}
+                    className="rounded-inner bg-muted w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
+                  >
+                    <span>
+                      <span className="t-16 block text-foreground">Automatisch senken</span>
+                      <span className="t-12 text-subtle">Jeden Montag um den gewählten Wert</span>
+                    </span>
+                    <Toggle on={reductionPlan.automaticReductionEnabled} />
+                  </button>
+                  <button
+                    onClick={togglePauseThisWeek}
+                    className="rounded-inner bg-muted w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
+                  >
+                    <span>
+                      <span className="t-16 block text-foreground">Diese Woche pausieren</span>
+                      <span className="t-12 text-subtle">Ziel bleibt für diese Woche gleich</span>
+                    </span>
+                    <Toggle on={thisWeekPaused} />
+                  </button>
+                  <div className="max-h-64 overflow-y-auto hide-scrollbar space-y-2">
+                    {actualRows.map((row) => (
+                      <div key={row.week} className="rounded-inner bg-muted px-4 py-3 flex items-center justify-between">
+                        <span>
+                          <span className="t-14 text-foreground block">{row.label}</span>
+                          <span className="t-12 text-subtle">Ø {row.actual ?? '–'} tatsächlich</span>
+                        </span>
+                        <span className="t-18 num text-foreground">{row.target}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* Geld & Zeit */}
+              <section>
+                <GroupTitle>Gespartes</GroupTitle>
+                <div className="surface-card p-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block">
+                      <span className="t-12 text-subtle">Packungspreis</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.10"
+                        value={reductionPlan.packPrice}
+                        onChange={(e) => setPlanMoney({ packPrice: Number(e.target.value), packSize: reductionPlan.packSize, currency: reductionPlan.currency })}
+                        className="mt-2 w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="t-12 text-subtle">Packungsgröße</span>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={reductionPlan.packSize}
+                        onChange={(e) => setPlanMoney({ packPrice: reductionPlan.packPrice, packSize: Number(e.target.value), currency: reductionPlan.currency })}
+                        className="mt-2 w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none"
+                      />
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(['CHF', 'EUR', 'USD', 'GBP'] as CurrencyCode[]).map((currency) => (
+                      <button
+                        key={currency}
+                        onClick={() => setPlanMoney({ packPrice: reductionPlan.packPrice, packSize: reductionPlan.packSize, currency })}
+                        className={`h-10 rounded-pill t-12 ${reductionPlan.currency === currency ? 'bg-primary text-primary-foreground' : 'bg-muted text-subtle'}`}
+                      >
+                        {currency}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="t-12 text-subtle">Zeitgewinn: 11 Minuten pro Zigarette. Quellenhinweis: WHO/NHS.</p>
+                </div>
+              </section>
+
+              {/* Plan neu erstellen */}
+              <section>
+                <button onClick={resetOnboarding} className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left">
+                  <span className="flex items-center gap-3">
+                    <RotateCcw className="w-5 h-5 text-primary" strokeWidth={1.75} />
+                    <span>
+                      <span className="t-16 block text-foreground">Plan neu erstellen</span>
+                      <span className="t-12 text-subtle">Onboarding erneut durchlaufen</span>
+                    </span>
+                  </span>
+                  <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
+                </button>
+              </section>
+
               {/* Tagesziel Zigaretten */}
               <section>
                 <GroupTitle>Tagesziel</GroupTitle>
@@ -323,20 +494,58 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 </div>
               </section>
 
-              {/* Premium */}
+              {/* Konto & Premium */}
+              <section>
+                <GroupTitle>Konto</GroupTitle>
+                <div className="surface-card p-5 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="w-5 h-5 text-primary" strokeWidth={1.75} />
+                    <div>
+                      <p className="t-16 text-foreground">{account.signedIn ? account.userEmail : 'Nicht angemeldet'}</p>
+                      <p className="t-12 text-subtle">
+                        {account.role === 'admin'
+                          ? 'Admin dauerhaft freigeschaltet'
+                          : account.access
+                            ? `${account.trialDaysRemaining} Tage Testzeit übrig`
+                            : 'Testzeit abgelaufen'}
+                      </p>
+                    </div>
+                  </div>
+                  {!account.signedIn ? (
+                    <>
+                      <input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        inputMode="email"
+                        placeholder="E-Mail"
+                        className="w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none"
+                      />
+                      <button disabled={accountBusy} onClick={handleMagicLink} className="btn-pill btn-secondary w-full disabled:opacity-60">Magic Link senden</button>
+                      <button disabled={accountBusy} onClick={handleApple} className="btn-pill btn-secondary w-full disabled:opacity-60">Mit Apple anmelden</button>
+                    </>
+                  ) : (
+                    <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
+                  )}
+                  {accountMessage && <p className="t-12 text-subtle">{accountMessage}</p>}
+                </div>
+              </section>
+
               <section>
                 <GroupTitle>Mehr freischalten</GroupTitle>
                 <div className="space-y-[10px]">
-                  <button className="w-full p-5 rounded-card bg-primary text-left">
-                    <p className="t-16 font-medium text-primary-foreground">Lebenslanger Zugang</p>
-                    <p className="t-12 text-primary-foreground/70">Einmaliger Kauf • 20 CHF</p>
+                  <button className="surface-card w-full p-5 text-left">
+                    <p className="t-16 font-medium text-foreground">Monatlich</p>
+                    <p className="t-12 text-subtle">CHF 4.90 / Monat</p>
                   </button>
 
                   <button className="surface-card w-full p-5 text-left">
-                    <p className="t-16 font-medium text-foreground">Abonnieren</p>
-                    <p className="t-12 text-subtle">
-                      1 CHF / Monat • Eigene Themes, Statistiken &amp; mehr
-                    </p>
+                    <p className="t-16 font-medium text-foreground">Jährlich</p>
+                    <p className="t-12 text-subtle">CHF 29 / Jahr</p>
+                  </button>
+
+                  <button className="w-full p-5 rounded-card bg-primary text-left">
+                    <p className="t-16 font-medium text-primary-foreground">Lebenslang</p>
+                    <p className="t-12 text-primary-foreground/70">{formatMoney(79, 'CHF')}</p>
                   </button>
                 </div>
               </section>
