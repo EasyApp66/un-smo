@@ -40,7 +40,18 @@ const HomeScreen = () => {
   // Minutentakt, damit die nächste Zigarette weiterwandert, auch ohne Antippen
   const [minuteTick, setMinuteTick] = useState(0);
   useEffect(() => {
-    const id = window.setInterval(() => setMinuteTick((t) => t + 1), 15000);
+    const id = window.setInterval(() => {
+      setMinuteTick((t) => t + 1);
+      // Tageswechsel um Mitternacht: Ansicht folgt dem neuen Tag,
+      // solange der Nutzer nicht bewusst einen anderen Tag gewählt hat.
+      const today = formatLocalDate();
+      setSelectedDate((current) => {
+        if (current === today) return current;
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        return current === formatLocalDate(yesterday) ? today : current;
+      });
+    }, 15000);
     return () => window.clearInterval(id);
   }, []);
 

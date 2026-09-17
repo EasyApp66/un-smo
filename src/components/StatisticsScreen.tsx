@@ -220,7 +220,7 @@ const StatisticsScreen = () => {
                       <div
                         className="h-full rounded-pill"
                         style={{
-                          width: `${Math.min((day.smoked / day.goal) * 100, 100)}%`,
+                          width: `${day.goal > 0 ? Math.min((day.smoked / day.goal) * 100, 100) : 0}%`,
                           backgroundColor:
                             day.smoked <= day.goal
                               ? 'hsl(var(--success))'
