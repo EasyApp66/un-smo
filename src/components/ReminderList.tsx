@@ -291,7 +291,7 @@ const ReminderList = ({ reminders, wakeTime, onComplete, onUncomplete, onSkip }:
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
-    const target = targetTime(r.time, minuteTick);
+    const target = targetTime(r.time, minuteTick, wakeMin);
     const planned = sortedReminders.filter((item) => !item.extra);
     const plannedIndex = planned.findIndex((item) => item.id === r.id);
     const currentKey = sortKey(r.timestamp);
