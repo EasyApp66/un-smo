@@ -51,11 +51,13 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     applyScheduleToAllDays,
     pushEnabled,
     pushToken,
+    extraButtonEnabled,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
     setThemeMode,
     setPushEnabled,
+    toggleExtraButtonEnabled,
     toggleApplyScheduleToAllDays,
     deleteAllData,
   } = useAppStore();
@@ -168,6 +170,20 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     <span className="t-12 text-subtle">Änderungen auf alle Tage anwenden</span>
                   </span>
                   <Toggle on={applyScheduleToAllDays} />
+                </button>
+              </section>
+
+              {/* Extra-Knopf */}
+              <section>
+                <button
+                  onClick={toggleExtraButtonEnabled}
+                  className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
+                >
+                  <span>
+                    <span className="t-16 block text-foreground">Extra-Knopf anzeigen</span>
+                    <span className="t-12 text-subtle">Zusätzliche Zigaretten unten eintragen</span>
+                  </span>
+                  <Toggle on={extraButtonEnabled} />
                 </button>
               </section>
 
