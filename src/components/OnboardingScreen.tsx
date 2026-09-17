@@ -111,7 +111,7 @@ const OnboardingScreen = () => {
   const buttonLabel = step < 2 ? 'Weiter' : step === 2 ? 'Plan berechnen' : signedIn ? 'Plan speichern' : 'Anmelden und speichern';
 
   return (
-    <div className="min-h-[100dvh] bg-background safe-top safe-bottom flex flex-col px-5">
+    <div className="min-h-[100dvh] bg-background safe-top safe-bottom flex flex-col px-5 max-w-md mx-auto w-full">
       <div className="flex items-center justify-between h-12">
         {step > 0 ? (
           <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} className="w-11 h-11 rounded-pill flex items-center justify-center text-foreground" aria-label="Zurück">
