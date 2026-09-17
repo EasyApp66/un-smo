@@ -80,7 +80,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMessage, setPushMessage] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
+  const [versionTaps, setVersionTaps] = useState(0);
   const [account, setAccount] = useState<AccountStatus>(defaultAccountStatus);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
@@ -117,33 +117,11 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     }
   };
 
-  const handleMagicLink = async () => {
-    if (!email.includes('@')) {
-      setAccountMessage('Bitte gib eine gültige E-Mail ein.');
-      return;
-    }
-    setAccountBusy(true);
-    setAccountMessage(null);
-    try {
-      await sendMagicLink(email.trim());
-      setAccountMessage('Link gesendet. Öffne ihn zum Einloggen.');
-    } catch {
-      setAccountMessage('Der Link konnte nicht gesendet werden.');
-    } finally {
-      setAccountBusy(false);
-    }
+  const handleSignedIn = () => {
+    setAccountMessage('Angemeldet.');
+    fetchAccountStatus().then(setAccount).catch(() => undefined);
   };
 
-  const handleApple = async () => {
-    setAccountBusy(true);
-    setAccountMessage(null);
-    try {
-      await signInWithApple();
-    } catch {
-      setAccountMessage('Apple-Anmeldung ist gerade nicht möglich.');
-      setAccountBusy(false);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
