@@ -37,6 +37,7 @@ interface AppState {
   isLocked: boolean;
   pushEnabled: boolean;
   pushToken: string | null;
+  extraButtonEnabled: boolean;
   
   // Daten
   days: Record<string, DayData>;
@@ -50,6 +51,7 @@ interface AppState {
   lock: () => void;
   unlock: () => void;
   setPushEnabled: (enabled: boolean, token?: string | null) => void;
+  toggleExtraButtonEnabled: () => void;
   setLanguage: (lang: 'de' | 'en') => void;
   toggleApplyScheduleToAllDays: () => void;
   completeOnboarding: () => void;
@@ -202,6 +204,7 @@ export const useAppStore = create<AppState>()(
       isLocked: false,
       pushEnabled: false,
       pushToken: null,
+      extraButtonEnabled: true,
       days: {},
       
       // Wird ein konkreter Tag angegeben, verändert sich ausschließlich dieser Tag.
@@ -261,6 +264,9 @@ export const useAppStore = create<AppState>()(
       unlock: () => set({ isLocked: false }),
       setPushEnabled: (enabled, token = null) =>
         set({ pushEnabled: enabled, pushToken: enabled ? token : null }),
+
+      toggleExtraButtonEnabled: () =>
+        set((state) => ({ extraButtonEnabled: !state.extraButtonEnabled })),
 
       setLanguage: (lang) => {
         set({ language: lang });
@@ -588,6 +594,7 @@ export const useAppStore = create<AppState>()(
           isLocked: false,
           pushEnabled: false,
           pushToken: null,
+          extraButtonEnabled: true,
           days: {},
         });
         applyTheme('system');
@@ -606,6 +613,9 @@ export const useAppStore = create<AppState>()(
           // Neue Standardwerte: 06:30 Aufstehzeit, 30 Zigaretten pro Tag
           p.wakeTime = '06:30';
           p.dailyCigarettes = 30;
+        }
+        if (p.extraButtonEnabled === undefined) {
+          p.extraButtonEnabled = true;
         }
         return p as unknown as AppState;
       },
