@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, formatLocalDate } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
@@ -39,18 +39,18 @@ const HomeScreen = () => {
 
   // Minutentakt, damit die nächste Zigarette weiterwandert, auch ohne Antippen
   const [minuteTick, setMinuteTick] = useState(0);
+  const todayRef = useRef(formatLocalDate());
   useEffect(() => {
     const id = window.setInterval(() => {
       setMinuteTick((t) => t + 1);
-      // Tageswechsel um Mitternacht: Ansicht folgt dem neuen Tag,
-      // solange der Nutzer nicht bewusst einen anderen Tag gewählt hat.
+      // Tageswechsel um Mitternacht: die Ansicht folgt dem neuen Tag,
+      // wenn zuvor der laufende Tag angezeigt wurde.
       const today = formatLocalDate();
-      setSelectedDate((current) => {
-        if (current === today) return current;
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        return current === formatLocalDate(yesterday) ? today : current;
-      });
+      if (today !== todayRef.current) {
+        const previousToday = todayRef.current;
+        todayRef.current = today;
+        setSelectedDate((current) => (current === previousToday ? today : current));
+      }
     }, 15000);
     return () => window.clearInterval(id);
   }, []);
