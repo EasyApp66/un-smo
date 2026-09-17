@@ -129,7 +129,7 @@ const HomeScreen = () => {
       </div>
 
       {/* Kennzahlen erscheinen erst nach dem Einrichten des Tages. */}
-      {!needsSetup && homeSavingsEnabled && (
+      {!needsSetup && (
         <div className="px-4 pt-[10px] grid grid-cols-2 gap-[10px]">
           <div className="surface-card p-4">
             <span className="icon-tile mb-3">
@@ -163,7 +163,7 @@ const HomeScreen = () => {
         </div>
       )}
 
-      {!needsSetup && (
+      {!needsSetup && homeSavingsEnabled && (
         <div className="px-4 pt-[10px]">
           <div className="surface-card p-4 grid grid-cols-2 gap-3">
             <div>
