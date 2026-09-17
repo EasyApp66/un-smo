@@ -6,19 +6,20 @@ import DaySetupCard from './DaySetupCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
 
-const DAY_BREAK = 240;
-const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
+import { sortKey, toMinutes } from '../store/appStore';
 
-const targetTime = (timeString: string, now: number): number => {
+/** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit liegen nach Mitternacht. */
+const targetTime = (timeString: string, now: number, wakeMin: number): number => {
   const nowDate = new Date(now);
   const [hours, minutes] = timeString.split(':').map(Number);
   const target = new Date(nowDate);
   target.setHours(hours, minutes, 0, 0);
   const slotMin = hours * 60 + minutes;
   const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
-  if (slotMin < DAY_BREAK && nowMin >= DAY_BREAK) target.setDate(target.getDate() + 1);
+  if (slotMin < wakeMin && nowMin >= wakeMin) target.setDate(target.getDate() + 1);
   return target.getTime();
 };
+
 
 const HomeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(() => formatLocalDate());
