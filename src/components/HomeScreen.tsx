@@ -30,9 +30,12 @@ const HomeScreen = () => {
     deleteReminder,
     skipReminder,
     dailyCigarettes,
+    wakeTime,
   } = useAppStore();
 
   const dayData = days[selectedDate];
+  const dayWakeTime = dayData?.wakeTime ?? wakeTime;
+
 
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
   const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
