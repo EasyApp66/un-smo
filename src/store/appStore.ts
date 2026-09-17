@@ -38,6 +38,7 @@ interface AppState {
   pushEnabled: boolean;
   pushToken: string | null;
   extraButtonEnabled: boolean;
+  extraReductionEnabled: boolean;
   
   // Daten
   days: Record<string, DayData>;
@@ -52,6 +53,7 @@ interface AppState {
   unlock: () => void;
   setPushEnabled: (enabled: boolean, token?: string | null) => void;
   toggleExtraButtonEnabled: () => void;
+  toggleExtraReductionEnabled: () => void;
   setLanguage: (lang: 'de' | 'en') => void;
   toggleApplyScheduleToAllDays: () => void;
   completeOnboarding: () => void;
@@ -140,7 +142,72 @@ export const sortKey = (minutes: number, wakeMinutes: number = DAY_BREAK) =>
   minutes < wakeMinutes ? minutes + 1440 : minutes;
 
 
-/** Verteilt `count` Zeiten gleichmäßig zwischen `startMin` und der Schlafenszeit */
+const restorePlannedReminders = (
+  day: DayData,
+  fallback: { wakeTime: string; sleepTime: string }
+) => {
+  const wakeTime = day.wakeTime ?? fallback.wakeTime;
+  const sleepTime = day.sleepTime ?? fallback.sleepTime;
+  const wakeMin = toMinutes(wakeTime);
+  const generated = generateReminders(wakeTime, sleepTime, day.totalCigarettes);
+  const previous = day.reminders
+    .filter((r) => !r.extra)
+    .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
+  const previousById = new Map(previous.map((r) => [r.id, r]));
+
+  return generated.map((r, i) => {
+    const preserved = previousById.get(r.id) ?? previous[i];
+    return {
+      ...r,
+      completed: !!preserved?.completed,
+      completedAt: preserved?.completedAt,
+      skipped: preserved?.skipped ? true : undefined,
+    };
+  });
+};
+
+const reconcileExtraReduction = (
+  date: string,
+  day: DayData,
+  settings: {
+    wakeTime: string;
+    sleepTime: string;
+    extraButtonEnabled: boolean;
+    extraReductionEnabled: boolean;
+  },
+  now: Date = new Date()
+): DayData => {
+  const extras = day.reminders.filter((r) => r.extra);
+  const planned = restorePlannedReminders(day, settings);
+  const wakeTime = day.wakeTime ?? settings.wakeTime;
+  const sleepTime = day.sleepTime ?? settings.sleepTime;
+  const wakeMin = toMinutes(wakeTime);
+  const reductionActive = settings.extraButtonEnabled && settings.extraReductionEnabled;
+  let reminders: ReminderTime[] = [...planned, ...extras];
+
+  if (reductionActive && date === formatLocalDate(now) && extras.length > 0) {
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const nowKey = sortKey(nowMin, wakeMin);
+    const open = planned
+      .filter((r) => !r.completed && !r.skipped && sortKey(r.timestamp, wakeMin) > nowKey)
+      .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
+
+    if (open.length > 0) {
+      const dropCount = Math.min(open.length, extras.length + Math.floor(extras.length / 2));
+      const dropIds = new Set(open.slice(open.length - dropCount).map((r) => r.id));
+      reminders = reminders.filter((r) => r.extra || !dropIds.has(r.id));
+    }
+  }
+
+  return {
+    ...day,
+    wakeTime,
+    sleepTime,
+    reminders,
+    cigarettesSmoked: reminders.filter((r) => r.completed).length,
+  };
+};
+
 /** Untergrenze für automatische Ziel-Empfehlungen */
 export const GOAL_FLOOR = 20;
 
@@ -205,6 +272,7 @@ export const useAppStore = create<AppState>()(
       pushEnabled: false,
       pushToken: null,
       extraButtonEnabled: true,
+      extraReductionEnabled: true,
       days: {},
       
       // Wird ein konkreter Tag angegeben, verändert sich ausschließlich dieser Tag.
@@ -266,7 +334,46 @@ export const useAppStore = create<AppState>()(
         set({ pushEnabled: enabled, pushToken: enabled ? token : null }),
 
       toggleExtraButtonEnabled: () =>
-        set((state) => ({ extraButtonEnabled: !state.extraButtonEnabled })),
+        set((state) => {
+          const extraButtonEnabled = !state.extraButtonEnabled;
+          const today = getTodayString();
+          const todayData = state.days[today];
+          if (!todayData) return { extraButtonEnabled };
+
+          return {
+            extraButtonEnabled,
+            days: {
+              ...state.days,
+              [today]: reconcileExtraReduction(today, todayData, {
+                wakeTime: state.wakeTime,
+                sleepTime: state.sleepTime,
+                extraButtonEnabled,
+                extraReductionEnabled: state.extraReductionEnabled,
+              }),
+            },
+          };
+        }),
+
+      toggleExtraReductionEnabled: () =>
+        set((state) => {
+          const extraReductionEnabled = !state.extraReductionEnabled;
+          const today = getTodayString();
+          const todayData = state.days[today];
+          if (!todayData) return { extraReductionEnabled };
+
+          return {
+            extraReductionEnabled,
+            days: {
+              ...state.days,
+              [today]: reconcileExtraReduction(today, todayData, {
+                wakeTime: state.wakeTime,
+                sleepTime: state.sleepTime,
+                extraButtonEnabled: state.extraButtonEnabled,
+                extraReductionEnabled,
+              }),
+            },
+          };
+        }),
 
       setLanguage: (lang) => {
         set({ language: lang });
@@ -324,14 +431,21 @@ export const useAppStore = create<AppState>()(
             : dayData.reminders.map((r) =>
                 r.id === reminderId ? { ...r, completed: false, completedAt: undefined } : r
               );
+          const updatedDay = target?.extra
+            ? reconcileExtraReduction(date, { ...dayData, reminders: updatedReminders }, {
+                wakeTime: state.wakeTime,
+                sleepTime: state.sleepTime,
+                extraButtonEnabled: state.extraButtonEnabled,
+                extraReductionEnabled: state.extraReductionEnabled,
+              })
+            : { ...dayData, reminders: updatedReminders };
 
           return {
             days: {
               ...state.days,
               [date]: {
-                ...dayData,
-                reminders: updatedReminders,
-                cigarettesSmoked: updatedReminders.filter((r) => r.completed).length,
+                ...updatedDay,
+                cigarettesSmoked: updatedDay.reminders.filter((r) => r.completed).length,
               },
             },
           };
@@ -366,40 +480,24 @@ export const useAppStore = create<AppState>()(
             extra: true,
           };
 
-          let reminders = [...base.reminders, extra];
-
-          // Eine Extra-Zigarette zählt auf das Tagesziel: der späteste offene Wecker fällt weg.
-          // Jede zweite Extra-Zigarette kostet zusätzlich einen weiteren Wecker.
-          // Die Zeiten der übrigen Wecker bleiben unverändert – nichts wird nach hinten geschoben.
-          const extraCount = reminders.filter((r) => r.extra).length;
-          if (date === getTodayString()) {
-            // Vergleich über sortKey ab der Aufstehzeit des Tages, damit nur
-            // echte Nachtzeiten als späteste Wecker des Tages gelten.
-            const wakeMin = toMinutes(base.wakeTime ?? state.wakeTime);
-            const nowKey = sortKey(nowMin, wakeMin);
-            const open = reminders
-              .filter(
-                (r) =>
-                  !r.extra && !r.completed && !r.skipped && sortKey(r.timestamp, wakeMin) > nowKey
-              )
-              .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
-
-
-            if (open.length > 0) {
-              const dropCount = Math.min(open.length, extraCount % 2 === 0 ? 2 : 1);
-              const dropIds = new Set(open.slice(open.length - dropCount).map((r) => r.id));
-              reminders = reminders.filter((r) => !dropIds.has(r.id));
-            }
-          }
+          const updated = reconcileExtraReduction(
+            date,
+            { ...base, reminders: [...base.reminders, extra] },
+            {
+              wakeTime: state.wakeTime,
+              sleepTime: state.sleepTime,
+              extraButtonEnabled: state.extraButtonEnabled,
+              extraReductionEnabled: state.extraReductionEnabled,
+            },
+            now
+          );
 
 
           return {
             days: {
               ...state.days,
               [date]: {
-                ...base,
-                reminders,
-                cigarettesSmoked: reminders.filter((r) => r.completed).length,
+                ...updated,
               },
             },
           };
@@ -595,6 +693,7 @@ export const useAppStore = create<AppState>()(
           pushEnabled: false,
           pushToken: null,
           extraButtonEnabled: true,
+          extraReductionEnabled: true,
           days: {},
         });
         applyTheme('system');
@@ -616,6 +715,9 @@ export const useAppStore = create<AppState>()(
         }
         if (p.extraButtonEnabled === undefined) {
           p.extraButtonEnabled = true;
+        }
+        if (p.extraReductionEnabled === undefined) {
+          p.extraReductionEnabled = true;
         }
         return p as unknown as AppState;
       },
