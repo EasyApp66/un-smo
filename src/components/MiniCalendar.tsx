@@ -67,12 +67,12 @@ const DayButton = ({
     onClick={() => onSelect(day.date)}
     aria-label={day.date}
     aria-pressed={isSelected}
-    className={`relative flex flex-col items-center justify-center h-[78px] rounded-md [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+    className={`relative flex flex-col items-center justify-center h-[82px] rounded-md [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1)] ${
       isSelected ? 'bg-primary' : 'bg-transparent'
     } ${!isSelected && day.isFuture ? 'opacity-45' : ''}`}
   >
     <span
-      className={`t-12 uppercase leading-none mb-1 ${
+      className={`t-14 font-medium uppercase leading-none mb-1 ${
         isSelected ? 'text-primary-foreground/70' : 'text-subtle'
       }`}
     >
