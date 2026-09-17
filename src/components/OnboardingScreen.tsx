@@ -6,7 +6,7 @@ import Mark from './Mark';
 import WheelPicker from './WheelPicker';
 import TimePicker from './TimePicker';
 import { buildReductionPlan, formatMoney, formatSavedTime, MINUTES_PER_CIGARETTE, unitPrice } from '@/lib/reductionPlan';
-import { ensureProfile, sendMagicLink, signInWithApple } from '@/lib/account';
+
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const steps = 3;

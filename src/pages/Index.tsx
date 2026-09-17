@@ -13,7 +13,6 @@ import { syncPushSchedule } from '../lib/push';
 const Index = () => {
   const {
     hasCompletedOnboarding,
-    onboardingVersion,
     themeMode,
     pushToken,
     wakeTime,
