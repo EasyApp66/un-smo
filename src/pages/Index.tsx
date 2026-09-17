@@ -19,6 +19,7 @@ const Index = () => {
     dailyCigarettes,
     days,
     addExtraCigarette,
+    extraButtonEnabled,
   } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -103,14 +104,18 @@ const Index = () => {
       <BottomTabBar
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        onAddExtra={() => {
-          addExtraCigarette(formatLocalDate());
-          if ('vibrate' in navigator) navigator.vibrate(12);
-          const extraCount =
-            useAppStore.getState().days[formatLocalDate()]?.reminders.filter((r) => r.extra).length || 0;
-          setExtraFeedback(extraCount);
-          setTimeout(() => setExtraFeedback(null), 2200);
-        }}
+        onAddExtra={
+          extraButtonEnabled
+            ? () => {
+                addExtraCigarette(formatLocalDate());
+                if ('vibrate' in navigator) navigator.vibrate(12);
+                const extraCount =
+                  useAppStore.getState().days[formatLocalDate()]?.reminders.filter((r) => r.extra).length || 0;
+                setExtraFeedback(extraCount);
+                setTimeout(() => setExtraFeedback(null), 2200);
+              }
+            : undefined
+        }
       />
 
       {/* Einstellungen Sheet */}

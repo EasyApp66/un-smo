@@ -22,7 +22,8 @@ interface DayCell {
   weekday: string;
   isToday: boolean;
   isFuture: boolean;
-  progress: number | null;
+  hasData: boolean;
+  smoked: number;
   overGoal: boolean;
 }
 
@@ -31,12 +32,11 @@ const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>
     const date = addDays(weekStart, i);
     const dateString = toDateString(date);
     const data = daysData[dateString];
-    let progress: number | null = null;
+    let smoked = 0;
     let overGoal = false;
     if (data && data.totalCigarettes > 0) {
-      const done = data.reminders.filter((r: any) => r.completed).length;
-      progress = Math.min(1, done / data.totalCigarettes);
-      overGoal = done > data.totalCigarettes;
+      smoked = data.reminders.filter((r: any) => r.completed).length;
+      overGoal = smoked > data.totalCigarettes;
     }
     return {
       date: dateString,
@@ -44,14 +44,11 @@ const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>
       weekday: format(date, 'EEEEEE', { locale: de }),
       isToday: dateString === today,
       isFuture: dateString > today,
-      progress,
+      hasData: !!data,
+      smoked,
       overGoal,
     };
   });
-
-const RING = 34; // Durchmesser des Fortschrittsrings
-const R = (RING - 3) / 2;
-const C = 2 * Math.PI * R;
 
 const DayButton = ({
   day,
@@ -67,44 +64,21 @@ const DayButton = ({
     onClick={() => onSelect(day.date)}
     aria-label={day.date}
     aria-pressed={isSelected}
-    className={`relative flex flex-col items-center justify-center h-[82px] rounded-md [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+    className={`relative flex flex-col items-center justify-center h-[86px] rounded-[24px] [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1)] ${
       isSelected ? 'bg-primary' : 'bg-transparent'
     } ${!isSelected && day.isFuture ? 'opacity-45' : ''}`}
   >
     <span
-      className={`t-14 font-medium uppercase leading-none mb-1 ${
+      className={`t-16 font-medium uppercase leading-none mb-2 ${
         isSelected ? 'text-primary-foreground/70' : 'text-subtle'
       }`}
     >
       {day.weekday}
     </span>
 
-    <span className="relative flex items-center justify-center" style={{ width: RING, height: RING }}>
-      {day.progress !== null && (
-        <svg className="absolute inset-0 -rotate-90" width={RING} height={RING} aria-hidden>
-          <circle
-            cx={RING / 2}
-            cy={RING / 2}
-            r={R}
-            fill="none"
-            strokeWidth={2}
-            stroke="hsl(var(--border) / 0.6)"
-          />
-          <circle
-            cx={RING / 2}
-            cy={RING / 2}
-            r={R}
-            fill="none"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeDasharray={C}
-            strokeDashoffset={C * (1 - day.progress)}
-            stroke={day.overGoal ? 'hsl(var(--destructive))' : 'hsl(var(--success))'}
-          />
-        </svg>
-      )}
+    <span className="relative flex items-center justify-center h-9">
       <span
-        className={`relative t-20 num leading-none ${
+        className={`relative t-24 num leading-none ${
           isSelected ? 'text-primary-foreground' : 'text-foreground'
         }`}
       >
@@ -113,12 +87,8 @@ const DayButton = ({
     </span>
 
     <span
-      className={`mt-1.5 h-1.5 w-1.5 rounded-pill ${
-        day.isToday
-          ? isSelected
-            ? 'bg-primary-foreground'
-            : 'bg-primary'
-          : 'bg-transparent'
+      className={`mt-2 h-2 w-2 rounded-pill ${
+        day.hasData ? (day.overGoal ? 'bg-destructive' : 'bg-success') : 'bg-transparent'
       }`}
     />
   </button>
@@ -175,6 +145,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   );
 
   const monthLabel = format(weekStart, 'MMMM yyyy', { locale: de });
+  const weekTotal = weeks[1]?.days.reduce((sum, day) => sum + day.smoked, 0) ?? 0;
 
   const goToWeek = (delta: number) => {
     if ('vibrate' in navigator) navigator.vibrate(5);
@@ -204,24 +175,30 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
 
   return (
     <div className="px-3 py-4 select-none">
-      <div className="flex items-center justify-between px-1 mb-3 h-8">
+      <div className="flex items-center justify-between gap-2 px-1 mb-3 min-h-8">
         <span className="t-16 font-medium text-foreground capitalize">{monthLabel}</span>
-        {showTodayButton && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.18, ease: EASE }}
-            type="button"
-            onClick={() => {
-              setWeekOffset(0);
-              x.set(0);
-              onDateSelect(today);
-            }}
-            className="px-4 h-8 rounded-pill bg-primary/[0.12] text-primary t-12 font-medium"
-          >
-            Heute
-          </motion.button>
-        )}
+        <span className="flex items-center gap-2">
+          <span className="rounded-pill bg-muted px-3 h-8 flex items-center gap-1.5" aria-label={`Woche gesamt: ${weekTotal}`}>
+            <span className="t-12 text-subtle">Woche</span>
+            <span className="t-18 num text-foreground">{weekTotal}</span>
+          </span>
+          {showTodayButton && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.18, ease: EASE }}
+              type="button"
+              onClick={() => {
+                setWeekOffset(0);
+                x.set(0);
+                onDateSelect(today);
+              }}
+              className="px-4 h-8 rounded-pill bg-primary/[0.12] text-primary t-12 font-medium"
+            >
+              Heute
+            </motion.button>
+          )}
+        </span>
       </div>
 
       <div ref={containerRef} className="overflow-hidden" style={{ touchAction: 'pan-y' }}>

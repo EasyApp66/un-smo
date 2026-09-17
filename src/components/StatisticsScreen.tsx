@@ -2,13 +2,15 @@ import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingDown, Cigarette, Calendar, Target } from 'lucide-react';
-import { useMemo } from 'react';
+import { TrendingDown, Cigarette, Calendar, Target, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Input } from './ui/input';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const StatisticsScreen = () => {
   const { days, dailyCigarettes } = useAppStore();
+  const [monthSearch, setMonthSearch] = useState('');
 
   // Letzte 7 Tage berechnen
   const weekData = useMemo(() => {
@@ -88,6 +90,52 @@ const StatisticsScreen = () => {
       savedCigarettes: Math.max(0, savedCigarettes),
     };
   }, [weekData]);
+
+  const monthMemories = useMemo(() => {
+    const currentMonth = formatLocalDate().slice(0, 7);
+    const months = Array.from(
+      new Set([currentMonth, ...Object.keys(days).map((date) => date.slice(0, 7))])
+    ).sort((a, b) => b.localeCompare(a));
+
+    return months.map((month) => {
+      const entries = Object.values(days).filter((day) => day.date.startsWith(month));
+      const [year, monthNumber] = month.split('-').map(Number);
+      const label = new Date(year, monthNumber - 1, 1).toLocaleDateString('de-DE', {
+        month: 'long',
+        year: 'numeric',
+      });
+      const smoked = entries.reduce((sum, day) => sum + day.cigarettesSmoked, 0);
+      const goal = entries.reduce((sum, day) => sum + day.totalCigarettes, 0);
+      const extras = entries.reduce(
+        (sum, day) => sum + day.reminders.filter((reminder) => reminder.extra).length,
+        0
+      );
+      const skipped = entries.reduce(
+        (sum, day) => sum + day.reminders.filter((reminder) => reminder.skipped).length,
+        0
+      );
+
+      return {
+        month,
+        label,
+        activeDays: entries.length,
+        smoked,
+        goal,
+        extras,
+        skipped,
+        overGoal: goal > 0 && smoked > goal,
+      };
+    });
+  }, [days]);
+
+  const visibleMonthMemories = useMemo(() => {
+    const query = monthSearch.trim().toLocaleLowerCase('de-DE');
+    if (!query) return monthMemories;
+    return monthMemories.filter(
+      (memory) =>
+        memory.label.toLocaleLowerCase('de-DE').includes(query) || memory.month.includes(query)
+    );
+  }, [monthMemories, monthSearch]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -194,11 +242,68 @@ const StatisticsScreen = () => {
           </Metric>
         </div>
 
-        {/* Tägliche Details */}
+        {/* Monats-Memory */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: EASE, delay: 0.12 }}
+          className="surface-card p-5"
+        >
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="t-18 text-foreground">Monats-Memory</h2>
+            <span className="t-12 text-subtle">{monthMemories.length}</span>
+          </div>
+
+          <label className="relative block mb-3">
+            <span className="sr-only">Monat suchen</span>
+            <Search className="absolute left-4 top-1/2 w-4 h-4 -translate-y-1/2 text-subtle" strokeWidth={1.75} />
+            <Input
+              value={monthSearch}
+              onChange={(event) => setMonthSearch(event.target.value)}
+              placeholder="Monat suchen"
+              className="h-12 rounded-pill bg-muted border-transparent pl-11 t-16"
+            />
+          </label>
+
+          <div className="space-y-[10px]">
+            {visibleMonthMemories.map((memory) => (
+              <div key={memory.month} className="rounded-inner bg-muted px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="t-16 text-foreground capitalize">{memory.label}</p>
+                    <p className="t-12 text-subtle">{memory.activeDays} Tage gespeichert</p>
+                  </div>
+                  <span className="flex items-baseline gap-1 num">
+                    <span className={`t-24 ${memory.overGoal ? 'text-destructive' : 'text-foreground'}`}>
+                      {memory.smoked}
+                    </span>
+                    <span className="t-12 text-subtle">/ {memory.goal}</span>
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <span className="rounded-pill bg-card px-3 py-2 flex items-center justify-between">
+                    <span className="t-12 text-subtle">Extra</span>
+                    <span className="num t-16 text-destructive">{memory.extras}</span>
+                  </span>
+                  <span className="rounded-pill bg-card px-3 py-2 flex items-center justify-between">
+                    <span className="t-12 text-subtle">Übersprungen</span>
+                    <span className="num t-16 text-success">{memory.skipped}</span>
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {visibleMonthMemories.length === 0 && (
+              <p className="t-14 text-subtle text-center py-4">Kein Monat gefunden</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Tägliche Details */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: EASE, delay: 0.14 }}
           className="surface-card p-5"
         >
           <h2 className="t-18 text-foreground mb-3">Ziel &amp; erreicht pro Tag</h2>
