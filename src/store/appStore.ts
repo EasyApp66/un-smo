@@ -117,6 +117,14 @@ export const formatLocalDate = (d: Date = new Date()) => {
 
 const getTodayString = () => formatLocalDate();
 
+/**
+ * Zeiten vor 04:00 gehören zum Vorabend (Zeitplan über Mitternacht).
+ * Diese Reihenfolge-Hilfe wird überall verwendet, wo Wecker verglichen
+ * oder sortiert werden – sonst landen Nachtzeiten fälschlich am Tagesanfang.
+ */
+export const DAY_BREAK = 240;
+export const sortKey = (minutes: number) => (minutes < DAY_BREAK ? minutes + 1440 : minutes);
+
 /** Verteilt `count` Zeiten gleichmäßig zwischen `startMin` und der Schlafenszeit */
 /** Untergrenze für automatische Ziel-Empfehlungen */
 export const GOAL_FLOOR = 20;
