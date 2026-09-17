@@ -52,12 +52,14 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     pushEnabled,
     pushToken,
     extraButtonEnabled,
+    extraReductionEnabled,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
     setThemeMode,
     setPushEnabled,
     toggleExtraButtonEnabled,
+    toggleExtraReductionEnabled,
     toggleApplyScheduleToAllDays,
     deleteAllData,
   } = useAppStore();
@@ -184,6 +186,24 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     <span className="t-12 text-subtle">Zusätzliche Zigaretten unten eintragen</span>
                   </span>
                   <Toggle on={extraButtonEnabled} />
+                </button>
+              </section>
+
+              {/* Extra-Regel */}
+              <section>
+                <button
+                  onClick={toggleExtraReductionEnabled}
+                  disabled={!extraButtonEnabled}
+                  aria-disabled={!extraButtonEnabled}
+                  className={`surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left ${
+                    extraButtonEnabled ? '' : 'opacity-45'
+                  }`}
+                >
+                  <span>
+                    <span className="t-16 block text-foreground">Wecker bei Extras entfernen</span>
+                    <span className="t-12 text-subtle">Geklickte Extras kürzen den heutigen Ablauf</span>
+                  </span>
+                  <Toggle on={extraButtonEnabled && extraReductionEnabled} />
                 </button>
               </section>
 
