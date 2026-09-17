@@ -61,7 +61,11 @@ const OnboardingScreen = () => {
     setAuthBusy(true);
     setAuthMessage(null);
     try {
-      await ensureProfile();
+      const ready = await ensureProfile();
+      if (!ready) {
+        setAuthMessage('Bitte melde dich an, damit dein Plan gespeichert wird.');
+        return;
+      }
       setSignedIn(true);
       completeWithPlan({ dailyCigarettes: daily, wakeTime, sleepTime, reductionPerWeek: selectedSpeed as ReductionSpeed });
     } catch {

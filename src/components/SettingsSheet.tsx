@@ -147,6 +147,22 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     setAccount(defaultAccountStatus);
   };
 
+  const handleDeleteAccount = async () => {
+    setAccountBusy(true);
+    setAccountMessage(null);
+    try {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) throw error;
+      deleteAllData();
+      setAccount(defaultAccountStatus);
+      onClose();
+    } catch {
+      setAccountMessage('Konto konnte nicht gelöscht werden.');
+    } finally {
+      setAccountBusy(false);
+    }
+  };
+
   const handleTogglePush = async () => {
     setPushBusy(true);
     setPushMessage(null);
@@ -524,7 +540,10 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                       <button disabled={accountBusy} onClick={handleApple} className="btn-pill btn-secondary w-full disabled:opacity-60">Mit Apple anmelden</button>
                     </>
                   ) : (
-                    <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
+                    <>
+                      <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
+                      <button disabled={accountBusy} onClick={handleDeleteAccount} className="btn-pill w-full text-destructive disabled:opacity-60">Konto und Daten löschen</button>
+                    </>
                   )}
                   {accountMessage && <p className="t-12 text-subtle">{accountMessage}</p>}
                 </div>
