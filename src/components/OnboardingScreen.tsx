@@ -6,7 +6,7 @@ import Mark from './Mark';
 import WheelPicker from './WheelPicker';
 import TimePicker from './TimePicker';
 import { buildReductionPlan, formatMoney, formatSavedTime, MINUTES_PER_CIGARETTE, unitPrice } from '@/lib/reductionPlan';
-import { ensureProfile, sendMagicLink, signInWithApple } from '@/lib/account';
+
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const steps = 3;
@@ -46,10 +46,6 @@ const OnboardingScreen = () => {
   const [sleepTime, setSleepTime] = useState('23:00');
   const [speed, setSpeed] = useState<ReductionSpeed>(2);
   const [customSpeed, setCustomSpeed] = useState(2);
-  const [email, setEmail] = useState('');
-  const [authMessage, setAuthMessage] = useState<string | null>(null);
-  const [authBusy, setAuthBusy] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
 
   const selectedSpeed = speed === 4 ? customSpeed : speed;
   const previewState = useMemo(() => planState(daily, selectedSpeed), [daily, selectedSpeed]);
@@ -57,50 +53,9 @@ const OnboardingScreen = () => {
   const zeroWeeks = Math.ceil(daily / Math.max(1, selectedSpeed));
   const totalSaved = planRows.reduce((sum, row) => sum + Math.max(0, daily - row.target) * 7, 0);
 
-  const finish = async () => {
-    setAuthBusy(true);
-    setAuthMessage(null);
-    try {
-      const ready = await ensureProfile();
-      if (!ready) {
-        setAuthMessage('Bitte melde dich an, damit dein Plan gespeichert wird.');
-        return;
-      }
-      setSignedIn(true);
-      completeWithPlan({ dailyCigarettes: daily, wakeTime, sleepTime, reductionPerWeek: selectedSpeed as ReductionSpeed });
-    } catch {
-      setAuthMessage('Bitte melde dich an, damit dein Plan gespeichert wird.');
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
-  const magicLink = async () => {
-    if (!email.includes('@')) {
-      setAuthMessage('Bitte gib eine gültige E-Mail ein.');
-      return;
-    }
-    setAuthBusy(true);
-    setAuthMessage(null);
-    try {
-      await sendMagicLink(email.trim());
-      setAuthMessage('Link gesendet. Öffne ihn und komm danach zurück.');
-    } catch {
-      setAuthMessage('Der Link konnte nicht gesendet werden.');
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
-  const apple = async () => {
-    setAuthBusy(true);
-    setAuthMessage(null);
-    try {
-      await signInWithApple();
-    } catch {
-      setAuthMessage('Apple-Anmeldung ist gerade nicht möglich.');
-      setAuthBusy(false);
-    }
+  // Kein Konto nötig – der Plan bleibt lokal gespeichert.
+  const finish = () => {
+    completeWithPlan({ dailyCigarettes: daily, wakeTime, sleepTime, reductionPerWeek: selectedSpeed as ReductionSpeed });
   };
 
   const next = () => {
@@ -108,7 +63,7 @@ const OnboardingScreen = () => {
     else finish();
   };
 
-  const buttonLabel = step < 2 ? 'Weiter' : step === 2 ? 'Plan berechnen' : signedIn ? 'Plan speichern' : 'Anmelden und speichern';
+  const buttonLabel = step < 2 ? 'Weiter' : step === 2 ? 'Plan berechnen' : 'Los geht\u2019s';
 
   return (
     <div className="min-h-[100dvh] bg-background safe-top safe-bottom flex flex-col px-5 max-w-md mx-auto w-full">
@@ -187,20 +142,7 @@ const OnboardingScreen = () => {
             {step === 3 && (
               <div className="flex-1 overflow-y-auto hide-scrollbar pb-2">
                 <h1 className="t-24 text-foreground mb-2">Der Plan</h1>
-                <p className="t-14 text-subtle mb-5">Melde dich an, damit dein Plan geschützt gespeichert wird.</p>
-                <div className="surface-card p-4 mb-4 space-y-3">
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    inputMode="email"
-                    autoComplete="email"
-                    placeholder="E-Mail"
-                    className="w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none"
-                  />
-                  <button type="button" onClick={magicLink} disabled={authBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">Magic Link senden</button>
-                  <button type="button" onClick={apple} disabled={authBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">Mit Apple anmelden</button>
-                  {authMessage && <p className="t-12 text-subtle">{authMessage}</p>}
-                </div>
+                <p className="t-14 text-subtle mb-5">Dein Plan bleibt auf diesem Gerät gespeichert.</p>
                 <div className="surface-card p-4 mb-4 grid grid-cols-2 gap-3">
                   <div>
                     <p className="t-12 text-subtle">Gespart bis dahin</p>
@@ -228,7 +170,7 @@ const OnboardingScreen = () => {
         </AnimatePresence>
       </div>
 
-      <button type="button" onClick={next} disabled={authBusy} className="btn-pill btn-primary w-full mb-2 disabled:opacity-60">
+      <button type="button" onClick={next} className="btn-pill btn-primary w-full mb-2 disabled:opacity-60">
         {buttonLabel}
       </button>
     </div>

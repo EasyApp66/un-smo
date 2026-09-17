@@ -8,3 +8,8 @@
 - [x] Kalender- und Theme-Korrekturen abschließen
 - [ ] Zahlungsanbieter-Aktivierung klären — Empfehlung liegt vor, Aktivierung braucht Bestätigung
 - [x] Sicherheitswarnung pg_net dokumentieren
+- [x] Freischaltcode und /unlock für Admin
+- [x] App startet ohne Anmeldung, Testzeit lokal
+- [x] Zahlencode statt Magic Link, Apple ausgeblendet
+- [x] Service Worker v4 und Versionsanzeige (7 Tipper = Freischaltung)
+- [ ] E-Mail-Vorlage „Magic Link" auf {{ .Token }} umstellen (muss der Nutzer selbst tun)

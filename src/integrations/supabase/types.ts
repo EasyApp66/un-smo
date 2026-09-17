@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_unlock_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       day_logs: {
         Row: {
           cigarettes_smoked: number

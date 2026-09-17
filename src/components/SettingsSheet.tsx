@@ -7,8 +7,11 @@ import WheelPicker from './WheelPicker';
 
 import { enablePush, disablePush, sendTestPush } from '../lib/push';
 import { formatMoney, weeklyActuals, type CurrencyCode, weekKey } from '@/lib/reductionPlan';
-import { defaultAccountStatus, fetchAccountStatus, sendMagicLink, signInWithApple, type AccountStatus } from '@/lib/account';
+import { defaultAccountStatus, fetchAccountStatus, type AccountStatus } from '@/lib/account';
 import { supabase } from '@/integrations/supabase/client';
+import EmailCodeSignIn from './EmailCodeSignIn';
+import { APP_VERSION } from '@/lib/appVersion';
+import { goTo } from '@/lib/navigate';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,7 +80,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMessage, setPushMessage] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
+  const [versionTaps, setVersionTaps] = useState(0);
   const [account, setAccount] = useState<AccountStatus>(defaultAccountStatus);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
@@ -114,33 +117,11 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     }
   };
 
-  const handleMagicLink = async () => {
-    if (!email.includes('@')) {
-      setAccountMessage('Bitte gib eine gültige E-Mail ein.');
-      return;
-    }
-    setAccountBusy(true);
-    setAccountMessage(null);
-    try {
-      await sendMagicLink(email.trim());
-      setAccountMessage('Link gesendet. Öffne ihn zum Einloggen.');
-    } catch {
-      setAccountMessage('Der Link konnte nicht gesendet werden.');
-    } finally {
-      setAccountBusy(false);
-    }
+  const handleSignedIn = () => {
+    setAccountMessage('Angemeldet.');
+    fetchAccountStatus().then(setAccount).catch(() => undefined);
   };
 
-  const handleApple = async () => {
-    setAccountBusy(true);
-    setAccountMessage(null);
-    try {
-      await signInWithApple();
-    } catch {
-      setAccountMessage('Apple-Anmeldung ist gerade nicht möglich.');
-      setAccountBusy(false);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -514,6 +495,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
               <section>
                 <GroupTitle>Konto</GroupTitle>
                 <div className="surface-card p-5 space-y-3">
+                  <p className="t-12 text-subtle">Optional — für Sicherung und mehrere Geräte</p>
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="w-5 h-5 text-primary" strokeWidth={1.75} />
                     <div>
@@ -528,17 +510,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     </div>
                   </div>
                   {!account.signedIn ? (
-                    <>
-                      <input
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        inputMode="email"
-                        placeholder="E-Mail"
-                        className="w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none"
-                      />
-                      <button disabled={accountBusy} onClick={handleMagicLink} className="btn-pill btn-secondary w-full disabled:opacity-60">Magic Link senden</button>
-                      <button disabled={accountBusy} onClick={handleApple} className="btn-pill btn-secondary w-full disabled:opacity-60">Mit Apple anmelden</button>
-                    </>
+                    <EmailCodeSignIn onSignedIn={handleSignedIn} />
                   ) : (
                     <>
                       <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
@@ -616,6 +588,26 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+              </section>
+
+              {/* Version – siebenmal antippen öffnet die Freischaltung */}
+              <section className="pb-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = versionTaps + 1;
+                    if (next >= 7) {
+                      setVersionTaps(0);
+                      onClose();
+                      goTo('/unlock');
+                      return;
+                    }
+                    setVersionTaps(next);
+                  }}
+                  className="w-full py-3 t-12 text-subtle text-center"
+                >
+                  Version {APP_VERSION}
+                </button>
               </section>
             </div>
           </motion.div>

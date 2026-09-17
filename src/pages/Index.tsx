@@ -4,7 +4,7 @@ import HomeScreen from '../components/HomeScreen';
 import BottomTabBar from '../components/BottomTabBar';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { REQUIRED_ONBOARDING_VERSION } from '@/lib/reductionPlan';
+
 
 const StatisticsScreen = lazy(() => import('../components/StatisticsScreen'));
 const SettingsSheet = lazy(() => import('../components/SettingsSheet'));
@@ -13,7 +13,6 @@ import { syncPushSchedule } from '../lib/push';
 const Index = () => {
   const {
     hasCompletedOnboarding,
-    onboardingVersion,
     themeMode,
     pushToken,
     wakeTime,
@@ -61,7 +60,8 @@ const Index = () => {
     setActiveTab('home');
   };
 
-  if (!hasCompletedOnboarding || onboardingVersion < REQUIRED_ONBOARDING_VERSION) {
+  // Nur beim allerersten Start: kein Kennzeichen und keine lokalen Daten.
+  if (!hasCompletedOnboarding && Object.keys(days).length === 0) {
     return <OnboardingScreen />;
   }
 
