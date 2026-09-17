@@ -26,7 +26,7 @@
 
 @layer base {
   :root {
-    --background: 252 29% 97%;
+    --background: 250 24% 96%;
     --foreground: 222 32% 8%;
 
     --card: 0 0% 100%;
@@ -68,7 +68,7 @@
     --radius-inner: 20px;
     --radius-icon: 16px;
 
-    --shadow-card: 0 1px 2px hsl(222 32% 6% / 0.03);
+    --shadow-card: 0 1px 2px hsl(222 32% 6% / 0.04), 0 8px 24px -12px hsl(222 32% 6% / 0.10);
     --shadow-float: 0 4px 30px hsl(0 0% 0% / 0.1);
     --shadow-navigation: 0 8px 24px hsl(222 32% 6% / 0.14), 0 2px 6px hsl(222 32% 6% / 0.06);
     --shadow-countdown: 0 5px 16px hsl(var(--primary) / 0.16);

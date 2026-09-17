@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { durableStorage } from '../lib/persistentStorage';
+import {
+  REQUIRED_ONBOARDING_VERSION,
+  type CurrencyCode,
+  type ReductionPlanState,
+  measuredAverage,
+  needsMeasurementReview,
+  plannedTargetForDate,
+  weekKey,
+} from '../lib/reductionPlan';
 
 export interface ReminderTime {
   id: string;
@@ -23,6 +32,14 @@ export interface DayData {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+export type ReductionSpeed = 1 | 2 | 3 | 4 | 5;
+
+export interface OnboardingPlanInput {
+  dailyCigarettes: number;
+  wakeTime: string;
+  sleepTime: string;
+  reductionPerWeek: ReductionSpeed;
+}
 
 interface AppState {
   // Einstellungen
@@ -39,6 +56,9 @@ interface AppState {
   pushToken: string | null;
   extraButtonEnabled: boolean;
   extraReductionEnabled: boolean;
+  onboardingVersion: number;
+  reductionPlan: ReductionPlanState;
+  milestoneSeenIds: string[];
   
   // Daten
   days: Record<string, DayData>;
@@ -57,6 +77,14 @@ interface AppState {
   setLanguage: (lang: 'de' | 'en') => void;
   toggleApplyScheduleToAllDays: () => void;
   completeOnboarding: () => void;
+  completeOnboardingWithPlan: (input: OnboardingPlanInput) => void;
+  resetOnboarding: () => void;
+  updateReductionPlan: (patch: Partial<ReductionPlanState>) => void;
+  setPlanMoney: (settings: { packPrice: number; packSize: number; currency: CurrencyCode }) => void;
+  toggleAutomaticReduction: () => void;
+  togglePauseThisWeek: () => void;
+  completeMeasurementIfNeeded: (today?: string) => void;
+  markMilestoneSeen: (id: string) => void;
   markReminderComplete: (date: string, reminderId: string) => void;
   unmarkReminderComplete: (date: string, reminderId: string) => void;
   addExtraCigarette: (date: string) => void;
@@ -120,6 +148,20 @@ export const formatLocalDate = (d: Date = new Date()) => {
 };
 
 const getTodayString = () => formatLocalDate();
+
+const defaultReductionPlan = (): ReductionPlanState => ({
+  planStartedAt: null,
+  measurementCompletedAt: null,
+  baselineCigarettes: 20,
+  onboardingEstimate: 20,
+  reductionPerWeek: 2,
+  automaticReductionEnabled: true,
+  pausedWeekKeys: [],
+  packPrice: 9,
+  packSize: 20,
+  currency: 'CHF',
+  zeroReachedAt: null,
+});
 
 /** Minuten seit Mitternacht aus "HH:mm" */
 export const toMinutes = (hhmm: string) => {
@@ -260,9 +302,9 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       // Standard-Einstellungen
-      wakeTime: '06:30',
+      wakeTime: '06:00',
       sleepTime: '23:00',
-      dailyCigarettes: 30,
+      dailyCigarettes: 20,
       themeMode: 'system',
       hasCompletedOnboarding: false,
       language: 'de',
@@ -273,6 +315,9 @@ export const useAppStore = create<AppState>()(
       pushToken: null,
       extraButtonEnabled: true,
       extraReductionEnabled: true,
+      onboardingVersion: 0,
+      reductionPlan: defaultReductionPlan(),
+      milestoneSeenIds: [],
       days: {},
       
       // Wird ein konkreter Tag angegeben, verändert sich ausschließlich dieser Tag.
@@ -391,7 +436,97 @@ export const useAppStore = create<AppState>()(
         }
       },
       
-      completeOnboarding: () => set({ hasCompletedOnboarding: true }),
+      completeOnboarding: () => set({ hasCompletedOnboarding: true, onboardingVersion: REQUIRED_ONBOARDING_VERSION }),
+
+      completeOnboardingWithPlan: (input) => {
+        const today = getTodayString();
+        const goal = Math.max(1, Math.min(60, Math.round(input.dailyCigarettes)));
+        const reductionPerWeek = Math.max(1, Math.min(5, Math.round(input.reductionPerWeek))) as ReductionSpeed;
+        set((state) => ({
+          wakeTime: input.wakeTime,
+          sleepTime: input.sleepTime,
+          dailyCigarettes: goal,
+          hasCompletedOnboarding: true,
+          onboardingVersion: REQUIRED_ONBOARDING_VERSION,
+          reductionPlan: {
+            ...state.reductionPlan,
+            planStartedAt: today,
+            measurementCompletedAt: null,
+            baselineCigarettes: goal,
+            onboardingEstimate: goal,
+            reductionPerWeek,
+            automaticReductionEnabled: true,
+            zeroReachedAt: null,
+          },
+        }));
+        get().configureDay(today, { wakeTime: input.wakeTime, sleepTime: input.sleepTime, goal });
+      },
+
+      resetOnboarding: () => set({ hasCompletedOnboarding: false, onboardingVersion: 0 }),
+
+      updateReductionPlan: (patch) =>
+        set((state) => ({ reductionPlan: { ...state.reductionPlan, ...patch } })),
+
+      setPlanMoney: ({ packPrice, packSize, currency }) =>
+        set((state) => ({
+          reductionPlan: {
+            ...state.reductionPlan,
+            packPrice: Math.max(0, packPrice),
+            packSize: Math.max(1, Math.round(packSize)),
+            currency,
+          },
+        })),
+
+      toggleAutomaticReduction: () =>
+        set((state) => ({
+          reductionPlan: {
+            ...state.reductionPlan,
+            automaticReductionEnabled: !state.reductionPlan.automaticReductionEnabled,
+          },
+        })),
+
+      togglePauseThisWeek: () =>
+        set((state) => {
+          const key = weekKey(getTodayString());
+          const paused = state.reductionPlan.pausedWeekKeys.includes(key);
+          return {
+            reductionPlan: {
+              ...state.reductionPlan,
+              pausedWeekKeys: paused
+                ? state.reductionPlan.pausedWeekKeys.filter((item) => item !== key)
+                : [...state.reductionPlan.pausedWeekKeys, key],
+            },
+          };
+        }),
+
+      completeMeasurementIfNeeded: (today = getTodayString()) =>
+        set((state) => {
+          if (!needsMeasurementReview(state.reductionPlan, today) || !state.reductionPlan.planStartedAt) return state;
+          const baseline = measuredAverage(
+            state.days,
+            state.reductionPlan.planStartedAt,
+            state.reductionPlan.onboardingEstimate
+          );
+          const zeroWeek = Math.ceil(baseline / Math.max(1, state.reductionPlan.reductionPerWeek));
+          const zeroDate = new Date(`${state.reductionPlan.planStartedAt}T12:00:00`);
+          zeroDate.setDate(zeroDate.getDate() + 7 + zeroWeek * 7);
+          return {
+            dailyCigarettes: baseline,
+            reductionPlan: {
+              ...state.reductionPlan,
+              measurementCompletedAt: today,
+              baselineCigarettes: baseline,
+              zeroReachedAt: formatLocalDate(zeroDate),
+            },
+          };
+        }),
+
+      markMilestoneSeen: (id) =>
+        set((state) =>
+          state.milestoneSeenIds.includes(id)
+            ? state
+            : { milestoneSeenIds: [...state.milestoneSeenIds, id] }
+        ),
       
       markReminderComplete: (date, reminderId) => {
         set((state) => {
@@ -463,12 +598,16 @@ export const useAppStore = create<AppState>()(
             ({
               date,
               cigarettesSmoked: 0,
-              totalCigarettes: state.dailyCigarettes,
+              totalCigarettes: plannedTargetForDate(state.reductionPlan, date),
               wakeTime: state.wakeTime,
               sleepTime: state.sleepTime,
               // Noch nicht eingerichteter Tag: Wecker aus den Standardwerten anlegen,
               // damit der Tag nicht ohne jeden Wecker entsteht.
-              reminders: generateReminders(state.wakeTime, state.sleepTime, state.dailyCigarettes),
+              reminders: generateReminders(
+                state.wakeTime,
+                state.sleepTime,
+                plannedTargetForDate(state.reductionPlan, date)
+              ),
             } as DayData);
 
           const extra: ReminderTime = {
@@ -556,7 +695,7 @@ export const useAppStore = create<AppState>()(
         state.configureDay(date, {
           wakeTime: state.wakeTime,
           sleepTime: state.sleepTime,
-          goal: state.dailyCigarettes,
+          goal: plannedTargetForDate(state.reductionPlan, date),
         });
       },
 
@@ -669,7 +808,7 @@ export const useAppStore = create<AppState>()(
       
       getSuggestedGoal: (date) => {
         const state = get();
-        return suggestGoal(state.days, date, state.dailyCigarettes);
+        return plannedTargetForDate(state.reductionPlan, date) || suggestGoal(state.days, date, state.dailyCigarettes);
       },
 
       getTodayData: () => {
@@ -681,9 +820,9 @@ export const useAppStore = create<AppState>()(
       deleteAllData: () => {
         // Setze auf Standardwerte zurück
         set({
-          wakeTime: '06:30',
+          wakeTime: '06:00',
           sleepTime: '23:00',
-          dailyCigarettes: 30,
+          dailyCigarettes: 20,
           themeMode: 'system',
           hasCompletedOnboarding: false,
           language: 'de',
@@ -694,6 +833,9 @@ export const useAppStore = create<AppState>()(
           pushToken: null,
           extraButtonEnabled: true,
           extraReductionEnabled: true,
+          onboardingVersion: 0,
+          reductionPlan: defaultReductionPlan(),
+          milestoneSeenIds: [],
           days: {},
         });
         applyTheme('system');
@@ -708,16 +850,22 @@ export const useAppStore = create<AppState>()(
         if (p.themeMode === undefined) {
           p.themeMode = p.isDarkMode ? 'dark' : 'system';
         }
-        if (version < 3) {
-          // Neue Standardwerte: 06:30 Aufstehzeit, 30 Zigaretten pro Tag
-          p.wakeTime = '06:30';
-          p.dailyCigarettes = 30;
-        }
         if (p.extraButtonEnabled === undefined) {
           p.extraButtonEnabled = true;
         }
         if (p.extraReductionEnabled === undefined) {
           p.extraReductionEnabled = true;
+        }
+        if (p.onboardingVersion === undefined) {
+          p.onboardingVersion = 0;
+        }
+        if (p.reductionPlan === undefined) {
+          p.reductionPlan = defaultReductionPlan();
+        } else {
+          p.reductionPlan = { ...defaultReductionPlan(), ...(p.reductionPlan as Partial<ReductionPlanState>) };
+        }
+        if (p.milestoneSeenIds === undefined) {
+          p.milestoneSeenIds = [];
         }
         return p as unknown as AppState;
       },

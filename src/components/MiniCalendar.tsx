@@ -64,13 +64,13 @@ const DayButton = ({
     onClick={() => onSelect(day.date)}
     aria-label={day.date}
     aria-pressed={isSelected}
-    className={`relative flex flex-col items-center justify-center h-[86px] rounded-[24px] [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1)] ${
-      isSelected ? 'bg-primary' : 'bg-transparent'
+    className={`relative flex flex-col items-center justify-center h-[90px] rounded-[14px] px-1 py-2 border [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),opacity_180ms_cubic-bezier(0.22,1,0.36,1),border-color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+      isSelected ? 'bg-muted border-primary' : day.isToday ? 'bg-transparent border-primary/80' : 'bg-transparent border-transparent'
     } ${!isSelected && day.isFuture ? 'opacity-45' : ''}`}
   >
     <span
       className={`t-16 font-medium uppercase leading-none mb-2 ${
-        isSelected ? 'text-primary-foreground/70' : 'text-subtle'
+          isSelected ? 'text-subtle' : 'text-subtle'
       }`}
     >
       {day.weekday}
@@ -79,7 +79,7 @@ const DayButton = ({
     <span className="relative flex items-center justify-center h-9">
       <span
         className={`relative t-24 num leading-none ${
-          isSelected ? 'text-primary-foreground' : 'text-foreground'
+           'text-foreground'
         }`}
       >
         {day.dayNumber}
@@ -88,7 +88,7 @@ const DayButton = ({
 
     <span
       className={`mt-2 h-2 w-2 rounded-pill ${
-        day.hasData ? (day.overGoal ? 'bg-destructive' : 'bg-success') : 'bg-transparent'
+        day.hasData && !day.isToday ? (day.overGoal ? 'bg-destructive' : 'bg-success') : 'bg-transparent'
       }`}
     />
   </button>

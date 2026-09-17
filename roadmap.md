@@ -1,7 +1,10 @@
-# Aufgaben
-- [ ] Onboarding mit drei Fragen und Ergebnisplan
-- [ ] Messwoche und automatischer Abbauplan
-- [ ] Gespartes Geld und Zeit
-- [ ] Körper-Meilensteine mit einmaligem Pop-up
-- [ ] Konto, Datenschutz, Testzeit und spätere Bezahlschranke vorbereiten
-- [ ] Kalenderzelle und helles Theme korrigieren
+# Roadmap
+
+- [ ] Neues Onboarding mit Ergebnisplan fertigstellen
+- [ ] Messwoche und automatischen Abbauplan einbauen
+- [ ] Gespartes Geld und Zeit anzeigen
+- [ ] Körper-Meilensteine in Statistik ergänzen
+- [ ] Konto, Testzeit und Bezahlschranke anbinden
+- [ ] Kalender- und Theme-Korrekturen abschließen
+- [ ] Zahlungsanbieter-Aktivierung klären
+- [ ] Sicherheitswarnung pg_net dokumentieren
