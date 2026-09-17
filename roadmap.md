@@ -1,5 +1,7 @@
 # Aufgaben
-- [x] Extra-Regel-Schalter als dritten Punkt in den Einstellungen ergänzen
-- [x] Extra-Regel nur bei aktivem Extra-Knopf nutzbar machen
-- [x] Beim Ausschalten entfernte heutige Wecker wiederherstellen
-- [x] Standardwerte für Extra-Knopf und Extra-Regel eingeschaltet lassen
+- [ ] Onboarding mit drei Fragen und Ergebnisplan
+- [ ] Messwoche und automatischer Abbauplan
+- [ ] Gespartes Geld und Zeit
+- [ ] Körper-Meilensteine mit einmaligem Pop-up
+- [ ] Konto, Datenschutz, Testzeit und spätere Bezahlschranke vorbereiten
+- [ ] Kalenderzelle und helles Theme korrigieren
