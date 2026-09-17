@@ -1,5 +1,5 @@
 // UN-SMO Service Worker: Push-Meldungen + App-Hülle zwischenspeichern.
-const CACHE = 'un-smo-shell-v3';
+const CACHE = 'un-smo-shell-v4';
 const PRECACHE = [
   '/',
   '/manifest.webmanifest',
