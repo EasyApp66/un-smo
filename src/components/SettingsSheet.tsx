@@ -589,6 +589,26 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   </AlertDialogContent>
                 </AlertDialog>
               </section>
+
+              {/* Version – siebenmal antippen öffnet die Freischaltung */}
+              <section className="pb-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = versionTaps + 1;
+                    if (next >= 7) {
+                      setVersionTaps(0);
+                      onClose();
+                      goTo('/unlock');
+                      return;
+                    }
+                    setVersionTaps(next);
+                  }}
+                  className="w-full py-3 t-12 text-subtle text-center"
+                >
+                  Version {APP_VERSION}
+                </button>
+              </section>
             </div>
           </motion.div>
         </>
