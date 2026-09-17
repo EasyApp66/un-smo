@@ -113,7 +113,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className={isEditing ? 'px-0' : 'flex-1 px-4 pb-8 overflow-y-auto'}
+      className={isEditing ? 'px-0' : 'flex-1 px-4 pb-36 overflow-y-auto'}
     >
       <div className="surface-card p-5">
         <div className="flex items-center gap-3">

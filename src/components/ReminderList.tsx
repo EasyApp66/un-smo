@@ -270,11 +270,12 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   );
 
   const rows = sortedReminders.map((r, i) => ({ r, i }));
-  // Erledigte, Extra- und übersprungene Zigaretten liegen in einer gemeinsamen Mappe
-  const doneRows = rows.filter(({ r }) => r.completed || r.skipped);
+  // Erledigte, Extra- und übersprungene Zigaretten liegen im aufklappbaren Zähler.
+  const doneRows = rows.filter(({ r }) => r.completed || r.skipped || r.extra);
   const openRows = rows.filter(({ r }) => !r.completed && !r.skipped);
   const smokedCount = doneRows.filter(({ r }) => r.completed).length;
   const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
+  const extraCount = reminders.filter((r) => r.extra).length;
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
@@ -308,32 +309,49 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
 
   return (
     <div className="px-4 pt-[10px] pb-48">
-      {doneRows.length > 0 && (
-        <div className="mb-[10px]">
-          <button
-            type="button"
-            onClick={() => {
-              setShowCompleted((v) => !v);
-              tap();
-            }}
-            aria-expanded={showCompleted}
-            className="surface-card w-full flex items-center justify-between px-4 py-4"
-          >
-            <span className="t-14 text-muted-foreground">
-              {smokedCount} geraucht
-              {skippedCount > 0 && <span className="text-subtle"> · {skippedCount} übersprungen</span>}
+      <div className="mb-[10px]">
+        <button
+          type="button"
+          onClick={() => {
+            if (doneRows.length === 0) return;
+            setShowCompleted((v) => !v);
+            tap();
+          }}
+          aria-expanded={showCompleted}
+          aria-label={doneRows.length > 0 ? 'Zigarettenverlauf auf- oder zuklappen' : 'Noch kein Zigarettenverlauf'}
+          className="surface-card w-full px-5 py-4 flex items-center justify-center gap-5"
+        >
+          <span className="flex flex-1 items-baseline justify-end gap-2">
+            <span className="num t-32 text-destructive">{extraCount}</span>
+            <span className="t-14 text-subtle">{extraCount === 1 ? 'Extra' : 'Extras'}</span>
+          </span>
+
+          <span className="h-6 w-px bg-border shrink-0" aria-hidden />
+
+          <span className="flex flex-1 items-baseline gap-2">
+            <span className="num t-32" style={{ color: 'hsl(var(--success))' }}>
+              {skippedCount}
             </span>
+            <span className="t-14 text-subtle">übersprungen</span>
+          </span>
+
+          {doneRows.length > 0 && (
             <ChevronDown
-              className={`w-5 h-5 text-subtle [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+              className={`w-5 h-5 shrink-0 text-subtle [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1)] ${
                 showCompleted ? 'rotate-180' : ''
               }`}
               strokeWidth={1.75}
             />
-          </button>
+          )}
+        </button>
 
-          {showCompleted && <div className="pt-[10px]">{doneRows.map(renderRow)}</div>}
-        </div>
-      )}
+        {showCompleted && doneRows.length > 0 && (
+          <div className="pt-[10px]">
+            <p className="px-1 pb-2 t-14 text-subtle">{smokedCount} geraucht</p>
+            {doneRows.map(renderRow)}
+          </div>
+        )}
+      </div>
 
       <AnimatePresence mode="popLayout" initial={false}>
         {openRows.map(renderRow)}
