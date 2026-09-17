@@ -32,6 +32,13 @@ const UpdateBanner = () => {
     let cancelled = false;
 
     const check = async () => {
+      // Hintergrunddienst im Hintergrund auf eine neue Fassung prüfen lassen
+      try {
+        const reg = await navigator.serviceWorker?.getRegistration();
+        await reg?.update();
+      } catch {
+        // ignorieren
+      }
       const sig = await fetchSignature();
       if (cancelled || !sig) return;
       if (initialRef.current === null) {
