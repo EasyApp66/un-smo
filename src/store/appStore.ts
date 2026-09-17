@@ -473,9 +473,15 @@ export const useAppStore = create<AppState>()(
           const generated = generateReminders(cfg.wakeTime, cfg.sleepTime, cfg.goal);
 
           const extras = existingDay?.reminders.filter((r) => r.extra) || [];
+          // Bisherige Wecker nach dem alten Zeitplan sortieren (Tagesbeginn = alte Aufstehzeit).
+          const previousWakeMin = toMinutes(existingDay?.wakeTime ?? s.wakeTime);
           const previous = (existingDay?.reminders || [])
             .filter((r) => !r.extra)
-            .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
+            .sort(
+              (a, b) =>
+                sortKey(a.timestamp, previousWakeMin) - sortKey(b.timestamp, previousWakeMin)
+            );
+
 
           const updatedReminders = [
             ...generated.map((r, i) => ({
