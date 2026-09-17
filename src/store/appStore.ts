@@ -333,7 +333,9 @@ export const useAppStore = create<AppState>()(
               totalCigarettes: state.dailyCigarettes,
               wakeTime: state.wakeTime,
               sleepTime: state.sleepTime,
-              reminders: [],
+              // Noch nicht eingerichteter Tag: Wecker aus den Standardwerten anlegen,
+              // damit der Tag nicht ohne jeden Wecker entsteht.
+              reminders: generateReminders(state.wakeTime, state.sleepTime, state.dailyCigarettes),
             } as DayData);
 
           const extra: ReminderTime = {
