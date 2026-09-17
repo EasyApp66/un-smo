@@ -49,26 +49,27 @@ const CountdownFill = memo(({ start, target }: { start: number; target: number }
 });
 CountdownFill.displayName = 'CountdownFill';
 
-/** Zielzeitpunkt – nur Zeiten nach Mitternacht (vor 04:00) zählen zum nächsten Tag */
-const targetTime = (timeString: string, now: number): number => {
+/** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit zählen zum nächsten Tag */
+const targetTime = (timeString: string, now: number, wakeMin: number): number => {
   const nowDate = new Date(now);
   const [hours, minutes] = timeString.split(':').map(Number);
   const target = new Date(nowDate);
   target.setHours(hours, minutes, 0, 0);
   const slotMin = hours * 60 + minutes;
   const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
-  if (slotMin < DAY_BREAK && nowMin >= DAY_BREAK) target.setDate(target.getDate() + 1);
+  if (slotMin < wakeMin && nowMin >= wakeMin) target.setDate(target.getDate() + 1);
   return target.getTime();
 };
 
-const timeUntilLabel = (timeString: string, now: number): string => {
-  const diffMins = Math.floor((targetTime(timeString, now) - now) / 60000);
+const timeUntilLabel = (timeString: string, now: number, wakeMin: number): string => {
+  const diffMins = Math.floor((targetTime(timeString, now, wakeMin) - now) / 60000);
   if (diffMins <= 0) return 'jetzt';
   if (diffMins < 60) return `in ${diffMins} Min`;
   const h = Math.floor(diffMins / 60);
   const m = diffMins % 60;
   return `in ${h}h ${m}m`;
 };
+
 
 interface RowProps {
   reminder: ReminderTime;
