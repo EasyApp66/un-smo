@@ -5,7 +5,6 @@ import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
-import Mark from './Mark';
 
 const DAY_BREAK = 240;
 const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
@@ -93,21 +92,11 @@ const HomeScreen = () => {
 
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col">
-      {/* Kopfbereich */}
-      <header
-        className="flex items-center justify-between px-4 pb-3"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
-      >
-        <span className="text-primary flex items-center">
-          <Mark size={28} />
-        </span>
-        <span className="w-12 h-12 rounded-md bg-card flex items-center justify-center text-subtle">
-          <Flame className="w-5 h-5" strokeWidth={1.5} />
-        </span>
-      </header>
-
       {/* Kalender */}
-      <div className="px-4">
+      <div
+        className="px-4 pb-0"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
+      >
         <div className="surface-card max-w-md mx-auto">
           <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
         </div>

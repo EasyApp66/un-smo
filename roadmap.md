@@ -1,7 +1,7 @@
 # Aufgaben
-- [ ] Extra-Knopf: leichter Außenrand
-- [ ] Oberen Logo-/Icon-Bereich auf der Startseite entfernen
-- [ ] Header-Blur in der installierten iOS-App entfernen
-- [ ] „Tag einrichten“-Knopf verdeckt den Zigaretten-Regler nicht mehr
-- [ ] Erste Statistik-Sektion entfernen
-- [ ] Wochentage und aktuelle Tages-Pille leicht vergrößern
+- [x] Extra-Knopf: leichter Außenrand
+- [x] Oberen Logo-/Icon-Bereich auf der Startseite entfernen
+- [x] Header-Blur in der installierten iOS-App entfernen
+- [x] „Tag einrichten“-Knopf verdeckt den Zigaretten-Regler nicht mehr
+- [x] Erste Statistik-Sektion entfernen
+- [x] Wochentage und aktuelle Tages-Pille leicht vergrößern

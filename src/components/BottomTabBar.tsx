@@ -115,7 +115,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
               transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               onClick={onAddExtra}
               aria-label="Zusätzliche Zigarette eintragen"
-              className="surface-float nav-elevation pointer-events-auto w-16 h-16 rounded-pill border-primary/70 backdrop-blur-xl flex items-center justify-center text-foreground"
+              className="surface-float nav-elevation pointer-events-auto w-16 h-16 rounded-pill border border-primary/60 backdrop-blur-xl flex items-center justify-center text-foreground"
             >
               <Plus className="w-6 h-6" strokeWidth={1.75} />
             </motion.button>
