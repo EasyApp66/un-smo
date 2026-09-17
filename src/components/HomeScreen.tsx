@@ -38,6 +38,7 @@ const HomeScreen = () => {
     dailyCigarettes,
     wakeTime,
     reductionPlan,
+    homeSavingsEnabled,
   } = useAppStore();
 
   const dayData = days[selectedDate];
@@ -128,7 +129,7 @@ const HomeScreen = () => {
       </div>
 
       {/* Kennzahlen erscheinen erst nach dem Einrichten des Tages. */}
-      {!needsSetup && (
+      {!needsSetup && homeSavingsEnabled && (
         <div className="px-4 pt-[10px] grid grid-cols-2 gap-[10px]">
           <div className="surface-card p-4">
             <span className="icon-tile mb-3">
