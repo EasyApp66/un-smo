@@ -14,36 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      day_logs: {
+        Row: {
+          cigarettes_smoked: number
+          created_at: string
+          day: string
+          extra_count: number
+          id: string
+          sleep_time: string | null
+          total_cigarettes: number
+          updated_at: string
+          user_id: string
+          wake_time: string | null
+        }
+        Insert: {
+          cigarettes_smoked?: number
+          created_at?: string
+          day: string
+          extra_count?: number
+          id?: string
+          sleep_time?: string | null
+          total_cigarettes?: number
+          updated_at?: string
+          user_id: string
+          wake_time?: string | null
+        }
+        Update: {
+          cigarettes_smoked?: number
+          created_at?: string
+          day?: string
+          extra_count?: number
+          id?: string
+          sleep_time?: string | null
+          total_cigarettes?: number
+          updated_at?: string
+          user_id?: string
+          wake_time?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          baseline_cigarettes: number | null
           created_at: string
           id: string
           payment_expires_at: string | null
           payment_provider: string | null
           payment_status: string
+          sleep_time: string | null
           trial_started_at: string
           updated_at: string
           user_id: string
+          wake_time: string | null
         }
         Insert: {
+          baseline_cigarettes?: number | null
           created_at?: string
           id?: string
           payment_expires_at?: string | null
           payment_provider?: string | null
           payment_status?: string
+          sleep_time?: string | null
           trial_started_at?: string
           updated_at?: string
           user_id: string
+          wake_time?: string | null
         }
         Update: {
+          baseline_cigarettes?: number | null
           created_at?: string
           id?: string
           payment_expires_at?: string | null
           payment_provider?: string | null
           payment_status?: string
+          sleep_time?: string | null
           trial_started_at?: string
           updated_at?: string
           user_id?: string
+          wake_time?: string | null
         }
         Relationships: []
       }
