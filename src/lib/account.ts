@@ -23,9 +23,10 @@ export const defaultAccountStatus: AccountStatus = {
 export const ensureProfile = async () => {
   const { data } = await supabase.auth.getUser();
   const userId = data.user?.id;
-  if (!userId) return;
+  if (!userId) return false;
   const { data: existing } = await supabase.from('profiles').select('id').eq('user_id', userId).maybeSingle();
   if (!existing) await supabase.from('profiles').insert({ user_id: userId });
+  return true;
 };
 
 export const fetchAccountStatus = async (): Promise<AccountStatus> => {
