@@ -153,7 +153,7 @@ describe('Frühe Aufstehzeit und Nachtpläne', () => {
   it('Nachtplan 08:00–05:00: frühe Morgenzeiten gelten als Tagesende', () => {
     vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
     const date = formatLocalDate();
-    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '05:00', goal: 9 });
+    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '05:00', goal: 20 });
     const day = useAppStore.getState().days[date];
     const wakeMin = toMinutes('08:00');
     const night = day.reminders.filter((r) => r.timestamp < wakeMin);
