@@ -272,7 +272,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
   const rows = sortedReminders.map((r, i) => ({ r, i }));
   // Erledigte, Extra- und übersprungene Zigaretten liegen im aufklappbaren Zähler.
   const doneRows = rows.filter(({ r }) => r.completed || r.skipped || r.extra);
-  const openRows = rows.filter(({ r }) => !r.completed && !r.skipped);
+  const openRows = rows.filter(({ r }) => !r.completed && !r.skipped && !r.extra);
   const smokedCount = doneRows.filter(({ r }) => r.completed).length;
   const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
   const extraCount = reminders.filter((r) => r.extra).length;
