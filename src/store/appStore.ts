@@ -117,13 +117,26 @@ export const formatLocalDate = (d: Date = new Date()) => {
 
 const getTodayString = () => formatLocalDate();
 
+/** Minuten seit Mitternacht aus "HH:mm" */
+export const toMinutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
 /**
- * Zeiten vor 04:00 gehören zum Vorabend (Zeitplan über Mitternacht).
- * Diese Reihenfolge-Hilfe wird überall verwendet, wo Wecker verglichen
- * oder sortiert werden – sonst landen Nachtzeiten fälschlich am Tagesanfang.
+ * Rückfallwert, wenn keine Aufstehzeit bekannt ist (Zeiten vor 04:00 gelten
+ * dann als Nachtzeiten des Vortags).
  */
 export const DAY_BREAK = 240;
-export const sortKey = (minutes: number) => (minutes < DAY_BREAK ? minutes + 1440 : minutes);
+
+/**
+ * Reihenfolge-Hilfe für Wecker eines Tages: Der Tag beginnt mit der Aufstehzeit.
+ * Nur Zeiten davor liegen tatsächlich nach Mitternacht und gehören ans Ende.
+ * So bleibt eine frühe Aufstehzeit (z. B. 03:00) ein normaler Tagesbeginn.
+ */
+export const sortKey = (minutes: number, wakeMinutes: number = DAY_BREAK) =>
+  minutes < wakeMinutes ? minutes + 1440 : minutes;
+
 
 /** Verteilt `count` Zeiten gleichmäßig zwischen `startMin` und der Schlafenszeit */
 /** Untergrenze für automatische Ziel-Empfehlungen */
