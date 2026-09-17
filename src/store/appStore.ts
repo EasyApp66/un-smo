@@ -460,7 +460,7 @@ export const useAppStore = create<AppState>()(
           const extras = existingDay?.reminders.filter((r) => r.extra) || [];
           const previous = (existingDay?.reminders || [])
             .filter((r) => !r.extra)
-            .sort((a, b) => a.timestamp - b.timestamp);
+            .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
 
           const updatedReminders = [
             ...generated.map((r, i) => ({
