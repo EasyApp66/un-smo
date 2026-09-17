@@ -354,9 +354,15 @@ export const useAppStore = create<AppState>()(
           // Die Zeiten der übrigen Wecker bleiben unverändert – nichts wird nach hinten geschoben.
           const extraCount = reminders.filter((r) => r.extra).length;
           if (date === getTodayString()) {
+            // Vergleich über sortKey, damit Zeiten nach Mitternacht korrekt
+            // als späteste Wecker des Tages gelten.
+            const nowKey = sortKey(nowMin);
             const open = reminders
-              .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
-              .sort((a, b) => a.timestamp - b.timestamp);
+              .filter(
+                (r) =>
+                  !r.extra && !r.completed && !r.skipped && sortKey(r.timestamp) > nowKey
+              )
+              .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
 
             if (open.length > 0) {
               const dropCount = Math.min(open.length, extraCount % 2 === 0 ? 2 : 1);
