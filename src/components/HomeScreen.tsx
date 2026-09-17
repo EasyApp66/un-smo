@@ -3,7 +3,6 @@ import { useAppStore, formatLocalDate } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
-import CoachCard from './CoachCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
 import Mark from './Mark';
@@ -114,29 +113,31 @@ const HomeScreen = () => {
         </div>
       </div>
 
-      {/* Bento-Reihe */}
-      <div className="px-4 pt-[10px] grid grid-cols-2 gap-[10px]">
-        <div className="surface-card p-4">
-          <span className="icon-tile mb-3">
-            <Flame className="w-6 h-6" strokeWidth={1.5} />
-          </span>
-          <p className="t-14 text-subtle">Heute</p>
-          <p className="flex items-baseline gap-1">
-            <span className="t-36 num text-foreground">{completedCount}</span>
-            <span className="t-20 num text-subtle">/{totalCount}</span>
-          </p>
-        </div>
+      {/* Kennzahlen erscheinen erst nach dem Einrichten des Tages. */}
+      {!needsSetup && (
+        <div className="px-4 pt-[10px] grid grid-cols-2 gap-[10px]">
+          <div className="surface-card p-4">
+            <span className="icon-tile mb-3">
+              <Flame className="w-6 h-6" strokeWidth={1.5} />
+            </span>
+            <p className="t-14 text-subtle">Heute</p>
+            <p className="flex items-baseline gap-1">
+              <span className="t-36 num text-foreground">{completedCount}</span>
+              <span className="t-20 num text-subtle">/{totalCount}</span>
+            </p>
+          </div>
 
-        <div className="surface-card p-4">
-          <span className="icon-tile mb-3">
-            <Timer className="w-6 h-6" strokeWidth={1.5} />
-          </span>
-          <p className="t-14 text-subtle">Abstand</p>
-          <p className="t-32 num text-foreground">
-            {nextTarget ? <Countdown target={nextTarget} /> : '–'}
-          </p>
+          <div className="surface-card p-4">
+            <span className="icon-tile mb-3">
+              <Timer className="w-6 h-6" strokeWidth={1.5} />
+            </span>
+            <p className="t-14 text-subtle">Abstand</p>
+            <p className="t-32 num text-foreground">
+              {nextTarget ? <Countdown target={nextTarget} /> : '–'}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tag Setup oder Erinnerungsliste */}
       <div className="flex-1">
@@ -146,11 +147,6 @@ const HomeScreen = () => {
           </div>
         ) : (
           <>
-            {dayData && (
-              <div className="px-4 pt-[10px]">
-                <CoachCard dayData={dayData} />
-              </div>
-            )}
             <div className="px-4 pt-[10px]">
               <DaySetupCard
                 selectedDate={selectedDate}
