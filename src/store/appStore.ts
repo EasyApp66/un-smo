@@ -117,13 +117,26 @@ export const formatLocalDate = (d: Date = new Date()) => {
 
 const getTodayString = () => formatLocalDate();
 
+/** Minuten seit Mitternacht aus "HH:mm" */
+export const toMinutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
 /**
- * Zeiten vor 04:00 gehören zum Vorabend (Zeitplan über Mitternacht).
- * Diese Reihenfolge-Hilfe wird überall verwendet, wo Wecker verglichen
- * oder sortiert werden – sonst landen Nachtzeiten fälschlich am Tagesanfang.
+ * Rückfallwert, wenn keine Aufstehzeit bekannt ist (Zeiten vor 04:00 gelten
+ * dann als Nachtzeiten des Vortags).
  */
 export const DAY_BREAK = 240;
-export const sortKey = (minutes: number) => (minutes < DAY_BREAK ? minutes + 1440 : minutes);
+
+/**
+ * Reihenfolge-Hilfe für Wecker eines Tages: Der Tag beginnt mit der Aufstehzeit.
+ * Nur Zeiten davor liegen tatsächlich nach Mitternacht und gehören ans Ende.
+ * So bleibt eine frühe Aufstehzeit (z. B. 03:00) ein normaler Tagesbeginn.
+ */
+export const sortKey = (minutes: number, wakeMinutes: number = DAY_BREAK) =>
+  minutes < wakeMinutes ? minutes + 1440 : minutes;
+
 
 /** Verteilt `count` Zeiten gleichmäßig zwischen `startMin` und der Schlafenszeit */
 /** Untergrenze für automatische Ziel-Empfehlungen */
@@ -354,15 +367,17 @@ export const useAppStore = create<AppState>()(
           // Die Zeiten der übrigen Wecker bleiben unverändert – nichts wird nach hinten geschoben.
           const extraCount = reminders.filter((r) => r.extra).length;
           if (date === getTodayString()) {
-            // Vergleich über sortKey, damit Zeiten nach Mitternacht korrekt
-            // als späteste Wecker des Tages gelten.
-            const nowKey = sortKey(nowMin);
+            // Vergleich über sortKey ab der Aufstehzeit des Tages, damit nur
+            // echte Nachtzeiten als späteste Wecker des Tages gelten.
+            const wakeMin = toMinutes(base.wakeTime ?? state.wakeTime);
+            const nowKey = sortKey(nowMin, wakeMin);
             const open = reminders
               .filter(
                 (r) =>
-                  !r.extra && !r.completed && !r.skipped && sortKey(r.timestamp) > nowKey
+                  !r.extra && !r.completed && !r.skipped && sortKey(r.timestamp, wakeMin) > nowKey
               )
-              .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
+              .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
+
 
             if (open.length > 0) {
               const dropCount = Math.min(open.length, extraCount % 2 === 0 ? 2 : 1);
@@ -458,9 +473,15 @@ export const useAppStore = create<AppState>()(
           const generated = generateReminders(cfg.wakeTime, cfg.sleepTime, cfg.goal);
 
           const extras = existingDay?.reminders.filter((r) => r.extra) || [];
+          // Bisherige Wecker nach dem alten Zeitplan sortieren (Tagesbeginn = alte Aufstehzeit).
+          const previousWakeMin = toMinutes(existingDay?.wakeTime ?? s.wakeTime);
           const previous = (existingDay?.reminders || [])
             .filter((r) => !r.extra)
-            .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
+            .sort(
+              (a, b) =>
+                sortKey(a.timestamp, previousWakeMin) - sortKey(b.timestamp, previousWakeMin)
+            );
+
 
           const updatedReminders = [
             ...generated.map((r, i) => ({

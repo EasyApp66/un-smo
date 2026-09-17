@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
-import { useAppStore, sortKey, formatLocalDate } from '../store/appStore';
+import { useAppStore, sortKey, toMinutes, formatLocalDate } from '../store/appStore';
+
+const shift = (date: string, days: number) => {
+  const d = new Date(`${date}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  return formatLocalDate(d);
+};
 import { buildPlan } from '../lib/push';
 
 const resetStore = () =>
@@ -118,5 +124,91 @@ describe('Benachrichtigungsplan', () => {
     expect(nightTimes.length).toBeGreaterThan(0);
     expect(plan['2026-09-18']).toEqual(expect.arrayContaining(nightTimes));
     for (const t of nightTimes) expect(plan[date] ?? []).not.toContain(t);
+  });
+});
+
+describe('Frühe Aufstehzeit und Nachtpläne', () => {
+  beforeEach(() => {
+    resetStore();
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('normaler Tag 03:00–20:00: kein Wecker landet am Tagesende', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 10, 0, 0));
+    const date = formatLocalDate();
+    useAppStore.getState().configureDay(date, { wakeTime: '03:00', sleepTime: '20:00', goal: 10 });
+    const day = useAppStore.getState().days[date];
+    const wakeMin = toMinutes('03:00');
+    const keys = day.reminders.map((r) => sortKey(r.timestamp, wakeMin));
+    // Reihenfolge entspricht der Uhrzeit – nichts wird auf den Folgetag geschoben
+    expect(keys).toEqual([...keys].sort((a, b) => a - b));
+    expect(Math.max(...keys)).toBeLessThan(1440);
+
+    const plan = buildPlan();
+    expect(plan[date]).toHaveLength(10);
+    expect(plan[shift(date, 1)]).toBeUndefined();
+  });
+
+  it('Nachtplan 08:00–05:00: frühe Morgenzeiten gelten als Tagesende', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
+    const date = formatLocalDate();
+    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '05:00', goal: 20 });
+    const day = useAppStore.getState().days[date];
+    const wakeMin = toMinutes('08:00');
+    const night = day.reminders.filter((r) => r.timestamp < wakeMin);
+    expect(night.length).toBeGreaterThan(0);
+    expect(night.some((r) => r.timestamp >= 240)).toBe(true); // z. B. 04:xx
+    const keys = day.reminders.map((r) => sortKey(r.timestamp, wakeMin));
+    expect(keys).toEqual([...keys].sort((a, b) => a - b));
+
+    const plan = buildPlan();
+    for (const r of night) expect(plan[shift(date, 1)]).toContain(r.time);
+  });
+
+  it('Extra-Zigarette streicht auch bei Nachtplan den spätesten Wecker (04:xx)', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 23, 0, 0));
+    const date = formatLocalDate();
+    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '05:00', goal: 9 });
+    const wakeMin = toMinutes('08:00');
+    const before = useAppStore.getState().days[date].reminders;
+    const latest = [...before]
+      .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin))
+      .at(-1)!;
+    useAppStore.getState().addExtraCigarette(date);
+    const after = useAppStore.getState().days[date].reminders;
+    expect(after.find((r) => r.id === latest.id)).toBeUndefined();
+  });
+
+  it('nach Mitternacht bleiben die offenen Nachtzeiten des Vortags im Plan', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
+    const yesterday = formatLocalDate();
+    useAppStore
+      .getState()
+      .configureDay(yesterday, { wakeTime: '08:00', sleepTime: '02:00', goal: 6 });
+    const night = useAppStore
+      .getState()
+      .days[yesterday].reminders.filter((r) => r.timestamp < toMinutes('08:00'));
+    expect(night.length).toBeGreaterThan(0);
+
+    // Jetzt ist es 00:30 des Folgetags – die Nachtzeiten stehen noch an
+    vi.setSystemTime(new Date(2026, 8, 18, 0, 30, 0));
+    const plan = buildPlan();
+    const today = formatLocalDate();
+    for (const r of night) expect(plan[today]).toContain(r.time);
+  });
+
+  it('Sommerzeitende: Plan nutzt lokale Kalenderdaten', () => {
+    // 25.10.2026 ist in Europa der Umstellungstag (25 Stunden)
+    vi.setSystemTime(new Date(2026, 9, 25, 12, 0, 0));
+    const date = formatLocalDate();
+    expect(date).toBe('2026-10-25');
+    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '02:00', goal: 6 });
+    const plan = buildPlan();
+    const night = useAppStore
+      .getState()
+      .days[date].reminders.filter((r) => r.timestamp < toMinutes('08:00'));
+    for (const r of night) expect(plan['2026-10-26']).toContain(r.time);
+    expect(Object.keys(plan).every((k) => /^\d{4}-\d{2}-\d{2}$/.test(k))).toBe(true);
   });
 });

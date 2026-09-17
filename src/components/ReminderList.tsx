@@ -7,15 +7,22 @@ import Countdown from './Countdown';
 
 interface ReminderListProps {
   reminders: ReminderTime[];
+  /** Aufstehzeit des Tages – markiert den Tagesbeginn für die Reihenfolge */
+  wakeTime?: string;
   onComplete: (id: string) => void;
   onUncomplete?: (id: string) => void;
   onDelete?: (id: string) => void;
   onSkip?: (id: string) => void;
 }
 
-// Zeiten vor 04:00 gehören zum Vorabend – sie stehen am Ende der Liste
+// Der Tag beginnt mit der Aufstehzeit; nur frühere Zeiten liegen nach Mitternacht
 const DAY_BREAK = 240;
-const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
+const toMinutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+const makeSortKey = (wakeMin: number) => (t: number) => (t < wakeMin ? t + 1440 : t);
+
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -42,26 +49,27 @@ const CountdownFill = memo(({ start, target }: { start: number; target: number }
 });
 CountdownFill.displayName = 'CountdownFill';
 
-/** Zielzeitpunkt – nur Zeiten nach Mitternacht (vor 04:00) zählen zum nächsten Tag */
-const targetTime = (timeString: string, now: number): number => {
+/** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit zählen zum nächsten Tag */
+const targetTime = (timeString: string, now: number, wakeMin: number): number => {
   const nowDate = new Date(now);
   const [hours, minutes] = timeString.split(':').map(Number);
   const target = new Date(nowDate);
   target.setHours(hours, minutes, 0, 0);
   const slotMin = hours * 60 + minutes;
   const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
-  if (slotMin < DAY_BREAK && nowMin >= DAY_BREAK) target.setDate(target.getDate() + 1);
+  if (slotMin < wakeMin && nowMin >= wakeMin) target.setDate(target.getDate() + 1);
   return target.getTime();
 };
 
-const timeUntilLabel = (timeString: string, now: number): string => {
-  const diffMins = Math.floor((targetTime(timeString, now) - now) / 60000);
+const timeUntilLabel = (timeString: string, now: number, wakeMin: number): string => {
+  const diffMins = Math.floor((targetTime(timeString, now, wakeMin) - now) / 60000);
   if (diffMins <= 0) return 'jetzt';
   if (diffMins < 60) return `in ${diffMins} Min`;
   const h = Math.floor(diffMins / 60);
   const m = diffMins % 60;
   return `in ${h}h ${m}m`;
 };
+
 
 interface RowProps {
   reminder: ReminderTime;
@@ -229,7 +237,7 @@ const ReminderRow = memo(
 );
 ReminderRow.displayName = 'ReminderRow';
 
-const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
+const ReminderList = ({ reminders, wakeTime, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
@@ -241,9 +249,12 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     return () => window.clearInterval(id);
   }, []);
 
+  const wakeMin = wakeTime ? toMinutes(wakeTime) : DAY_BREAK;
+  const sortKey = useMemo(() => makeSortKey(wakeMin), [wakeMin]);
+
   const sortedReminders = useMemo(
     () => [...reminders].sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp)),
-    [reminders]
+    [reminders, sortKey]
   );
 
   const nextReminderIndex = useMemo(() => {
@@ -251,10 +262,11 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
     // beim ersten offenen Eintrag, dessen Zeit noch bevorsteht.
     const isOpen = (r: ReminderTime) => !r.completed && !r.extra && !r.skipped;
     const future = sortedReminders.findIndex(
-      (r) => isOpen(r) && targetTime(r.time, minuteTick) > minuteTick
+      (r) => isOpen(r) && targetTime(r.time, minuteTick, wakeMin) > minuteTick
     );
     return future >= 0 ? future : sortedReminders.findIndex(isOpen);
-  }, [sortedReminders, minuteTick]);
+  }, [sortedReminders, minuteTick, wakeMin]);
+
 
   const toggle = useCallback(
     (reminder: ReminderTime) => {
@@ -279,7 +291,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
-    const target = targetTime(r.time, minuteTick);
+    const target = targetTime(r.time, minuteTick, wakeMin);
     const planned = sortedReminders.filter((item) => !item.extra);
     const plannedIndex = planned.findIndex((item) => item.id === r.id);
     const currentKey = sortKey(r.timestamp);
@@ -297,7 +309,7 @@ const ReminderList = ({ reminders, onComplete, onUncomplete, onSkip }: ReminderL
         index={i}
         isNext={isNext}
         isPassed={!r.completed && !r.skipped && !isNext && target < minuteTick}
-        timeUntil={timeUntilLabel(r.time, minuteTick)}
+        timeUntil={timeUntilLabel(r.time, minuteTick, wakeMin)}
         target={target}
         progressStart={progressStart}
         reduceMotion={reduceMotion}

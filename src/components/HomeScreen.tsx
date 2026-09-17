@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useAppStore, formatLocalDate } from '../store/appStore';
+import { useAppStore, formatLocalDate, sortKey, toMinutes } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
 
-const DAY_BREAK = 240;
-const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
 
-const targetTime = (timeString: string, now: number): number => {
+/** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit liegen nach Mitternacht. */
+const targetTime = (timeString: string, now: number, wakeMin: number): number => {
   const nowDate = new Date(now);
   const [hours, minutes] = timeString.split(':').map(Number);
   const target = new Date(nowDate);
   target.setHours(hours, minutes, 0, 0);
   const slotMin = hours * 60 + minutes;
   const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
-  if (slotMin < DAY_BREAK && nowMin >= DAY_BREAK) target.setDate(target.getDate() + 1);
+  if (slotMin < wakeMin && nowMin >= wakeMin) target.setDate(target.getDate() + 1);
   return target.getTime();
 };
+
 
 const HomeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(() => formatLocalDate());
@@ -30,9 +30,12 @@ const HomeScreen = () => {
     deleteReminder,
     skipReminder,
     dailyCigarettes,
+    wakeTime,
   } = useAppStore();
 
   const dayData = days[selectedDate];
+  const dayWakeTime = dayData?.wakeTime ?? wakeTime;
+
 
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
   const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
@@ -59,14 +62,16 @@ const HomeScreen = () => {
   const nextTarget = useMemo(() => {
     if (!dayData) return null;
     const now = Date.now();
+    const wakeMin = toMinutes(dayWakeTime);
     const open = [...dayData.reminders]
       .filter((r) => !r.completed && !r.skipped && !r.extra)
-      .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
+      .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
     // Abgelaufene Einträge gelten als vorbei – der Countdown läuft für den
     // ersten noch bevorstehenden Wecker.
-    const next = open.find((r) => targetTime(r.time, now) > now) ?? open[0];
-    return next ? targetTime(next.time, now) : null;
-  }, [dayData, selectedDate, minuteTick]);
+    const next = open.find((r) => targetTime(r.time, now, wakeMin) > now) ?? open[0];
+    return next ? targetTime(next.time, now, wakeMin) : null;
+  }, [dayData, dayWakeTime, selectedDate, minuteTick]);
+
 
   const handleComplete = (reminderId: string) => {
     markReminderComplete(selectedDate, reminderId);
@@ -156,6 +161,8 @@ const HomeScreen = () => {
             </div>
             <ReminderList
               reminders={dayData?.reminders || []}
+              wakeTime={dayWakeTime}
+
               onComplete={handleComplete}
               onUncomplete={handleUncomplete}
               onDelete={handleDelete}
