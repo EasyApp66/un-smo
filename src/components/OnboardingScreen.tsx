@@ -170,7 +170,7 @@ const OnboardingScreen = () => {
         </AnimatePresence>
       </div>
 
-      <button type="button" onClick={next} disabled={authBusy} className="btn-pill btn-primary w-full mb-2 disabled:opacity-60">
+      <button type="button" onClick={next} className="btn-pill btn-primary w-full mb-2 disabled:opacity-60">
         {buttonLabel}
       </button>
     </div>
