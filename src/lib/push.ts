@@ -22,6 +22,15 @@ const urlBase64ToUint8Array = (base64: string) => {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 };
 
+/** Zeiten vor 04:00 gehören zum Vorabend und finden am Folgetag statt. */
+const DAY_BREAK_MINUTES = 240;
+
+const shiftDate = (date: string, days: number) => {
+  const d = new Date(`${date}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  return formatLocalDate(d);
+};
+
 /** Konkrete, noch offene Weckerzeiten der nächsten Tage – exakt wie in der App angezeigt. */
 export const buildPlan = (): Record<string, string[]> => {
   const { days } = useAppStore.getState();
@@ -32,11 +41,15 @@ export const buildPlan = (): Record<string, string[]> => {
     const key = formatLocalDate(d);
     const day = days[key];
     if (!day) continue;
-    plan[key] = day.reminders
-      .filter((r) => !r.completed && !r.extra && !r.skipped)
-      .map((r) => r.time)
-      .sort();
+    for (const r of day.reminders) {
+      if (r.completed || r.extra || r.skipped) continue;
+      const [h, m] = r.time.split(':').map(Number);
+      // Nachtzeiten dem Kalendertag zuordnen, an dem sie tatsächlich eintreten.
+      const planKey = h * 60 + m < DAY_BREAK_MINUTES ? shiftDate(key, 1) : key;
+      (plan[planKey] ??= []).push(r.time);
+    }
   }
+  for (const key of Object.keys(plan)) plan[key].sort();
   return plan;
 };
 

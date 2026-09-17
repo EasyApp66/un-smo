@@ -117,6 +117,14 @@ export const formatLocalDate = (d: Date = new Date()) => {
 
 const getTodayString = () => formatLocalDate();
 
+/**
+ * Zeiten vor 04:00 gehören zum Vorabend (Zeitplan über Mitternacht).
+ * Diese Reihenfolge-Hilfe wird überall verwendet, wo Wecker verglichen
+ * oder sortiert werden – sonst landen Nachtzeiten fälschlich am Tagesanfang.
+ */
+export const DAY_BREAK = 240;
+export const sortKey = (minutes: number) => (minutes < DAY_BREAK ? minutes + 1440 : minutes);
+
 /** Verteilt `count` Zeiten gleichmäßig zwischen `startMin` und der Schlafenszeit */
 /** Untergrenze für automatische Ziel-Empfehlungen */
 export const GOAL_FLOOR = 20;
@@ -325,7 +333,9 @@ export const useAppStore = create<AppState>()(
               totalCigarettes: state.dailyCigarettes,
               wakeTime: state.wakeTime,
               sleepTime: state.sleepTime,
-              reminders: [],
+              // Noch nicht eingerichteter Tag: Wecker aus den Standardwerten anlegen,
+              // damit der Tag nicht ohne jeden Wecker entsteht.
+              reminders: generateReminders(state.wakeTime, state.sleepTime, state.dailyCigarettes),
             } as DayData);
 
           const extra: ReminderTime = {
@@ -344,9 +354,15 @@ export const useAppStore = create<AppState>()(
           // Die Zeiten der übrigen Wecker bleiben unverändert – nichts wird nach hinten geschoben.
           const extraCount = reminders.filter((r) => r.extra).length;
           if (date === getTodayString()) {
+            // Vergleich über sortKey, damit Zeiten nach Mitternacht korrekt
+            // als späteste Wecker des Tages gelten.
+            const nowKey = sortKey(nowMin);
             const open = reminders
-              .filter((r) => !r.extra && !r.completed && !r.skipped && r.timestamp > nowMin)
-              .sort((a, b) => a.timestamp - b.timestamp);
+              .filter(
+                (r) =>
+                  !r.extra && !r.completed && !r.skipped && sortKey(r.timestamp) > nowKey
+              )
+              .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
 
             if (open.length > 0) {
               const dropCount = Math.min(open.length, extraCount % 2 === 0 ? 2 : 1);
@@ -444,7 +460,7 @@ export const useAppStore = create<AppState>()(
           const extras = existingDay?.reminders.filter((r) => r.extra) || [];
           const previous = (existingDay?.reminders || [])
             .filter((r) => !r.extra)
-            .sort((a, b) => a.timestamp - b.timestamp);
+            .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
 
           const updatedReminders = [
             ...generated.map((r, i) => ({
