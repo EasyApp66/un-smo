@@ -62,14 +62,16 @@ const HomeScreen = () => {
   const nextTarget = useMemo(() => {
     if (!dayData) return null;
     const now = Date.now();
+    const wakeMin = toMinutes(dayWakeTime);
     const open = [...dayData.reminders]
       .filter((r) => !r.completed && !r.skipped && !r.extra)
-      .sort((a, b) => sortKey(a.timestamp) - sortKey(b.timestamp));
+      .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
     // Abgelaufene Einträge gelten als vorbei – der Countdown läuft für den
     // ersten noch bevorstehenden Wecker.
-    const next = open.find((r) => targetTime(r.time, now) > now) ?? open[0];
-    return next ? targetTime(next.time, now) : null;
-  }, [dayData, selectedDate, minuteTick]);
+    const next = open.find((r) => targetTime(r.time, now, wakeMin) > now) ?? open[0];
+    return next ? targetTime(next.time, now, wakeMin) : null;
+  }, [dayData, dayWakeTime, selectedDate, minuteTick]);
+
 
   const handleComplete = (reminderId: string) => {
     markReminderComplete(selectedDate, reminderId);
