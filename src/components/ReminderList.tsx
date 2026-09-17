@@ -7,15 +7,22 @@ import Countdown from './Countdown';
 
 interface ReminderListProps {
   reminders: ReminderTime[];
+  /** Aufstehzeit des Tages – markiert den Tagesbeginn für die Reihenfolge */
+  wakeTime?: string;
   onComplete: (id: string) => void;
   onUncomplete?: (id: string) => void;
   onDelete?: (id: string) => void;
   onSkip?: (id: string) => void;
 }
 
-// Zeiten vor 04:00 gehören zum Vorabend – sie stehen am Ende der Liste
+// Der Tag beginnt mit der Aufstehzeit; nur frühere Zeiten liegen nach Mitternacht
 const DAY_BREAK = 240;
-const sortKey = (t: number) => (t < DAY_BREAK ? t + 1440 : t);
+const toMinutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+const makeSortKey = (wakeMin: number) => (t: number) => (t < wakeMin ? t + 1440 : t);
+
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
