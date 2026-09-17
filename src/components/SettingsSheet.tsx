@@ -495,6 +495,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
               <section>
                 <GroupTitle>Konto</GroupTitle>
                 <div className="surface-card p-5 space-y-3">
+                  <p className="t-12 text-subtle">Optional — für Sicherung und mehrere Geräte</p>
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="w-5 h-5 text-primary" strokeWidth={1.75} />
                     <div>
@@ -509,17 +510,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     </div>
                   </div>
                   {!account.signedIn ? (
-                    <>
-                      <input
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        inputMode="email"
-                        placeholder="E-Mail"
-                        className="w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none"
-                      />
-                      <button disabled={accountBusy} onClick={handleMagicLink} className="btn-pill btn-secondary w-full disabled:opacity-60">Magic Link senden</button>
-                      <button disabled={accountBusy} onClick={handleApple} className="btn-pill btn-secondary w-full disabled:opacity-60">Mit Apple anmelden</button>
-                    </>
+                    <EmailCodeSignIn onSignedIn={handleSignedIn} />
                   ) : (
                     <>
                       <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
