@@ -7,8 +7,11 @@ import WheelPicker from './WheelPicker';
 
 import { enablePush, disablePush, sendTestPush } from '../lib/push';
 import { formatMoney, weeklyActuals, type CurrencyCode, weekKey } from '@/lib/reductionPlan';
-import { defaultAccountStatus, fetchAccountStatus, sendMagicLink, signInWithApple, type AccountStatus } from '@/lib/account';
+import { defaultAccountStatus, fetchAccountStatus, type AccountStatus } from '@/lib/account';
 import { supabase } from '@/integrations/supabase/client';
+import EmailCodeSignIn from './EmailCodeSignIn';
+import { APP_VERSION } from '@/lib/appVersion';
+import { goTo } from '@/lib/navigate';
 import {
   AlertDialog,
   AlertDialogAction,
