@@ -175,7 +175,11 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
                   : 'Kein Tagesziel gesetzt'}
               </p>
 
-              <button type="button" onClick={handleSave} className="btn-pill btn-primary w-full">
+              <button
+                type="button"
+                onClick={handleSave}
+                className={`btn-pill btn-primary w-full ${!isEditing ? 'sticky bottom-20 z-20' : ''}`}
+              >
                 {isEditing ? 'Zeitplan aktualisieren' : 'Tag einrichten'}
               </button>
             </div>
