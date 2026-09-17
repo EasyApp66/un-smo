@@ -12,7 +12,6 @@ import {
   pauseStats,
   savedSummary,
   weeklyActuals,
-  MINUTES_PER_CIGARETTE,
 } from '@/lib/reductionPlan';
 import { defaultAccountStatus, fetchAccountStatus, type AccountStatus } from '@/lib/account';
 
@@ -72,7 +71,6 @@ const StatisticsScreen = () => {
   const pauses = useMemo(() => pauseStats(days), [days]);
 
   const milestones = useMemo(() => {
-    const currentHours = Math.floor(pauses.currentMs / 3_600_000);
     const longTermActive = !!reductionPlan.zeroReachedAt && formatLocalDate() >= reductionPlan.zeroReachedAt;
     return [
       { id: 'short-20m', label: '20 Minuten', detail: 'Puls und Blutdruck beginnen sich zu normalisieren.', done: pauses.currentMs >= 20 * 60_000 },
