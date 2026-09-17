@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useAppStore, formatLocalDate } from '../store/appStore';
+import { useAppStore, formatLocalDate, sortKey, toMinutes } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
 
-import { sortKey, toMinutes } from '../store/appStore';
 
 /** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit liegen nach Mitternacht. */
 const targetTime = (timeString: string, now: number, wakeMin: number): number => {
