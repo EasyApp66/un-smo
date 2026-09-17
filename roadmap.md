@@ -13,3 +13,6 @@
 - [x] Zahlencode statt Magic Link, Apple ausgeblendet
 - [x] Service Worker v4 und Versionsanzeige (7 Tipper = Freischaltung)
 - [ ] E-Mail-Vorlage „Magic Link" auf {{ .Token }} umstellen (muss der Nutzer selbst tun)
+- [x] Einstellungen als normale Seite mit sichtbarem Menü umbauen
+- [x] Startseiten-Anzeige für gespartes Geld und Zeit schaltbar machen
+- [x] Extra-Knopf mit deutlicherem Akzent-Rand versehen

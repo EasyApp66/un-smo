@@ -24,7 +24,6 @@ const Index = () => {
     completeMeasurementIfNeeded,
   } = useAppStore();
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'settings'>('home');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [extraFeedback, setExtraFeedback] = useState<number | null>(null);
 
   // Theme anwenden (Hell / Dunkel / System)
@@ -50,14 +49,7 @@ const Index = () => {
 
   const handleTabChange = (tab: 'home' | 'stats' | 'settings') => {
     setActiveTab(tab);
-    if (tab === 'settings') {
-      setIsSettingsOpen(true);
-    }
-  };
-
-  const handleSettingsClose = () => {
-    setIsSettingsOpen(false);
-    setActiveTab('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Nur beim allerersten Start: kein Kennzeichen und keine lokalen Daten.
@@ -73,6 +65,12 @@ const Index = () => {
       {activeTab === 'stats' && (
         <Suspense fallback={<div className="min-h-[100dvh]" />}>
           <StatisticsScreen />
+        </Suspense>
+      )}
+
+      {activeTab === 'settings' && (
+        <Suspense fallback={<div className="min-h-[100dvh]" />}>
+          <SettingsSheet />
         </Suspense>
       )}
 
@@ -123,10 +121,6 @@ const Index = () => {
         }
       />
 
-      {/* Einstellungen Sheet */}
-      <Suspense fallback={null}>
-        {isSettingsOpen && <SettingsSheet isOpen={isSettingsOpen} onClose={handleSettingsClose} />}
-      </Suspense>
     </div>
   );
 };

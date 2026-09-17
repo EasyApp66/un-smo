@@ -56,6 +56,7 @@ interface AppState {
   pushToken: string | null;
   extraButtonEnabled: boolean;
   extraReductionEnabled: boolean;
+  homeSavingsEnabled: boolean;
   onboardingVersion: number;
   reductionPlan: ReductionPlanState;
   milestoneSeenIds: string[];
@@ -74,6 +75,7 @@ interface AppState {
   setPushEnabled: (enabled: boolean, token?: string | null) => void;
   toggleExtraButtonEnabled: () => void;
   toggleExtraReductionEnabled: () => void;
+  toggleHomeSavingsEnabled: () => void;
   setLanguage: (lang: 'de' | 'en') => void;
   toggleApplyScheduleToAllDays: () => void;
   completeOnboarding: () => void;
@@ -315,6 +317,7 @@ export const useAppStore = create<AppState>()(
       pushToken: null,
       extraButtonEnabled: true,
       extraReductionEnabled: true,
+      homeSavingsEnabled: true,
       onboardingVersion: 0,
       reductionPlan: defaultReductionPlan(),
       milestoneSeenIds: [],
@@ -419,6 +422,9 @@ export const useAppStore = create<AppState>()(
             },
           };
         }),
+
+      toggleHomeSavingsEnabled: () =>
+        set((state) => ({ homeSavingsEnabled: !state.homeSavingsEnabled })),
 
       setLanguage: (lang) => {
         set({ language: lang });
@@ -833,6 +839,7 @@ export const useAppStore = create<AppState>()(
           pushToken: null,
           extraButtonEnabled: true,
           extraReductionEnabled: true,
+          homeSavingsEnabled: true,
           onboardingVersion: 0,
           reductionPlan: defaultReductionPlan(),
           milestoneSeenIds: [],
@@ -855,6 +862,9 @@ export const useAppStore = create<AppState>()(
         }
         if (p.extraReductionEnabled === undefined) {
           p.extraReductionEnabled = true;
+        }
+        if (p.homeSavingsEnabled === undefined) {
+          p.homeSavingsEnabled = true;
         }
         if (p.onboardingVersion === undefined) {
           p.onboardingVersion = 0;

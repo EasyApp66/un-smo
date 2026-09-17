@@ -1,5 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronRight, AlertTriangle, Globe, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ChevronRight, AlertTriangle, Globe, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
@@ -24,13 +23,6 @@ import {
   AlertDialogTrigger,
 } from './ui/alert-dialog';
 
-interface SettingsSheetProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const EASE = [0.22, 1, 0.36, 1] as const;
-
 const GroupTitle = ({ children }: { children: React.ReactNode }) => (
   <h3 className="t-12 font-medium uppercase tracking-[0.08em] text-subtle mb-3">{children}</h3>
 );
@@ -48,7 +40,7 @@ const Toggle = ({ on }: { on: boolean }) => (
   </span>
 );
 
-const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
+const SettingsSheet = () => {
   const {
     wakeTime,
     sleepTime,
@@ -59,6 +51,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     pushToken,
     extraButtonEnabled,
     extraReductionEnabled,
+    homeSavingsEnabled,
     reductionPlan,
     days,
     setWakeTime,
@@ -73,6 +66,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     setPushEnabled,
     toggleExtraButtonEnabled,
     toggleExtraReductionEnabled,
+    toggleHomeSavingsEnabled,
     toggleApplyScheduleToAllDays,
     deleteAllData,
   } = useAppStore();
@@ -100,7 +94,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     if (pushToken) await disablePush(pushToken).catch(() => undefined);
     deleteAllData();
     setShowDeleteConfirm(false);
-    onClose();
   };
 
   const handleTestPush = async () => {
@@ -136,7 +129,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
       if (error) throw error;
       deleteAllData();
       setAccount(defaultAccountStatus);
-      onClose();
     } catch {
       setAccountMessage('Konto konnte nicht gelöscht werden.');
     } finally {
@@ -176,46 +168,12 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: EASE }}
-            onClick={onClose}
-            className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
-          />
+    <div className="min-h-[100dvh] bg-background px-4 pb-32 safe-top">
+      <div className="pt-3 pb-5">
+        <h2 className="t-24 text-foreground">Einstellungen</h2>
+      </div>
 
-          {/* Sheet */}
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ duration: 0.22, ease: EASE }}
-            className="fixed bottom-0 left-0 right-0 bg-background rounded-t-[32px] z-50 max-h-[90vh] overflow-hidden"
-          >
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 bg-subtle/40 rounded-pill" />
-            </div>
-
-            {/* Kopfbereich */}
-            <div className="flex items-center justify-between px-4 py-3">
-              <h2 className="t-24 text-foreground">Einstellungen</h2>
-              <button
-                onClick={onClose}
-                aria-label="Schließen"
-                className="w-12 h-12 rounded-md bg-card flex items-center justify-center text-subtle"
-              >
-                <X className="w-5 h-5" strokeWidth={1.75} />
-              </button>
-            </div>
-
-            {/* Inhalt */}
-            <div className="overflow-y-auto px-4 py-4 space-y-6 max-h-[70vh] hide-scrollbar safe-bottom">
+      <div className="space-y-6">
               {/* Zeitplan für alle Tage */}
               <section>
                 <button
@@ -259,6 +217,19 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     <span className="t-12 text-subtle">Geklickte Extras kürzen den heutigen Ablauf</span>
                   </span>
                   <Toggle on={extraButtonEnabled && extraReductionEnabled} />
+                </button>
+              </section>
+
+              <section>
+                <button
+                  onClick={toggleHomeSavingsEnabled}
+                  className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
+                >
+                  <span>
+                    <span className="t-16 block text-foreground">Gespartes auf Startseite</span>
+                    <span className="t-12 text-subtle">Geld und Zeit auf der Startseite anzeigen</span>
+                  </span>
+                  <Toggle on={homeSavingsEnabled} />
                 </button>
               </section>
 
@@ -598,7 +569,6 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     const next = versionTaps + 1;
                     if (next >= 7) {
                       setVersionTaps(0);
-                      onClose();
                       goTo('/unlock');
                       return;
                     }
@@ -609,11 +579,8 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   Version {APP_VERSION}
                 </button>
               </section>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+      </div>
+    </div>
   );
 };
 
