@@ -96,14 +96,16 @@ const SettingsSheet = () => {
   const actualRows = useMemo(() => weeklyActuals(days, reductionPlan).slice(0, 12), [days, reductionPlan]);
   const thisWeekPaused = reductionPlan.pausedWeekKeys.includes(weekKey(new Date().toISOString().slice(0, 10)));
 
-  const isPaying = account.paymentStatus === 'active' || account.paymentStatus === 'lifetime';
-  const planLabel = account.paymentStatus === 'lifetime' ? 'Lebenslang, CHF 79.00' : 'Abonnement, laufend';
-  const renewalLabel =
-    account.paymentStatus === 'lifetime'
-      ? 'Einmalig bezahlt, keine weiteren Kosten'
-      : account.trialEndsAt
-        ? `Nächste Abbuchung: ${new Date(account.trialEndsAt).toLocaleDateString('de-CH')}`
-        : 'Nächste Abbuchung: wird nach der Zahlung angezeigt';
+  const isLifetime = account.paymentStatus === 'lifetime';
+  const isPaying = account.paymentStatus === 'active' || isLifetime;
+  const purchasedAt = account.paidSince ? new Date(account.paidSince).toLocaleDateString('de-CH') : null;
+  const planLabel = isLifetime
+    ? `Lebenslang — einmalig bezahlt${purchasedAt ? ` am ${purchasedAt}` : ''}. Es fallen keine weiteren Kosten an.`
+    : 'Abonnement, laufend';
+  const renewalLabel = account.trialEndsAt
+    ? `Nächste Abbuchung: ${new Date(account.trialEndsAt).toLocaleDateString('de-CH')}`
+    : 'Nächste Abbuchung: wird nach der Zahlung angezeigt';
+
 
 
   const handleDeleteAllData = async () => {
@@ -564,13 +566,13 @@ const SettingsSheet = () => {
               {/* Abonnement – nur für Zahlende */}
               {isPaying && (
                 <section>
-                  <GroupTitle>Abonnement</GroupTitle>
+                  <GroupTitle>{isLifetime ? 'Dein Kauf' : 'Abonnement'}</GroupTitle>
                   <div className="surface-card p-5 space-y-3">
                     <div>
                       <p className="t-16 text-foreground">{planLabel}</p>
-                      <p className="t-12 text-subtle">{renewalLabel}</p>
+                      {!isLifetime && <p className="t-12 text-subtle">{renewalLabel}</p>}
                     </div>
-                    {account.paymentStatus !== 'lifetime' && (
+                    {!isLifetime && (
                       <>
                         <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
                           Abonnement kündigen
@@ -580,16 +582,17 @@ const SettingsSheet = () => {
                         </button>
                       </>
                     )}
+                    <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
+                      {isLifetime ? 'Rechnung herunterladen' : 'Rechnungen'}
+                    </button>
                     <button onClick={handleRestore} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
                       Kauf wiederherstellen
-                    </button>
-                    <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
-                      Rechnungen
                     </button>
                     {subMessage && <p className="t-12 text-subtle">{subMessage}</p>}
                   </div>
                 </section>
               )}
+
 
               {!isPaying && (
               <section>
@@ -608,6 +611,8 @@ const SettingsSheet = () => {
                   <button className="w-full p-5 rounded-card bg-primary text-left">
                     <p className="t-16 font-medium text-primary-foreground">Lebenslang</p>
                     <p className="t-12 text-primary-foreground/70">{formatMoney(79, 'CHF')}</p>
+                    <p className="t-14 text-primary-foreground mt-1">Einmal bezahlen. Nie wieder. Kein Abo, keine Verlängerung.</p>
+
                   </button>
                 </div>
 
