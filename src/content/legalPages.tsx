@@ -28,9 +28,9 @@ const datenschutzTodos = [
 
 const agbTodos = [
   'mit oder ohne MWST',
-  'Mindestbetriebsdauer festlegen, z.B. 24 Monate',
   'Gerichtsstand eintragen',
 ];
+
 
 export const legalPages: LegalPage[] = [
   {
