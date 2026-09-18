@@ -564,13 +564,13 @@ const SettingsSheet = () => {
               {/* Abonnement – nur für Zahlende */}
               {isPaying && (
                 <section>
-                  <GroupTitle>Abonnement</GroupTitle>
+                  <GroupTitle>{isLifetime ? 'Dein Kauf' : 'Abonnement'}</GroupTitle>
                   <div className="surface-card p-5 space-y-3">
                     <div>
                       <p className="t-16 text-foreground">{planLabel}</p>
-                      <p className="t-12 text-subtle">{renewalLabel}</p>
+                      {!isLifetime && <p className="t-12 text-subtle">{renewalLabel}</p>}
                     </div>
-                    {account.paymentStatus !== 'lifetime' && (
+                    {!isLifetime && (
                       <>
                         <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
                           Abonnement kündigen
@@ -580,16 +580,17 @@ const SettingsSheet = () => {
                         </button>
                       </>
                     )}
+                    <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
+                      {isLifetime ? 'Rechnung herunterladen' : 'Rechnungen'}
+                    </button>
                     <button onClick={handleRestore} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
                       Kauf wiederherstellen
-                    </button>
-                    <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
-                      Rechnungen
                     </button>
                     {subMessage && <p className="t-12 text-subtle">{subMessage}</p>}
                   </div>
                 </section>
               )}
+
 
               {!isPaying && (
               <section>
