@@ -134,7 +134,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
               onClick={() => setExpanded((e) => !e)}
               aria-expanded={isOpen}
               aria-label="Zeitplan auf- oder zuklappen"
-              className="w-11 h-11 shrink-0 rounded-pill bg-muted flex items-center justify-center"
+              className="glass-flat w-11 h-11 shrink-0 rounded-pill flex items-center justify-center"
             >
               <ChevronDown
                 className="w-5 h-5 text-subtle [transition:transform_200ms_cubic-bezier(0.22,1,0.36,1)]"
@@ -178,7 +178,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
               <button
                 type="button"
                 onClick={handleSave}
-                className="btn-pill btn-primary w-full"
+                className="btn-pill glass-tint-flat w-full"
               >
                 {isEditing ? 'Zeitplan aktualisieren' : 'Tag einrichten'}
               </button>
