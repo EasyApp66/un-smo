@@ -241,20 +241,21 @@
     border-radius: inherit;
     pointer-events: none;
     background: radial-gradient(120% 80% at 20% 0%, rgb(255 255 255 / 0.45), transparent 55%);
-    opacity: 1;
+    opacity: 0.68;
     transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .glass-tint::before,
   .glass-tint-flat::before {
     background: radial-gradient(120% 80% at 20% 0%, rgb(255 255 255 / 0.35), transparent 55%);
+    opacity: 0.72;
   }
 
   .glass:active::before,
   .glass-flat:active::before,
   .glass-tint:active::before,
   .glass-tint-flat:active::before {
-    opacity: 1.75;
+    opacity: 1;
   }
 
   .glass > *,
