@@ -125,16 +125,69 @@ const SettingsSheet = () => {
     setAccountBusy(true);
     setAccountMessage(null);
     try {
-      const { error } = await supabase.functions.invoke('delete-account');
-      if (error) throw error;
+      if (account.signedIn) {
+        const { error } = await supabase.functions.invoke('delete-account');
+        if (error) throw error;
+      }
+      if (pushToken) await disablePush(pushToken).catch(() => undefined);
       deleteAllData();
       setAccount(defaultAccountStatus);
+      setShowAccountDelete(false);
+      setDeleteWord('');
+      setAccountMessage('Konto und Daten wurden gelöscht.');
     } catch {
       setAccountMessage('Konto konnte nicht gelöscht werden.');
     } finally {
       setAccountBusy(false);
     }
   };
+
+  const handleExport = () => {
+    const state = useAppStore.getState();
+    const payload = {
+      exportiertAm: new Date().toISOString(),
+      wakeTime: state.wakeTime,
+      sleepTime: state.sleepTime,
+      dailyCigarettes: state.dailyCigarettes,
+      reductionPlan: state.reductionPlan,
+      days: state.days,
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `un-smo-daten-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const notReady = 'Zahlungen sind noch nicht freigeschaltet. Sobald der Zahlungsanbieter aktiv ist, öffnet sich hier das Kundenportal.';
+
+  const handleOpenPortal = async () => {
+    setSubBusy(true);
+    setSubMessage(notReady);
+    setSubBusy(false);
+  };
+
+  const handleCancelInApp = async () => {
+    setSubBusy(true);
+    setSubMessage(notReady);
+    setSubBusy(false);
+  };
+
+  const handleRestore = async () => {
+    setSubBusy(true);
+    setSubMessage(null);
+    try {
+      const status = await fetchAccountStatus();
+      setAccount(status);
+      setSubMessage(status.access ? 'Kauf wiederhergestellt.' : 'Kein aktiver Kauf gefunden.');
+    } catch {
+      setSubMessage('Wiederherstellen hat nicht geklappt. Bitte später erneut versuchen.');
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
 
   const handleTogglePush = async () => {
     setPushBusy(true);
@@ -485,8 +538,8 @@ const SettingsSheet = () => {
                   ) : (
                     <>
                       <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
-                      <button disabled={accountBusy} onClick={handleDeleteAccount} className="btn-pill w-full text-destructive disabled:opacity-60">Konto und Daten löschen</button>
                     </>
+
                   )}
                   {accountMessage && <p className="t-12 text-subtle">{accountMessage}</p>}
                 </div>
