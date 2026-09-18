@@ -96,14 +96,16 @@ const SettingsSheet = () => {
   const actualRows = useMemo(() => weeklyActuals(days, reductionPlan).slice(0, 12), [days, reductionPlan]);
   const thisWeekPaused = reductionPlan.pausedWeekKeys.includes(weekKey(new Date().toISOString().slice(0, 10)));
 
-  const isPaying = account.paymentStatus === 'active' || account.paymentStatus === 'lifetime';
-  const planLabel = account.paymentStatus === 'lifetime' ? 'Lebenslang, CHF 79.00' : 'Abonnement, laufend';
-  const renewalLabel =
-    account.paymentStatus === 'lifetime'
-      ? 'Einmalig bezahlt, keine weiteren Kosten'
-      : account.trialEndsAt
-        ? `Nächste Abbuchung: ${new Date(account.trialEndsAt).toLocaleDateString('de-CH')}`
-        : 'Nächste Abbuchung: wird nach der Zahlung angezeigt';
+  const isLifetime = account.paymentStatus === 'lifetime';
+  const isPaying = account.paymentStatus === 'active' || isLifetime;
+  const purchasedAt = account.paidSince ? new Date(account.paidSince).toLocaleDateString('de-CH') : null;
+  const planLabel = isLifetime
+    ? `Lebenslang — einmalig bezahlt${purchasedAt ? ` am ${purchasedAt}` : ''}. Es fallen keine weiteren Kosten an.`
+    : 'Abonnement, laufend';
+  const renewalLabel = account.trialEndsAt
+    ? `Nächste Abbuchung: ${new Date(account.trialEndsAt).toLocaleDateString('de-CH')}`
+    : 'Nächste Abbuchung: wird nach der Zahlung angezeigt';
+
 
 
   const handleDeleteAllData = async () => {
