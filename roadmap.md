@@ -16,3 +16,7 @@
 - [x] Einstellungen als normale Seite mit sichtbarem Menü umbauen
 - [x] Startseiten-Anzeige für gespartes Geld und Zeit schaltbar machen
 - [x] Extra-Knopf mit deutlicherem Akzent-Rand versehen
+- [x] Rechtliche Seiten (Impressum, Datenschutz, AGB, Gesundheitshinweis) mit Todo-Markierungen
+- [x] Admin-Übersicht /rechtliches-check
+- [x] Abschnitt Abonnement, Kauf wiederherstellen, Export, Konto löschen mit LÖSCHEN
+- [ ] Stripe-Kundenportal und echte Kündigung — wartet auf Zahlungsanbieter-Aktivierung
