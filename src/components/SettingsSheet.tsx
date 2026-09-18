@@ -78,6 +78,12 @@ const SettingsSheet = () => {
   const [account, setAccount] = useState<AccountStatus>(defaultAccountStatus);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
+  const [showAccountDelete, setShowAccountDelete] = useState(false);
+  const [deleteWord, setDeleteWord] = useState('');
+  const [withdrawalConsent, setWithdrawalConsent] = useState(false);
+  const [subBusy, setSubBusy] = useState(false);
+  const [subMessage, setSubMessage] = useState<string | null>(null);
+
 
   useEffect(() => {
     fetchAccountStatus().then(setAccount).catch(() => setAccount(defaultAccountStatus));
