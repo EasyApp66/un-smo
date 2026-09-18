@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('trial_started_at,payment_status,payment_expires_at')
+    .select('trial_started_at,payment_status,payment_expires_at,updated_at')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -34,16 +34,22 @@ Deno.serve(async (req) => {
   const trialStarted = profile?.trial_started_at ? new Date(profile.trial_started_at).getTime() : Date.now()
   const trialEnds = trialStarted + 7 * 24 * 60 * 60 * 1000
   const now = Date.now()
-  const paymentExpires = profile?.payment_expires_at ? new Date(profile.payment_expires_at).getTime() : 0
   const paymentStatus = profile?.payment_status ?? 'trial'
-  const paid = paymentStatus === 'active' || paymentStatus === 'lifetime' || paymentExpires > now
+  // Lebenslang ist ein einmaliger Kauf: niemals ablaufen lassen, kein Ablaufdatum auswerten.
+  const lifetime = paymentStatus === 'lifetime'
+  const paymentExpires = lifetime || !profile?.payment_expires_at
+    ? 0
+    : new Date(profile.payment_expires_at).getTime()
+  const paid = lifetime || paymentStatus === 'active' || paymentExpires > now
   const trialActive = now < trialEnds
 
   return json({
     access: role === 'admin' || paid || trialActive,
     role,
     paymentStatus,
-    trialDaysRemaining: Math.max(0, Math.ceil((trialEnds - now) / 86_400_000)),
-    trialEndsAt: new Date(trialEnds).toISOString(),
+    trialDaysRemaining: lifetime ? 0 : Math.max(0, Math.ceil((trialEnds - now) / 86_400_000)),
+    trialEndsAt: lifetime ? null : new Date(trialEnds).toISOString(),
+    paidSince: lifetime ? (profile?.updated_at ?? null) : null,
   })
 })
+
