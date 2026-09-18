@@ -67,20 +67,25 @@ export const fetchAccountStatus = async (): Promise<AccountStatus> => {
 
   const role = (data as { role?: string } | null)?.role === 'admin' ? 'admin' : 'user';
   const serverAccess = !!(data as { access?: boolean } | null)?.access;
+  const paymentStatus =
+    ((data as { paymentStatus?: AccountStatus['paymentStatus'] } | null)?.paymentStatus) ?? 'trial';
+  const lifetime = paymentStatus === 'lifetime';
   return {
     signedIn: true,
     userEmail: email,
-    access: role === 'admin' || serverAccess || localTrialActive(),
+    access: role === 'admin' || lifetime || serverAccess || localTrialActive(),
     role,
-    paymentStatus:
-      ((data as { paymentStatus?: AccountStatus['paymentStatus'] } | null)?.paymentStatus) ?? 'trial',
+    paymentStatus,
     trialDaysRemaining: Math.max(
       localTrialDaysRemaining(),
       Number((data as { trialDaysRemaining?: number } | null)?.trialDaysRemaining ?? 0),
     ),
-    trialEndsAt: ((data as { trialEndsAt?: string } | null)?.trialEndsAt) ?? null,
+    // Lebenslang kennt kein Ablaufdatum.
+    trialEndsAt: lifetime ? null : ((data as { trialEndsAt?: string } | null)?.trialEndsAt) ?? null,
+    paidSince: ((data as { paidSince?: string } | null)?.paidSince) ?? null,
   };
 };
+
 
 /** Sechsstelligen Code per E-Mail anfordern. */
 export const sendEmailCode = async (email: string) => {
