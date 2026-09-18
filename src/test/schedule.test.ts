@@ -145,6 +145,17 @@ describe('Tagesziel bleibt unverändert', () => {
       false
     );
   });
+
+  it('verwendet den Standard aus den Einstellungen für neue Tage', () => {
+    const date = formatLocalDate();
+    useAppStore.getState().setDailyCigarettes(30);
+    useAppStore.getState().initializeDay(date);
+
+    const state = useAppStore.getState();
+    expect(state.reductionPlan.baselineCigarettes).toBe(30);
+    expect(state.days[date].totalCigarettes).toBe(30);
+    expect(state.days[date].reminders).toHaveLength(30);
+  });
 });
 
 describe('Benachrichtigungsplan', () => {

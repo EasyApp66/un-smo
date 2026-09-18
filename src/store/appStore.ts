@@ -366,7 +366,14 @@ export const useAppStore = create<AppState>()(
           });
           return;
         }
-        set({ dailyCigarettes: count });
+        set((current) => ({
+          dailyCigarettes: count,
+          reductionPlan: {
+            ...current.reductionPlan,
+            baselineCigarettes: count,
+            onboardingEstimate: count,
+          },
+        }));
         if (get().applyScheduleToAllDays) get().recalculateAllDays();
       },
       
@@ -851,7 +858,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'smoke-storage',
       storage: createJSONStorage(() => durableStorage),
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown, version: number) => {
         const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
         if (p.themeMode === undefined) {
@@ -870,9 +877,19 @@ export const useAppStore = create<AppState>()(
           p.onboardingVersion = 0;
         }
         if (p.reductionPlan === undefined) {
-          p.reductionPlan = defaultReductionPlan();
+          const daily = typeof p.dailyCigarettes === 'number' ? p.dailyCigarettes : 20;
+          p.reductionPlan = {
+            ...defaultReductionPlan(),
+            baselineCigarettes: daily,
+            onboardingEstimate: daily,
+          };
         } else {
           p.reductionPlan = { ...defaultReductionPlan(), ...(p.reductionPlan as Partial<ReductionPlanState>) };
+          const reductionPlan = p.reductionPlan as ReductionPlanState;
+          if (version < 4 && !reductionPlan.planStartedAt && typeof p.dailyCigarettes === 'number') {
+            reductionPlan.baselineCigarettes = p.dailyCigarettes;
+            reductionPlan.onboardingEstimate = p.dailyCigarettes;
+          }
         }
         if (p.milestoneSeenIds === undefined) {
           p.milestoneSeenIds = [];
