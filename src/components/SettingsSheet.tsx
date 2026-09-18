@@ -78,6 +78,12 @@ const SettingsSheet = () => {
   const [account, setAccount] = useState<AccountStatus>(defaultAccountStatus);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
+  const [showAccountDelete, setShowAccountDelete] = useState(false);
+  const [deleteWord, setDeleteWord] = useState('');
+  const [withdrawalConsent, setWithdrawalConsent] = useState(false);
+  const [subBusy, setSubBusy] = useState(false);
+  const [subMessage, setSubMessage] = useState<string | null>(null);
+
 
   useEffect(() => {
     fetchAccountStatus().then(setAccount).catch(() => setAccount(defaultAccountStatus));
@@ -89,6 +95,16 @@ const SettingsSheet = () => {
 
   const actualRows = useMemo(() => weeklyActuals(days, reductionPlan).slice(0, 12), [days, reductionPlan]);
   const thisWeekPaused = reductionPlan.pausedWeekKeys.includes(weekKey(new Date().toISOString().slice(0, 10)));
+
+  const isPaying = account.paymentStatus === 'active' || account.paymentStatus === 'lifetime';
+  const planLabel = account.paymentStatus === 'lifetime' ? 'Lebenslang, CHF 79.00' : 'Abonnement, laufend';
+  const renewalLabel =
+    account.paymentStatus === 'lifetime'
+      ? 'Einmalig bezahlt, keine weiteren Kosten'
+      : account.trialEndsAt
+        ? `Nächste Abbuchung: ${new Date(account.trialEndsAt).toLocaleDateString('de-CH')}`
+        : 'Nächste Abbuchung: wird nach der Zahlung angezeigt';
+
 
   const handleDeleteAllData = async () => {
     if (pushToken) await disablePush(pushToken).catch(() => undefined);
@@ -125,16 +141,69 @@ const SettingsSheet = () => {
     setAccountBusy(true);
     setAccountMessage(null);
     try {
-      const { error } = await supabase.functions.invoke('delete-account');
-      if (error) throw error;
+      if (account.signedIn) {
+        const { error } = await supabase.functions.invoke('delete-account');
+        if (error) throw error;
+      }
+      if (pushToken) await disablePush(pushToken).catch(() => undefined);
       deleteAllData();
       setAccount(defaultAccountStatus);
+      setShowAccountDelete(false);
+      setDeleteWord('');
+      setAccountMessage('Konto und Daten wurden gelöscht.');
     } catch {
       setAccountMessage('Konto konnte nicht gelöscht werden.');
     } finally {
       setAccountBusy(false);
     }
   };
+
+  const handleExport = () => {
+    const state = useAppStore.getState();
+    const payload = {
+      exportiertAm: new Date().toISOString(),
+      wakeTime: state.wakeTime,
+      sleepTime: state.sleepTime,
+      dailyCigarettes: state.dailyCigarettes,
+      reductionPlan: state.reductionPlan,
+      days: state.days,
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `un-smo-daten-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const notReady = 'Zahlungen sind noch nicht freigeschaltet. Sobald der Zahlungsanbieter aktiv ist, öffnet sich hier das Kundenportal.';
+
+  const handleOpenPortal = async () => {
+    setSubBusy(true);
+    setSubMessage(notReady);
+    setSubBusy(false);
+  };
+
+  const handleCancelInApp = async () => {
+    setSubBusy(true);
+    setSubMessage(notReady);
+    setSubBusy(false);
+  };
+
+  const handleRestore = async () => {
+    setSubBusy(true);
+    setSubMessage(null);
+    try {
+      const status = await fetchAccountStatus();
+      setAccount(status);
+      setSubMessage(status.access ? 'Kauf wiederhergestellt.' : 'Kein aktiver Kauf gefunden.');
+    } catch {
+      setSubMessage('Wiederherstellen hat nicht geklappt. Bitte später erneut versuchen.');
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
 
   const handleTogglePush = async () => {
     setPushBusy(true);
@@ -485,13 +554,44 @@ const SettingsSheet = () => {
                   ) : (
                     <>
                       <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
-                      <button disabled={accountBusy} onClick={handleDeleteAccount} className="btn-pill w-full text-destructive disabled:opacity-60">Konto und Daten löschen</button>
                     </>
+
                   )}
                   {accountMessage && <p className="t-12 text-subtle">{accountMessage}</p>}
                 </div>
               </section>
 
+              {/* Abonnement – nur für Zahlende */}
+              {isPaying && (
+                <section>
+                  <GroupTitle>Abonnement</GroupTitle>
+                  <div className="surface-card p-5 space-y-3">
+                    <div>
+                      <p className="t-16 text-foreground">{planLabel}</p>
+                      <p className="t-12 text-subtle">{renewalLabel}</p>
+                    </div>
+                    {account.paymentStatus !== 'lifetime' && (
+                      <>
+                        <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
+                          Abonnement kündigen
+                        </button>
+                        <button onClick={handleCancelInApp} disabled={subBusy} className="btn-pill w-full text-destructive disabled:opacity-60">
+                          Direkt in der App kündigen
+                        </button>
+                      </>
+                    )}
+                    <button onClick={handleRestore} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
+                      Kauf wiederherstellen
+                    </button>
+                    <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
+                      Rechnungen
+                    </button>
+                    {subMessage && <p className="t-12 text-subtle">{subMessage}</p>}
+                  </div>
+                </section>
+              )}
+
+              {!isPaying && (
               <section>
                 <GroupTitle>Mehr freischalten</GroupTitle>
                 <div className="space-y-[10px]">
@@ -510,26 +610,88 @@ const SettingsSheet = () => {
                     <p className="t-12 text-primary-foreground/70">{formatMoney(79, 'CHF')}</p>
                   </button>
                 </div>
+
+                <div className="mt-3 space-y-2">
+                  <p className="t-12 text-subtle">Verlängert sich automatisch. Jederzeit kündbar.</p>
+                  <p className="t-12 text-subtle">
+                    <button type="button" onClick={() => goTo('/agb')} className="underline">AGB</button>
+                    {' · '}
+                    <button type="button" onClick={() => goTo('/datenschutz')} className="underline">Datenschutzerklärung</button>
+                  </p>
+                  <label className="flex items-start gap-2 t-12 text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={withdrawalConsent}
+                      onChange={(e) => setWithdrawalConsent(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>Ich verlange die sofortige Bereitstellung und weiss, dass mein Widerrufsrecht damit erlischt.</span>
+                  </label>
+                  {!withdrawalConsent && <p className="t-12 text-subtle">Ohne dieses Häkchen ist kein Kauf möglich.</p>}
+                </div>
+              </section>
+              )}
+
+              {/* Daten exportieren */}
+              <section>
+                <GroupTitle>Deine Daten</GroupTitle>
+                <div className="surface-card p-5 space-y-3">
+                  <button onClick={handleExport} className="btn-pill btn-secondary w-full">Daten exportieren</button>
+                  <p className="t-12 text-subtle">Alle Angaben als Datei zum Mitnehmen (Art. 20 DSGVO).</p>
+                  <button
+                    onClick={() => setShowAccountDelete(true)}
+                    className="btn-pill w-full text-destructive"
+                  >
+                    Konto und alle Daten löschen
+                  </button>
+                  {showAccountDelete && (
+                    <div className="space-y-2">
+                      <p className="t-12 text-subtle">Zum Bestätigen bitte das Wort LÖSCHEN eintippen. Ein laufendes Abonnement wird dabei gekündigt.</p>
+                      <input
+                        value={deleteWord}
+                        onChange={(e) => setDeleteWord(e.target.value)}
+                        placeholder="LÖSCHEN"
+                        className="w-full rounded-pill bg-muted px-4 py-3 t-16 text-foreground outline-none"
+                      />
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={deleteWord.trim().toUpperCase() !== 'LÖSCHEN' || accountBusy}
+                        className="btn-pill w-full text-destructive disabled:opacity-40"
+                      >
+                        Endgültig löschen
+                      </button>
+                    </div>
+                  )}
+                </div>
               </section>
 
               {/* Rechtliches */}
               <section>
                 <GroupTitle>Rechtliches</GroupTitle>
                 <div className="surface-card overflow-hidden">
-                  <button className="w-full px-4 min-h-[56px] flex items-center justify-between border-b border-border/60">
-                    <span className="t-16 text-foreground">AGB</span>
-                    <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
-                  </button>
-                  <button className="w-full px-4 min-h-[56px] flex items-center justify-between border-b border-border/60">
-                    <span className="t-16 text-foreground">Datenschutzerklärung</span>
-                    <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
-                  </button>
-                  <button className="w-full px-4 min-h-[56px] flex items-center justify-between">
-                    <span className="t-16 text-foreground">Nutzungsbedingungen</span>
-                    <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
-                  </button>
+                  {[
+                    { slug: 'impressum', label: 'Impressum' },
+                    { slug: 'datenschutz', label: 'Datenschutzerklärung' },
+                    { slug: 'agb', label: 'Allgemeine Geschäftsbedingungen' },
+                    { slug: 'gesundheitshinweis', label: 'Gesundheitshinweis' },
+                  ].map((item, index, list) => (
+                    <button
+                      key={item.slug}
+                      onClick={() => goTo(`/${item.slug}`)}
+                      className={`w-full px-4 min-h-[56px] flex items-center justify-between ${index < list.length - 1 ? 'border-b border-border/60' : ''}`}
+                    >
+                      <span className="t-16 text-foreground text-left">{item.label}</span>
+                      <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
+                    </button>
+                  ))}
                 </div>
+                {account.role === 'admin' && (
+                  <button onClick={() => goTo('/rechtliches-check')} className="btn-pill btn-secondary w-full mt-3">
+                    Offene Stellen prüfen
+                  </button>
+                )}
               </section>
+
 
               {/* Gefahrenzone */}
               <section className="pb-6">

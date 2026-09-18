@@ -142,7 +142,13 @@ const OnboardingScreen = () => {
             {step === 3 && (
               <div className="flex-1 overflow-y-auto hide-scrollbar pb-2">
                 <h1 className="t-24 text-foreground mb-2">Der Plan</h1>
-                <p className="t-14 text-subtle mb-5">Dein Plan bleibt auf diesem Gerät gespeichert.</p>
+                <p className="t-14 text-subtle mb-3">Dein Plan bleibt auf diesem Gerät gespeichert.</p>
+                <p className="t-12 text-subtle mb-5">
+                  Gesundheitshinweis: Diese App ist kein Medizinprodukt und ersetzt keine ärztliche Beratung. Angaben zu
+                  Erholungsvorgängen folgen allgemeinen Informationen von WHO und NHS. Bei Beschwerden, Schwangerschaft
+                  oder Medikamenten bitte ärztlichen Rat einholen. Rauchstopplinie Schweiz: 0848 000 181.
+                </p>
+
                 <div className="surface-card p-4 mb-4 grid grid-cols-2 gap-3">
                   <div>
                     <p className="t-12 text-subtle">Gespart bis dahin</p>
