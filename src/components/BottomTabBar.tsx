@@ -99,7 +99,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
                 whileTap={{ scale: 0.94 }}
                 aria-label="Nach oben"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="surface-float nav-elevation pointer-events-auto w-16 h-16 rounded-pill backdrop-blur-xl flex items-center justify-center text-subtle"
+                className="glass pointer-events-auto w-16 h-16 rounded-pill flex items-center justify-center text-subtle"
               >
                 <ArrowUp className="w-5 h-5" strokeWidth={1.75} />
               </motion.button>
@@ -115,14 +115,14 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
               transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               onClick={onAddExtra}
               aria-label="Zusätzliche Zigarette eintragen"
-              className="surface-float nav-elevation pointer-events-auto w-16 h-16 rounded-pill !border-primary backdrop-blur-xl flex items-center justify-center text-foreground"
+              className="glass-tint pointer-events-auto w-16 h-16 rounded-pill flex items-center justify-center"
             >
               <Plus className="w-6 h-6" strokeWidth={1.75} />
             </motion.button>
           </div>
         )}
 
-        <div className="surface-float nav-elevation rounded-pill h-16 px-1 backdrop-blur-xl flex items-center">
+        <div className="glass rounded-pill h-16 px-1 flex items-center">
           <div className="flex items-center gap-1">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
@@ -136,7 +136,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
                   onClick={() => onTabChange(tab.id)}
                   aria-label={tab.label}
                   className={`flex items-center justify-center w-14 h-14 rounded-[24px] [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
-                    isActive ? 'bg-primary text-primary-foreground' : 'text-subtle'
+                    isActive ? 'glass-tint-flat' : 'text-subtle'
                   }`}
                 >
                   <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2 : 1.75} />

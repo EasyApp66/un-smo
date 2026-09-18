@@ -33,7 +33,7 @@ const TimePicker = ({ value, onChange, label, compact = false }: TimePickerProps
         {label}
       </span>
 
-      <div className={`flex items-center gap-0.5 bg-muted rounded-inner ${compact ? 'p-2' : 'p-3'}`}>
+      <div className={`glass-field-flat flex items-center gap-0.5 rounded-inner ${compact ? 'p-2' : 'p-3'}`}>
         <ScrollWheel
           values={hourValues}
           index={hours}
