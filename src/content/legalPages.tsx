@@ -177,7 +177,7 @@ export const legalPages: LegalPage[] = [
         </LegalSection>
 
         <LegalSection title="8. Anwendbares Recht und Gerichtsstand">
-          Es gilt Schweizer Recht. Gerichtsstand ist <Todo>{agbTodos[2]}</Todo>. Zwingende
+          Es gilt Schweizer Recht. Gerichtsstand ist <Todo>{agbTodos[1]}</Todo>. Zwingende
           Verbraucherschutzvorschriften des Wohnsitzstaates bleiben unberührt.
         </LegalSection>
 
