@@ -151,11 +151,18 @@ export const legalPages: LegalPage[] = [
           erfolgt nicht, soweit nicht zwingendes Recht etwas anderes vorsieht.
         </LegalSection>
 
-        <LegalSection title="5. Lebenslanger Zugang">
-          «Lebenslang» bedeutet: eine einmalige Zahlung, danach Nutzung ohne weitere Kosten, solange die App betrieben
-          wird, mindestens jedoch <Todo>{agbTodos[1]}</Todo> ab Kaufdatum. Wird der Betrieb vor Ablauf dieser
-          Mindestdauer eingestellt, wird der nicht genutzte Anteil zeitanteilig zurückerstattet.
+        <LegalSection title="5. Tarif «Lebenslang»">
+          Der Tarif «Lebenslang» ist eine einmalige Zahlung. Es fallen danach keinerlei weitere Kosten an: keine
+          Abonnementgebühr, keine Verlängerung, keine Nachzahlung, keine Zusatzkosten für künftige Funktionen. Der Zugang
+          umfasst den vollen Funktionsumfang einschliesslich aller späteren Aktualisierungen.
+          <br />
+          <br />
+          «Lebenslang» bezieht sich auf die Lebensdauer des Produkts, nicht auf die Lebenszeit der Kundin oder des
+          Kunden. Sollte der Betrieb der Anwendung eingestellt werden, gilt: Die Einstellung wird mindestens zwölf Monate
+          im Voraus per E-Mail angekündigt, der Zugang bleibt bis zum angekündigten Zeitpunkt vollständig bestehen, und
+          die eigenen Daten können während dieser ganzen Zeit sowie darüber hinaus exportiert werden.
         </LegalSection>
+
 
         <LegalSection title="6. Widerrufsrecht für Kundschaft in der EU">
           Kundinnen und Kunden mit Wohnsitz in der EU haben ein Widerrufsrecht von vierzehn Tagen. Bei digitalen Inhalten
