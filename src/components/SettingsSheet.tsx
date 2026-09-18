@@ -611,6 +611,8 @@ const SettingsSheet = () => {
                   <button className="w-full p-5 rounded-card bg-primary text-left">
                     <p className="t-16 font-medium text-primary-foreground">Lebenslang</p>
                     <p className="t-12 text-primary-foreground/70">{formatMoney(79, 'CHF')}</p>
+                    <p className="t-14 text-primary-foreground mt-1">Einmal bezahlen. Nie wieder. Kein Abo, keine Verlängerung.</p>
+
                   </button>
                 </div>
 

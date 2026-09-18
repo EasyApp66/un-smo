@@ -9,6 +9,8 @@ export interface AccountStatus {
   paymentStatus: 'trial' | 'active' | 'past_due' | 'expired' | 'lifetime';
   trialDaysRemaining: number;
   trialEndsAt: string | null;
+  /** Kaufdatum bei Lebenslang – nie ein Ablaufdatum. */
+  paidSince: string | null;
 }
 
 /** Ohne Konto: alles lokal, Testzeit ab erstem Start. */
@@ -20,7 +22,9 @@ export const defaultAccountStatus: AccountStatus = {
   paymentStatus: 'trial',
   trialDaysRemaining: 7,
   trialEndsAt: null,
+  paidSince: null,
 };
+
 
 const localStatus = (): AccountStatus => ({
   ...defaultAccountStatus,
