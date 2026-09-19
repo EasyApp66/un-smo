@@ -171,7 +171,10 @@ export const savedSummary = (days: Record<string, DayData>, state: ReductionPlan
   const price = unitPrice(state);
   let savedCigarettes = 0;
   Object.values(days).forEach((day) => {
-    savedCigarettes += Math.max(0, baseline - actualSmoked(day));
+    // Pro Tag zählt das Ziel, das an diesem Tag tatsächlich galt. So kann eine
+    // spätere Änderung des Ausgangswerts keine historischen Werte verschieben.
+    const dayTarget = Math.max(0, Math.round(day.totalCigarettes || baseline));
+    savedCigarettes += Math.max(0, dayTarget - actualSmoked(day));
   });
   return {
     savedCigarettes,
@@ -204,7 +207,13 @@ export const weeklyActuals = (days: Record<string, DayData>, state: ReductionPla
       ? Math.round((entries.reduce((sum, day) => sum + actualSmoked(day), 0) / entries.length) * 10) / 10
       : null;
     const saved = entries.reduce(
-      (sum, day) => sum + Math.max(0, (state.baselineCigarettes || state.onboardingEstimate || row.target) - actualSmoked(day)),
+      (sum, day) =>
+        sum +
+        Math.max(
+          0,
+          Math.round(day.totalCigarettes || state.baselineCigarettes || state.onboardingEstimate || row.target) -
+            actualSmoked(day)
+        ),
       0
     ) * unitPrice(state);
     return { ...row, actual, saved };

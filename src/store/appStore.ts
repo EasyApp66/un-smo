@@ -370,8 +370,9 @@ export const useAppStore = create<AppState>()(
           dailyCigarettes: count,
           reductionPlan: {
             ...current.reductionPlan,
+            // Nur der Ausgangswert folgt dem neuen Tagesziel. Der ursprüngliche
+            // Onboarding-Schätzwert bleibt unverändert erhalten.
             baselineCigarettes: count,
-            onboardingEstimate: count,
           },
         }));
         if (get().applyScheduleToAllDays) get().recalculateAllDays();
