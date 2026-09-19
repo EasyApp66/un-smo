@@ -207,7 +207,13 @@ export const weeklyActuals = (days: Record<string, DayData>, state: ReductionPla
       ? Math.round((entries.reduce((sum, day) => sum + actualSmoked(day), 0) / entries.length) * 10) / 10
       : null;
     const saved = entries.reduce(
-      (sum, day) => sum + Math.max(0, (state.baselineCigarettes || state.onboardingEstimate || row.target) - actualSmoked(day)),
+      (sum, day) =>
+        sum +
+        Math.max(
+          0,
+          Math.round(day.totalCigarettes || state.baselineCigarettes || state.onboardingEstimate || row.target) -
+            actualSmoked(day)
+        ),
       0
     ) * unitPrice(state);
     return { ...row, actual, saved };
