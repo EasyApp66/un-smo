@@ -72,6 +72,13 @@ describe('Messwoche und Abbauplan', () => {
     expect(saved.savedMoney).toBe(2.25);
   });
 
+  it('verschiebt eine spätere Zieländerung keine vergangenen Ersparniswerte', () => {
+    const days = { '2026-09-14': day('2026-09-14', 15), '2026-09-15': day('2026-09-15', 21) };
+    const before = savedSummary(days, plan);
+    const lowered = { ...plan, baselineCigarettes: 10, onboardingEstimate: 10 };
+    expect(savedSummary(days, lowered)).toEqual(before);
+  });
+
   it('erstellt eine Wochenliste bis null', () => {
     const rows = buildReductionPlan({ ...plan, baselineCigarettes: 6, reductionPerWeek: 3 });
     expect(rows.at(0)?.isMeasurement).toBe(true);
