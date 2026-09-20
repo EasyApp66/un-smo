@@ -11,6 +11,13 @@ export interface ReductionPlanState {
   measurementCompletedAt: string | null;
   baselineCigarettes: number;
   onboardingEstimate: number;
+  /**
+   * Eingefrorener Vergleichswert für die Ersparnis (ursprüngliche Rauchmenge,
+   * nach der Messwoche der gemessene Durchschnitt). Ändert sich nie durch
+   * spätere Tagesziel- oder Planeinstellungen, damit historische Sparwerte
+   * stabil bleiben.
+   */
+  savingsBaseline: number;
   reductionPerWeek: number;
   automaticReductionEnabled: boolean;
   pausedWeekKeys: string[];
@@ -170,11 +177,11 @@ export const savedSummary = (days: Record<string, DayData>, state: ReductionPlan
   const baseline = Math.max(0, Math.round(state.baselineCigarettes || state.onboardingEstimate || 0));
   const price = unitPrice(state);
   let savedCigarettes = 0;
+  const reference = savingsReference(state);
   Object.values(days).forEach((day) => {
-    // Pro Tag zählt das Ziel, das an diesem Tag tatsächlich galt. So kann eine
-    // spätere Änderung des Ausgangswerts keine historischen Werte verschieben.
-    const dayTarget = Math.max(0, Math.round(day.totalCigarettes || baseline));
-    savedCigarettes += Math.max(0, dayTarget - actualSmoked(day));
+    // Verglichen wird mit der ursprünglichen Rauchmenge (eingefroren), nicht
+    // mit dem Tagesziel — sonst läge die Ersparnis bei Plan-Einhaltung bei 0.
+    savedCigarettes += Math.max(0, reference - actualSmoked(day));
   });
   return {
     savedCigarettes,
