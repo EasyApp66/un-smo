@@ -15,6 +15,7 @@ const plan: ReductionPlanState = {
   measurementCompletedAt: null,
   baselineCigarettes: 20,
   onboardingEstimate: 20,
+  savingsBaseline: 20,
   reductionPerWeek: 2,
   automaticReductionEnabled: true,
   pausedWeekKeys: [],

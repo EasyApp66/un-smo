@@ -889,6 +889,7 @@ export const useAppStore = create<AppState>()(
             ...defaultReductionPlan(),
             baselineCigarettes: daily,
             onboardingEstimate: daily,
+            savingsBaseline: daily,
           };
         } else {
           p.reductionPlan = { ...defaultReductionPlan(), ...(p.reductionPlan as Partial<ReductionPlanState>) };
@@ -896,6 +897,11 @@ export const useAppStore = create<AppState>()(
           if (version < 4 && !reductionPlan.planStartedAt && typeof p.dailyCigarettes === 'number') {
             reductionPlan.baselineCigarettes = p.dailyCigarettes;
             reductionPlan.onboardingEstimate = p.dailyCigarettes;
+          }
+          // Bestandsnutzer: Ersparnis-Vergleichswert aus dem bisherigen
+          // Ausgangswert nachziehen, damit alte Sparwerte erhalten bleiben.
+          if (typeof reductionPlan.savingsBaseline !== 'number') {
+            reductionPlan.savingsBaseline = reductionPlan.baselineCigarettes;
           }
         }
         if (p.milestoneSeenIds === undefined) {
