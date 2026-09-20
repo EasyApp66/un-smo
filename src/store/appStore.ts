@@ -156,6 +156,7 @@ const defaultReductionPlan = (): ReductionPlanState => ({
   measurementCompletedAt: null,
   baselineCigarettes: 20,
   onboardingEstimate: 20,
+  savingsBaseline: 20,
   reductionPerWeek: 2,
   automaticReductionEnabled: true,
   pausedWeekKeys: [],
@@ -371,7 +372,8 @@ export const useAppStore = create<AppState>()(
           reductionPlan: {
             ...current.reductionPlan,
             // Nur der Ausgangswert folgt dem neuen Tagesziel. Der ursprüngliche
-            // Onboarding-Schätzwert bleibt unverändert erhalten.
+            // Onboarding-Schätzwert und der Ersparnis-Vergleichswert bleiben
+            // unverändert erhalten.
             baselineCigarettes: count,
           },
         }));
@@ -468,6 +470,7 @@ export const useAppStore = create<AppState>()(
             measurementCompletedAt: null,
             baselineCigarettes: goal,
             onboardingEstimate: goal,
+            savingsBaseline: goal,
             reductionPerWeek,
             automaticReductionEnabled: true,
             zeroReachedAt: null,
@@ -530,6 +533,9 @@ export const useAppStore = create<AppState>()(
               ...state.reductionPlan,
               measurementCompletedAt: today,
               baselineCigarettes: baseline,
+              // Nach der Messwoche gilt der gemessene Durchschnitt als
+              // ursprüngliche Rauchmenge für die Ersparnis.
+              savingsBaseline: baseline,
               zeroReachedAt: formatLocalDate(zeroDate),
             },
           };
