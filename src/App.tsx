@@ -81,6 +81,7 @@ const App = () => {
     <TooltipProvider>
       <Sonner />
       <UpdateBanner />
+      <Splash />
       {screen}
     </TooltipProvider>
   );
