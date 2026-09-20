@@ -73,6 +73,14 @@ describe('Messwoche und Abbauplan', () => {
     expect(saved.savedMoney).toBe(2.25);
   });
 
+  it('zählt Ersparnis gegen die ursprüngliche Menge, nicht gegen das gesunkene Tagesziel', () => {
+    // Nutzer hält sich exakt an das reduzierte Tagesziel von 14 — die Ersparnis
+    // darf nicht auf 0 fallen, sondern zählt gegen die ursprünglichen 20.
+    const days = { '2026-10-05': day('2026-10-05', 14, 14) };
+    const saved = savedSummary(days, { ...plan, measurementCompletedAt: '2026-09-21', baselineCigarettes: 14 });
+    expect(saved.savedCigarettes).toBe(6);
+  });
+
   it('verschiebt eine spätere Zieländerung keine vergangenen Ersparniswerte', () => {
     const days = { '2026-09-14': day('2026-09-14', 15), '2026-09-15': day('2026-09-15', 21) };
     const before = savedSummary(days, plan);
