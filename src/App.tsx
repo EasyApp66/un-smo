@@ -7,6 +7,8 @@ import UpdateBanner from "./components/UpdateBanner";
 
 const LegalRoute = lazy(() => import("./pages/LegalRoute"));
 const LegalCheck = lazy(() => import("./pages/LegalCheck"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Support = lazy(() => import("./pages/Support"));
 
 const LEGAL_SLUGS = ['impressum', 'datenschutz', 'agb', 'gesundheitshinweis'];
 
@@ -23,8 +25,17 @@ const usePath = () => {
 const App = () => {
   const path = usePath().replace(/\/+$/, '');
   const slug = path.replace(/^\//, '');
+  const isPublicInfoPage = slug === 'privacy-policy' || slug === 'support';
 
-  const screen = LEGAL_SLUGS.includes(slug) ? (
+  const screen = slug === 'privacy-policy' ? (
+    <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
+      <PrivacyPolicy />
+    </Suspense>
+  ) : slug === 'support' ? (
+    <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
+      <Support />
+    </Suspense>
+  ) : LEGAL_SLUGS.includes(slug) ? (
     <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
       <LegalRoute slug={slug} />
     </Suspense>
@@ -41,7 +52,7 @@ const App = () => {
   return (
     <TooltipProvider>
       <Sonner />
-      <UpdateBanner />
+      {!isPublicInfoPage && <UpdateBanner />}
       {screen}
     </TooltipProvider>
   );

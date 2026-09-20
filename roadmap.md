@@ -19,4 +19,5 @@
 - [x] Rechtliche Seiten (Impressum, Datenschutz, AGB, Gesundheitshinweis) mit Todo-Markierungen
 - [x] Admin-Übersicht /rechtliches-check
 - [x] Abschnitt Abonnement, Kauf wiederherstellen, Export, Konto löschen mit LÖSCHEN
+- [x] App-Store-Icon, zweisprachige Datenschutz-URL und Support-URL vorbereiten
 - [ ] Stripe-Kundenportal und echte Kündigung — wartet auf Zahlungsanbieter-Aktivierung
