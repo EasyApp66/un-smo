@@ -11,6 +11,44 @@ const LegalCheck = lazy(() => import("./pages/LegalCheck"));
 
 const LEGAL_SLUGS = ['impressum', 'datenschutz', 'agb', 'gesundheitshinweis'];
 
+/**
+ * Kurzer Startbildschirm mit dem Zeichen: erscheint sofort beim Öffnen,
+ * blendet nach weniger als einer Sekunde sanft aus. Verhindert den schwarzen
+ * bzw. leeren Bildschirm, während die App lädt.
+ */
+const Splash = () => {
+  const [gone, setGone] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setGone(true), 620);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {!gone && (
+        <motion.div
+          key="splash"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-[100] bg-background flex items-center justify-center"
+          aria-hidden
+        >
+          <motion.img
+            src="/mark.svg"
+            alt=""
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className="w-20 h-20"
+            draggable={false}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const usePath = () => {
   const [path, setPath] = useState(window.location.pathname);
   useEffect(() => {
