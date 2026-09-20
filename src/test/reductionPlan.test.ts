@@ -15,6 +15,7 @@ const plan: ReductionPlanState = {
   measurementCompletedAt: null,
   baselineCigarettes: 20,
   onboardingEstimate: 20,
+  savingsBaseline: 20,
   reductionPerWeek: 2,
   automaticReductionEnabled: true,
   pausedWeekKeys: [],
@@ -70,6 +71,14 @@ describe('Messwoche und Abbauplan', () => {
     const saved = savedSummary(days, plan);
     expect(saved.savedCigarettes).toBe(5);
     expect(saved.savedMoney).toBe(2.25);
+  });
+
+  it('zählt Ersparnis gegen die ursprüngliche Menge, nicht gegen das gesunkene Tagesziel', () => {
+    // Nutzer hält sich exakt an das reduzierte Tagesziel von 14 — die Ersparnis
+    // darf nicht auf 0 fallen, sondern zählt gegen die ursprünglichen 20.
+    const days = { '2026-10-05': day('2026-10-05', 14, 14) };
+    const saved = savedSummary(days, { ...plan, measurementCompletedAt: '2026-09-21', baselineCigarettes: 14 });
+    expect(saved.savedCigarettes).toBe(6);
   });
 
   it('verschiebt eine spätere Zieländerung keine vergangenen Ersparniswerte', () => {

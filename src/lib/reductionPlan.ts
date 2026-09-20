@@ -11,6 +11,13 @@ export interface ReductionPlanState {
   measurementCompletedAt: string | null;
   baselineCigarettes: number;
   onboardingEstimate: number;
+  /**
+   * Eingefrorener Vergleichswert für die Ersparnis (ursprüngliche Rauchmenge,
+   * nach der Messwoche der gemessene Durchschnitt). Ändert sich nie durch
+   * spätere Tagesziel- oder Planeinstellungen, damit historische Sparwerte
+   * stabil bleiben.
+   */
+  savingsBaseline: number;
   reductionPerWeek: number;
   automaticReductionEnabled: boolean;
   pausedWeekKeys: string[];
@@ -166,15 +173,22 @@ export const formatMoney = (amount: number, currency: string) =>
     maximumFractionDigits: amount >= 100 ? 0 : 2,
   }).format(Math.max(0, amount));
 
+export const savingsReference = (
+  state: Pick<ReductionPlanState, 'savingsBaseline' | 'baselineCigarettes' | 'onboardingEstimate'>
+) =>
+  Math.max(
+    0,
+    Math.round(state.savingsBaseline || state.baselineCigarettes || state.onboardingEstimate || 0)
+  );
+
 export const savedSummary = (days: Record<string, DayData>, state: ReductionPlanState) => {
-  const baseline = Math.max(0, Math.round(state.baselineCigarettes || state.onboardingEstimate || 0));
   const price = unitPrice(state);
   let savedCigarettes = 0;
+  const reference = savingsReference(state);
   Object.values(days).forEach((day) => {
-    // Pro Tag zählt das Ziel, das an diesem Tag tatsächlich galt. So kann eine
-    // spätere Änderung des Ausgangswerts keine historischen Werte verschieben.
-    const dayTarget = Math.max(0, Math.round(day.totalCigarettes || baseline));
-    savedCigarettes += Math.max(0, dayTarget - actualSmoked(day));
+    // Verglichen wird mit der ursprünglichen Rauchmenge (eingefroren), nicht
+    // mit dem Tagesziel — sonst läge die Ersparnis bei Plan-Einhaltung bei 0.
+    savedCigarettes += Math.max(0, reference - actualSmoked(day));
   });
   return {
     savedCigarettes,
@@ -206,14 +220,9 @@ export const weeklyActuals = (days: Record<string, DayData>, state: ReductionPla
     const actual = entries.length
       ? Math.round((entries.reduce((sum, day) => sum + actualSmoked(day), 0) / entries.length) * 10) / 10
       : null;
+    const reference = savingsReference(state);
     const saved = entries.reduce(
-      (sum, day) =>
-        sum +
-        Math.max(
-          0,
-          Math.round(day.totalCigarettes || state.baselineCigarettes || state.onboardingEstimate || row.target) -
-            actualSmoked(day)
-        ),
+      (sum, day) => sum + Math.max(0, reference - actualSmoked(day)),
       0
     ) * unitPrice(state);
     return { ...row, actual, saved };

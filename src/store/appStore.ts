@@ -156,6 +156,7 @@ const defaultReductionPlan = (): ReductionPlanState => ({
   measurementCompletedAt: null,
   baselineCigarettes: 20,
   onboardingEstimate: 20,
+  savingsBaseline: 20,
   reductionPerWeek: 2,
   automaticReductionEnabled: true,
   pausedWeekKeys: [],
@@ -371,7 +372,8 @@ export const useAppStore = create<AppState>()(
           reductionPlan: {
             ...current.reductionPlan,
             // Nur der Ausgangswert folgt dem neuen Tagesziel. Der ursprüngliche
-            // Onboarding-Schätzwert bleibt unverändert erhalten.
+            // Onboarding-Schätzwert und der Ersparnis-Vergleichswert bleiben
+            // unverändert erhalten.
             baselineCigarettes: count,
           },
         }));
@@ -468,6 +470,7 @@ export const useAppStore = create<AppState>()(
             measurementCompletedAt: null,
             baselineCigarettes: goal,
             onboardingEstimate: goal,
+            savingsBaseline: goal,
             reductionPerWeek,
             automaticReductionEnabled: true,
             zeroReachedAt: null,
@@ -530,6 +533,9 @@ export const useAppStore = create<AppState>()(
               ...state.reductionPlan,
               measurementCompletedAt: today,
               baselineCigarettes: baseline,
+              // Nach der Messwoche gilt der gemessene Durchschnitt als
+              // ursprüngliche Rauchmenge für die Ersparnis.
+              savingsBaseline: baseline,
               zeroReachedAt: formatLocalDate(zeroDate),
             },
           };
@@ -883,6 +889,7 @@ export const useAppStore = create<AppState>()(
             ...defaultReductionPlan(),
             baselineCigarettes: daily,
             onboardingEstimate: daily,
+            savingsBaseline: daily,
           };
         } else {
           p.reductionPlan = { ...defaultReductionPlan(), ...(p.reductionPlan as Partial<ReductionPlanState>) };
@@ -890,6 +897,11 @@ export const useAppStore = create<AppState>()(
           if (version < 4 && !reductionPlan.planStartedAt && typeof p.dailyCigarettes === 'number') {
             reductionPlan.baselineCigarettes = p.dailyCigarettes;
             reductionPlan.onboardingEstimate = p.dailyCigarettes;
+          }
+          // Bestandsnutzer: Ersparnis-Vergleichswert aus dem bisherigen
+          // Ausgangswert nachziehen, damit alte Sparwerte erhalten bleiben.
+          if (typeof reductionPlan.savingsBaseline !== 'number') {
+            reductionPlan.savingsBaseline = reductionPlan.baselineCigarettes;
           }
         }
         if (p.milestoneSeenIds === undefined) {

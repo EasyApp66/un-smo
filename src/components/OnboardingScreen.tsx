@@ -29,6 +29,7 @@ const planState = (daily: number, reduction: number) => ({
   measurementCompletedAt: null,
   baselineCigarettes: daily,
   onboardingEstimate: daily,
+  savingsBaseline: daily,
   reductionPerWeek: reduction,
   automaticReductionEnabled: true,
   pausedWeekKeys: [],
