@@ -173,8 +173,15 @@ export const formatMoney = (amount: number, currency: string) =>
     maximumFractionDigits: amount >= 100 ? 0 : 2,
   }).format(Math.max(0, amount));
 
+export const savingsReference = (
+  state: Pick<ReductionPlanState, 'savingsBaseline' | 'baselineCigarettes' | 'onboardingEstimate'>
+) =>
+  Math.max(
+    0,
+    Math.round(state.savingsBaseline || state.baselineCigarettes || state.onboardingEstimate || 0)
+  );
+
 export const savedSummary = (days: Record<string, DayData>, state: ReductionPlanState) => {
-  const baseline = Math.max(0, Math.round(state.baselineCigarettes || state.onboardingEstimate || 0));
   const price = unitPrice(state);
   let savedCigarettes = 0;
   const reference = savingsReference(state);
@@ -213,14 +220,9 @@ export const weeklyActuals = (days: Record<string, DayData>, state: ReductionPla
     const actual = entries.length
       ? Math.round((entries.reduce((sum, day) => sum + actualSmoked(day), 0) / entries.length) * 10) / 10
       : null;
+    const reference = savingsReference(state);
     const saved = entries.reduce(
-      (sum, day) =>
-        sum +
-        Math.max(
-          0,
-          Math.round(day.totalCigarettes || state.baselineCigarettes || state.onboardingEstimate || row.target) -
-            actualSmoked(day)
-        ),
+      (sum, day) => sum + Math.max(0, reference - actualSmoked(day)),
       0
     ) * unitPrice(state);
     return { ...row, actual, saved };
