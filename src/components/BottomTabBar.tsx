@@ -23,11 +23,19 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     const vv = window.visualViewport;
     if (!vv) return;
     let frame = 0;
+    // Grösste bisher gesehene sichtbare Höhe merken – beim App-Start meldet iOS
+    // manchmal kurz eine zu kleine Höhe, die sonst fälschlich als geöffnete
+    // Tastatur gedeutet und das Menü ausgeblendet wird.
+    let maxSeen = Math.max(window.innerHeight, vv.height);
     const update = () => {
       frame = 0;
-      const bottomGap = window.innerHeight - (vv.height + vv.offsetTop);
+      const visible = vv.height + vv.offsetTop;
+      maxSeen = Math.max(maxSeen, window.innerHeight, visible);
+      const bottomGap = window.innerHeight - visible;
       setOffset(Math.max(0, bottomGap));
-      setKeyboardOpen(vv.height < window.innerHeight * 0.75);
+      // Tastatur nur als geöffnet werten, wenn die sichtbare Höhe deutlich
+      // unter dem bisherigen Maximum liegt – nie anhand des aktuellen Fensters.
+      setKeyboardOpen(vv.height < maxSeen * 0.72 && vv.height < window.innerHeight * 0.9);
     };
     const onChange = () => {
       if (!frame) frame = requestAnimationFrame(update);
@@ -35,10 +43,12 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     update();
     vv.addEventListener('resize', onChange);
     vv.addEventListener('scroll', onChange);
+    window.addEventListener('resize', onChange);
     return () => {
       if (frame) cancelAnimationFrame(frame);
       vv.removeEventListener('resize', onChange);
       vv.removeEventListener('scroll', onChange);
+      window.removeEventListener('resize', onChange);
     };
   }, []);
 
