@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { useAppStore, formatLocalDate } from '@/store/appStore';
+import { useAppStore, formatLocalDate, generateReminders, type DayData } from '@/store/appStore';
 
 // Öffentlicher VAPID-Schlüssel (darf im Code stehen)
 export const VAPID_PUBLIC_KEY =
@@ -33,23 +33,38 @@ const toMinutes = (hhmm: string) => {
   return h * 60 + m;
 };
 
-/** Konkrete, noch offene Weckerzeiten der nächsten Tage – exakt wie in der App angezeigt. */
+/** Konkrete, noch offene Weckerzeiten der nächsten Tage – exakt wie in der App angezeigt.
+ *  Heute und die nächsten zwei Tage sind immer enthalten; [] heisst: keine Meldungen. */
 export const buildPlan = (): Record<string, string[]> => {
-  const { days, wakeTime } = useAppStore.getState();
+  const state = useAppStore.getState();
+  const { days, wakeTime, sleepTime } = state;
   const plan: Record<string, string[]> = {};
   const today = formatLocalDate();
+  for (let i = 0; i < 3; i++) plan[shiftDate(today, i)] = [];
   // Der Vortag zählt mit: Nachtzeiten nach Mitternacht gehören zum heutigen Kalendertag.
   for (let i = -1; i < 3; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const key = formatLocalDate(d);
-    const day = days[key];
-    if (!day) continue;
+    const key = shiftDate(today, i);
+    let day = days[key];
+    if (!day) {
+      if (i < 0) continue;
+      // Noch nicht angelegter Tag: nur berechnen, nicht speichern.
+      const goal = state.getSuggestedGoal(key);
+      day = {
+        date: key,
+        cigarettesSmoked: 0,
+        totalCigarettes: goal,
+        wakeTime,
+        sleepTime,
+        reminders: generateReminders(wakeTime, sleepTime, goal),
+      } as DayData;
+    }
+    // Tagesziel erreicht (inkl. Extras): keine weiteren Meldungen für diesen Tag.
+    const smoked = day.reminders.filter((r) => r.completed).length;
+    if (smoked >= (day.totalCigarettes ?? 0)) continue;
     // Der Tag beginnt mit seiner Aufstehzeit; nur frühere Zeiten liegen nach Mitternacht.
     const wakeMin = toMinutes(day.wakeTime ?? wakeTime);
     for (const r of day.reminders) {
       if (r.completed || r.extra || r.skipped) continue;
-      // Nachtzeiten dem Kalendertag zuordnen, an dem sie tatsächlich eintreten.
       const planKey = toMinutes(r.time) < wakeMin ? shiftDate(key, 1) : key;
       if (planKey < today) continue;
       (plan[planKey] ??= []).push(r.time);

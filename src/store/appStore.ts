@@ -105,7 +105,7 @@ interface AppState {
   deleteAllData: () => void;
 }
 
-const generateReminders = (wakeTime: string, sleepTime: string, count: number): ReminderTime[] => {
+export const generateReminders = (wakeTime: string, sleepTime: string, count: number): ReminderTime[] => {
   if (count === 0) return [];
   
   const [wakeHour, wakeMin] = wakeTime.split(':').map(Number);
