@@ -2,7 +2,7 @@ import { useAppStore, applyTheme, formatLocalDate } from '../store/appStore';
 import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
 import BottomTabBar from '../components/BottomTabBar';
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 

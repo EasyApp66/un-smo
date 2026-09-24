@@ -90,7 +90,7 @@ self.addEventListener('push', (event) => {
     icon: '/icon-v3-192.png',
     badge: '/icon-v3-192.png',
     vibrate: [10, 50, 10],
-      data: { url: '/' },
+    data: { url: '/' },
   };
   if (data.body && data.body !== title) options.body = data.body;
   event.waitUntil(self.registration.showNotification(title, options));
