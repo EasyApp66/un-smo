@@ -828,6 +828,8 @@ export const useAppStore = create<AppState>()(
       
       getSuggestedGoal: (date) => {
         const state = get();
+        // Mit gestartetem Plan gilt das Planziel – auch 0 (rauchfrei).
+        if (state.reductionPlan.planStartedAt) return plannedTargetForDate(state.reductionPlan, date);
         return plannedTargetForDate(state.reductionPlan, date) || suggestGoal(state.days, date, state.dailyCigarettes);
       },
 

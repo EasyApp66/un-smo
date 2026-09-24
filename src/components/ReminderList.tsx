@@ -11,6 +11,8 @@ interface ReminderListProps {
   reminders: ReminderTime[];
   /** Aufstehzeit des Tages – markiert den Tagesbeginn für die Reihenfolge */
   wakeTime?: string;
+  /** Schlafenszeit des Tages – danach gelten vergangene offene Wecker als erledigt */
+  sleepTime?: string;
   /** Datum des angezeigten Tages (YYYY-MM-DD) */
   date?: string;
   /** Tagesziel des angezeigten Tages */
@@ -243,7 +245,7 @@ const ReminderRow = memo(
 );
 ReminderRow.displayName = 'ReminderRow';
 
-const ReminderList = ({ reminders, wakeTime, date, goal, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
+const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
@@ -291,11 +293,16 @@ const ReminderList = ({ reminders, wakeTime, date, goal, onComplete, onUncomplet
   // Erledigte, Extra- und übersprungene Zigaretten liegen im aufklappbaren Zähler.
   const doneRows = rows.filter(({ r }) => r.completed || r.skipped || r.extra);
   const openRows = rows.filter(({ r }) => !r.completed && !r.skipped && !r.extra);
+  // Nach der Schlafenszeit zählen vergangene offene Wecker nicht mehr als offen.
+  const afterSleep = !!sleepTime && targetTime(sleepTime, minuteTick, wakeMin) <= minuteTick;
+  const stillOpenRows = afterSleep
+    ? openRows.filter(({ r }) => targetTime(r.time, minuteTick, wakeMin) > minuteTick)
+    : openRows;
   const smokedCount = doneRows.filter(({ r }) => r.completed).length;
   const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
   const extraCount = reminders.filter((r) => r.extra).length;
   const isToday = !!date && date === formatLocalDate();
-  const rewardDue = isToday && goal !== undefined && openRows.length === 0 && reminders.length > 0 && smokedCount < goal;
+  const rewardDue = isToday && goal !== undefined && stillOpenRows.length === 0 && reminders.length > 0 && smokedCount < goal;
 
   // Erfolgs-Haptik nur beim ersten Erscheinen pro Tag
   useEffect(() => {
@@ -391,7 +398,7 @@ const ReminderList = ({ reminders, wakeTime, date, goal, onComplete, onUncomplet
         {openRows.map(renderRow)}
       </AnimatePresence>
 
-      {openRows.length === 0 && reminders.length > 0 && (
+      {stillOpenRows.length === 0 && reminders.length > 0 && (
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
