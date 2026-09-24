@@ -196,6 +196,8 @@ const HomeScreen = () => {
             <ReminderList
               reminders={dayData?.reminders || []}
               wakeTime={dayWakeTime}
+              date={selectedDate}
+              goal={dayData?.totalCigarettes}
 
               onComplete={handleComplete}
               onUncomplete={handleUncomplete}
