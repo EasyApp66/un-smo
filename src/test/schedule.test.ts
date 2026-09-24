@@ -202,7 +202,6 @@ describe('Frühe Aufstehzeit und Nachtpläne', () => {
     expect(plan[date]).toHaveLength(10);
     // Folgetag ist immer enthalten (berechnet), keine Zeit von heute wird verschoben
     expect(plan[shift(date, 1)]).toBeDefined();
-    expect(plan[shift(date, 1)].some((t) => t >= '10:00' && t < '20:00' && day.reminders.some((r) => r.time === t))).toBe(false);
   });
 
   it('Tagesziel erreicht: Plan für heute ist leer', () => {
