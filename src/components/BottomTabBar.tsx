@@ -15,42 +15,107 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     { id: 'settings' as const, icon: Settings, label: 'Einstellungen' },
   ];
 
-  // Leiste am sichtbaren Ansichtsfenster ausrichten (Safari-Werkzeugleiste, Tastatur)
+  // Tastatur wird über den Fokus erkannt, nicht über die Fensterhöhe
+  // (iOS meldet in der Home-Bildschirm-App nicht immer ein resize-Ereignis).
   const [offset, setOffset] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
+    const isEditable = (el: Element | null) => {
+      if (!el || !(el instanceof HTMLElement)) return false;
+      if (el.isContentEditable) return true;
+      const tag = el.tagName;
+      if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      if (tag === 'INPUT') {
+        const type = (el as HTMLInputElement).type;
+        return !['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image', 'hidden'].includes(type);
+      }
+      return false;
+    };
+    const isStandalone = () =>
+      window.matchMedia?.('(display-mode: standalone)').matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
     const vv = window.visualViewport;
-    if (!vv) return;
     let frame = 0;
-    // Grösste bisher gesehene sichtbare Höhe merken – beim App-Start meldet iOS
-    // manchmal kurz eine zu kleine Höhe, die sonst fälschlich als geöffnete
-    // Tastatur gedeutet und das Menü ausgeblendet wird.
-    let maxSeen = Math.max(window.innerHeight, vv.height);
-    const update = () => {
-      frame = 0;
+    let safety = 0;
+    let maxSeen = Math.max(window.innerHeight, vv?.height ?? 0);
+
+    const computeOffset = () => {
+      if (isStandalone() || !vv) return 0;
       const visible = vv.height + vv.offsetTop;
       maxSeen = Math.max(maxSeen, window.innerHeight, visible);
-      const bottomGap = window.innerHeight - visible;
-      setOffset(Math.max(0, bottomGap));
-      // Tastatur nur als geöffnet werten, wenn die sichtbare Höhe deutlich
-      // unter dem bisherigen Maximum liegt – nie anhand des aktuellen Fensters.
-      setKeyboardOpen(vv.height < maxSeen * 0.72 && vv.height < window.innerHeight * 0.9);
+      return Math.min(120, Math.max(0, window.innerHeight - visible));
+    };
+
+    const scheduleSafety = () => {
+      window.clearTimeout(safety);
+      safety = window.setTimeout(() => {
+        if (!isEditable(document.activeElement)) setKeyboardOpen(false);
+      }, 500);
+    };
+
+    const update = () => {
+      frame = 0;
+      const open = isEditable(document.activeElement);
+      setKeyboardOpen(open);
+      setOffset(open ? 0 : computeOffset());
+      if (open) scheduleSafety();
     };
     const onChange = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
+    const reset = () => {
+      maxSeen = Math.max(window.innerHeight, vv?.height ?? 0);
+      update();
+      scheduleSafety();
+    };
+    const onFocusIn = () => update();
+    const onFocusOut = () => {
+      setKeyboardOpen(false);
+      onChange();
+      scheduleSafety();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') reset();
+    };
+
     update();
-    vv.addEventListener('resize', onChange);
-    vv.addEventListener('scroll', onChange);
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', reset);
+    window.addEventListener('focus', reset);
+    window.addEventListener('orientationchange', reset);
     window.addEventListener('resize', onChange);
+    vv?.addEventListener('resize', onChange);
+    vv?.addEventListener('scroll', onChange);
     return () => {
       if (frame) cancelAnimationFrame(frame);
-      vv.removeEventListener('resize', onChange);
-      vv.removeEventListener('scroll', onChange);
+      window.clearTimeout(safety);
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', reset);
+      window.removeEventListener('focus', reset);
+      window.removeEventListener('orientationchange', reset);
       window.removeEventListener('resize', onChange);
+      vv?.removeEventListener('resize', onChange);
+      vv?.removeEventListener('scroll', onChange);
     };
   }, []);
+
+  // Sicherheitsnetz: ausgeblendet ohne aktives Eingabefeld → nach 500 ms wieder zeigen
+  useEffect(() => {
+    if (!keyboardOpen) return;
+    const id = window.setInterval(() => {
+      const el = document.activeElement as HTMLElement | null;
+      const editable =
+        !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
+      if (!editable) setKeyboardOpen(false);
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [keyboardOpen]);
 
   // „Nach oben“-Knopf nur zeigen, wenn man weit unten auf der Seite ist
   const [showTop, setShowTop] = useState(false);
