@@ -1,14 +1,20 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
-import { ReminderTime } from '../store/appStore';
+import { ReminderTime, formatLocalDate } from '../store/appStore';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { success, tap } from '../lib/haptics';
+import { MINUTES_PER_CIGARETTE } from '../lib/reductionPlan';
 import Countdown from './Countdown';
+import Mark from './Mark';
 
 interface ReminderListProps {
   reminders: ReminderTime[];
   /** Aufstehzeit des Tages – markiert den Tagesbeginn für die Reihenfolge */
   wakeTime?: string;
+  /** Datum des angezeigten Tages (YYYY-MM-DD) */
+  date?: string;
+  /** Tagesziel des angezeigten Tages */
+  goal?: number;
   onComplete: (id: string) => void;
   onUncomplete?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -237,7 +243,7 @@ const ReminderRow = memo(
 );
 ReminderRow.displayName = 'ReminderRow';
 
-const ReminderList = ({ reminders, wakeTime, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
+const ReminderList = ({ reminders, wakeTime, date, goal, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
@@ -288,6 +294,22 @@ const ReminderList = ({ reminders, wakeTime, onComplete, onUncomplete, onSkip }:
   const smokedCount = doneRows.filter(({ r }) => r.completed).length;
   const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
   const extraCount = reminders.filter((r) => r.extra).length;
+  const isToday = !!date && date === formatLocalDate();
+  const rewardDue = isToday && goal !== undefined && openRows.length === 0 && reminders.length > 0 && smokedCount < goal;
+
+  // Erfolgs-Haptik nur beim ersten Erscheinen pro Tag
+  useEffect(() => {
+    if (!rewardDue || !date) return;
+    const key = 'un-smo-reward-haptic';
+    try {
+      if (localStorage.getItem(key) === date) return;
+      localStorage.setItem(key, date);
+    } catch {
+      /* ignorieren */
+    }
+    success();
+  }, [rewardDue, date]);
+
 
   const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
     const isNext = i === nextReminderIndex;
@@ -374,10 +396,27 @@ const ReminderList = ({ reminders, wakeTime, onComplete, onUncomplete, onSkip }:
           initial={reduceMotion ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0 : 0.2, ease: EASE }}
-          className="surface-card px-5 py-6 text-center"
+          className="surface-card rounded-[26px] p-5 text-center flex flex-col items-center"
         >
-          <p className="t-18 text-foreground">Bleib stark, rauche nicht weiter.</p>
-          <p className="t-14 text-subtle mt-1">Denk an deine Gesundheit.</p>
+          {isToday && goal !== undefined && smokedCount < goal ? (
+            <>
+              <Mark size={28} className="text-primary mb-3" />
+              <p className="t-18 text-foreground">Stark. {goal - smokedCount} weniger als geplant.</p>
+              <p className="t-14 text-subtle mt-1">
+                Das sind {(goal - smokedCount) * MINUTES_PER_CIGARETTE} Minuten gewonnene Zeit.
+              </p>
+            </>
+          ) : isToday && goal !== undefined && smokedCount === goal ? (
+            <>
+              <p className="t-18 text-foreground">Ziel eingehalten.</p>
+              <p className="t-14 text-subtle mt-1">Morgen geht es genauso weiter.</p>
+            </>
+          ) : (
+            <>
+              <p className="t-18 text-foreground">Bleib stark, rauche nicht weiter.</p>
+              <p className="t-14 text-subtle mt-1">Denk an deine Gesundheit.</p>
+            </>
+          )}
         </motion.div>
       )}
 

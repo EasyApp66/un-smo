@@ -51,7 +51,8 @@ Deno.serve(async (req) => {
 
     // Bevorzugt der vom Gerät übertragene, tatsächlich angezeigte Wecker-Plan
     const plan = (sub.plan ?? {}) as Record<string, string[]>;
-    const planned = Array.isArray(plan[date]) ? plan[date] : null;
+    // Leere Liste ist gültig (= nichts senden); Rückfall nur, wenn der Tag fehlt
+    const planned = Object.prototype.hasOwnProperty.call(plan, date) && Array.isArray(plan[date]) ? plan[date] : null;
     const slots = planned
       ? planned
           .map((t) => {
@@ -86,7 +87,8 @@ Deno.serve(async (req) => {
 
     const remaining = slots.length - d.index - 1;
     const payload = JSON.stringify({
-      title: 'Du kannst jetzt eine rauchen.',
+      title: 'UN-SMO',
+      body: 'Du kannst jetzt eine rauchen.',
       tag: `un-smo-${d.key}`,
     });
 

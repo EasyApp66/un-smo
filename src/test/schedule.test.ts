@@ -200,7 +200,18 @@ describe('Frühe Aufstehzeit und Nachtpläne', () => {
 
     const plan = buildPlan();
     expect(plan[date]).toHaveLength(10);
-    expect(plan[shift(date, 1)]).toBeUndefined();
+    // Folgetag ist immer enthalten (berechnet), keine Zeit von heute wird verschoben
+    expect(plan[shift(date, 1)]).toBeDefined();
+  });
+
+  it('Tagesziel erreicht: Plan für heute ist leer', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 10, 0, 0));
+    const date = formatLocalDate();
+    useAppStore.getState().configureDay(date, { wakeTime: '07:00', sleepTime: '22:00', goal: 3 });
+    for (let i = 0; i < 3; i++) useAppStore.getState().addExtraCigarette(date);
+    const plan = buildPlan();
+    expect(plan[date]).toEqual([]);
+    expect(Object.keys(plan)).toContain(shift(date, 2));
   });
 
   it('Nachtplan 08:00–05:00: frühe Morgenzeiten gelten als Tagesende', () => {

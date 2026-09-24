@@ -2,6 +2,7 @@ import { motion, useMotionValue, animate, PanInfo } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, addWeeks, format, startOfWeek } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 
 interface MiniCalendarProps {
@@ -147,6 +148,24 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   const monthLabel = format(weekStart, 'MMMM yyyy', { locale: de });
   const weekTotal = weeks[1]?.days.reduce((sum, day) => sum + day.smoked, 0) ?? 0;
 
+  // Fairer Vergleich mit der Vorwoche über den gleichen Zeitraum
+  const trend = useMemo(() => {
+    if (weekOffset > 0) return null;
+    const cur = weeks[1]?.days ?? [];
+    const prev = weeks[0]?.days ?? [];
+    const todayIdx = cur.findIndex((d) => d.isToday);
+    const len = weekOffset === 0 && todayIdx >= 0 ? todayIdx + 1 : 7;
+    const prevSlice = prev.slice(0, len);
+    if (!prevSlice.some((d) => d.hasData)) return null;
+    const a = cur.slice(0, len).reduce((s, d) => s + d.smoked, 0);
+    const b = prevSlice.reduce((s, d) => s + d.smoked, 0);
+    if (a === b) return null;
+    const weekdayName = format(addDays(weekStart, len - 1), 'EEEE', { locale: de });
+    const diff = Math.abs(a - b);
+    const suffix = len === 7 ? 'als letzte Woche' : `als letzte Woche bis ${weekdayName}`;
+    return { down: a < b, label: `${diff} ${a < b ? 'weniger' : 'mehr'} ${suffix}` };
+  }, [weeks, weekOffset, weekStart]);
+
   const goToWeek = (delta: number) => {
     if ('vibrate' in navigator) navigator.vibrate(5);
     if (!width || prefersReducedMotion()) {
@@ -181,6 +200,11 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
           <span className="rounded-pill bg-muted px-3 h-8 flex items-center gap-1.5" aria-label={`Woche gesamt: ${weekTotal}`}>
             <span className="t-12 text-subtle">Woche</span>
             <span className="t-18 num text-foreground">{weekTotal}</span>
+            {trend && (
+              <span role="img" aria-label={trend.label} className={trend.down ? 'text-success' : 'text-destructive'}>
+                {trend.down ? <ArrowDown size={14} strokeWidth={2} /> : <ArrowUp size={14} strokeWidth={2} />}
+              </span>
+            )}
           </span>
           {showTodayButton && (
             <motion.button

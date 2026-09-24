@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Input } from './ui/input';
 import {
   formatMoney,
+  MINUTES_PER_CIGARETTE,
   formatSavedTime,
   pauseStats,
   savedSummary,
@@ -162,16 +163,15 @@ const StatisticsScreen = () => {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.02 }} className="surface-card p-5">
-              <h2 className="t-18 text-foreground mb-4">Gespart</h2>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="rounded-inner bg-muted p-4"><p className="t-12 text-subtle">Geld</p><p className="t-24 num text-foreground">{formatMoney(savings.savedMoney, reductionPlan.currency)}</p></div>
+              <h2 className="t-18 text-foreground mb-4">Gewonnene Zeit</h2>
+              <div className="mb-4">
                 <div className="rounded-inner bg-muted p-4"><p className="t-12 text-subtle">Zeit</p><p className="t-24 num text-foreground">{formatSavedTime(savings.savedMinutes)}</p></div>
               </div>
               <div className="space-y-2">
                 {weeklySavings.map((row) => (
                   <div key={row.week} className="flex items-center justify-between rounded-inner bg-muted px-4 py-3">
                     <span className="t-14 text-foreground">{row.label}</span>
-                    <span className="t-16 num text-foreground">{formatMoney(row.saved, reductionPlan.currency)}</span>
+                    <span className="t-16 num text-foreground">{formatSavedTime(row.savedCigarettes * MINUTES_PER_CIGARETTE)}</span>
                   </div>
                 ))}
               </div>
