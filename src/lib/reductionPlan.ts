@@ -42,6 +42,7 @@ export interface WeeklyActualRow {
   target: number;
   actual: number | null;
   saved: number;
+  savedCigarettes: number;
   date: string;
 }
 
@@ -221,11 +222,12 @@ export const weeklyActuals = (days: Record<string, DayData>, state: ReductionPla
       ? Math.round((entries.reduce((sum, day) => sum + actualSmoked(day), 0) / entries.length) * 10) / 10
       : null;
     const reference = savingsReference(state);
-    const saved = entries.reduce(
+    const savedCigarettes = entries.reduce(
       (sum, day) => sum + Math.max(0, reference - actualSmoked(day)),
       0
-    ) * unitPrice(state);
-    return { ...row, actual, saved };
+    );
+    const saved = savedCigarettes * unitPrice(state);
+    return { ...row, actual, saved, savedCigarettes };
   }).filter((row) => row.date <= shiftDate(current, 7) || row.week <= 4 || row.isSmokeFree);
 };
 
