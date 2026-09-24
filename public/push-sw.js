@@ -1,5 +1,5 @@
 // UN-SMO Service Worker: Push-Meldungen + App-Hülle zwischenspeichern.
-const CACHE = 'un-smo-shell-v4';
+const CACHE = 'un-smo-shell-v5';
 const PRECACHE = [
   '/',
   '/manifest.webmanifest',
@@ -77,22 +77,23 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  let data = { title: 'UN-SMO', body: 'Du kannst jetzt eine rauchen.' };
+  // Titel und Text nur aus der Nutzlast – keine Standardtexte, die sich wiederholen.
+  let data = {};
   try {
-    if (event.data) data = { ...data, ...event.data.json() };
+    if (event.data) data = event.data.json() || {};
   } catch (_) {
-    if (event.data) data.body = event.data.text();
+    if (event.data) data = { body: event.data.text() };
   }
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      tag: data.tag,
-      icon: '/icon-v3-192.png',
-      badge: '/icon-v3-192.png',
-      vibrate: [10, 50, 10],
+  const title = data.title || 'UN-SMO';
+  const options = {
+    tag: data.tag,
+    icon: '/icon-v3-192.png',
+    badge: '/icon-v3-192.png',
+    vibrate: [10, 50, 10],
       data: { url: '/' },
-    }),
-  );
+  };
+  if (data.body && data.body !== title) options.body = data.body;
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {

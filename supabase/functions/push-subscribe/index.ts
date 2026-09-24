@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
       try {
         await webpush.sendNotification(
           sub.subscription,
-          JSON.stringify({ title: 'UN-SMO', body: 'Test erfolgreich – Push-Meldungen funktionieren.', tag: 'un-smo-test' }),
+          JSON.stringify({ title: 'UN-SMO', body: 'Du kannst jetzt eine rauchen.', tag: 'un-smo-test' }),
           { TTL: 120, urgency: 'high' },
         );
       } catch (e) {

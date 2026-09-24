@@ -40,12 +40,35 @@ const Index = () => {
   useEffect(() => {
     if (!pushToken) return;
     const t = setTimeout(() => {
-      syncPushSchedule(pushToken, { wakeTime, sleepTime, dailyCigarettes }).catch((e) =>
-        console.warn('Push-Sync fehlgeschlagen', e)
-      );
+      syncPushSchedule(pushToken, { wakeTime, sleepTime, dailyCigarettes })
+        .then(() => { pushSyncFailed.current = false; })
+        .catch((e) => {
+          pushSyncFailed.current = true;
+          console.warn('Push-Sync fehlgeschlagen', e);
+        });
     }, 1500);
     return () => clearTimeout(t);
   }, [pushToken, wakeTime, sleepTime, dailyCigarettes, days]);
+
+  // Fehlgeschlagenen Abgleich (z. B. offline) beim nächsten Online-/Sichtbar-Ereignis nachholen
+  const pushSyncFailed = useRef(false);
+  useEffect(() => {
+    if (!pushToken) return;
+    const retry = () => {
+      if (!pushSyncFailed.current) return;
+      if (document.visibilityState !== 'visible' || !navigator.onLine) return;
+      const s = useAppStore.getState();
+      syncPushSchedule(pushToken, { wakeTime: s.wakeTime, sleepTime: s.sleepTime, dailyCigarettes: s.dailyCigarettes })
+        .then(() => { pushSyncFailed.current = false; })
+        .catch((e) => console.warn('Push-Sync fehlgeschlagen', e));
+    };
+    window.addEventListener('online', retry);
+    document.addEventListener('visibilitychange', retry);
+    return () => {
+      window.removeEventListener('online', retry);
+      document.removeEventListener('visibilitychange', retry);
+    };
+  }, [pushToken]);
 
   const handleTabChange = (tab: 'home' | 'stats' | 'settings') => {
     setActiveTab(tab);
