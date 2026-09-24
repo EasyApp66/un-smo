@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { plannedTargetForDate } from '@/lib/reductionPlan';
 import { useAppStore, formatLocalDate, generateReminders, type DayData } from '@/store/appStore';
 
 // Öffentlicher VAPID-Schlüssel (darf im Code stehen)
@@ -48,7 +49,8 @@ export const buildPlan = (): Record<string, string[]> => {
     if (!day) {
       if (i < 0) continue;
       // Noch nicht angelegter Tag: nur berechnen, nicht speichern.
-      const goal = state.getSuggestedGoal(key);
+      // Dasselbe Ziel wie initializeDay() – auch 0 bleibt 0.
+      const goal = plannedTargetForDate(state.reductionPlan, key);
       day = {
         date: key,
         cigarettesSmoked: 0,

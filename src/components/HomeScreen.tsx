@@ -196,6 +196,7 @@ const HomeScreen = () => {
             <ReminderList
               reminders={dayData?.reminders || []}
               wakeTime={dayWakeTime}
+              sleepTime={dayData?.sleepTime ?? useAppStore.getState().sleepTime}
               date={selectedDate}
               goal={dayData?.totalCigarettes}
 

@@ -214,6 +214,19 @@ describe('Frühe Aufstehzeit und Nachtpläne', () => {
     expect(Object.keys(plan)).toContain(shift(date, 2));
   });
 
+  it('Planziel 0: heute und die nächsten zwei Tage ohne Meldungen', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 10, 0, 0));
+    const date = formatLocalDate();
+    const rp = useAppStore.getState().reductionPlan;
+    useAppStore.setState({
+      days: {},
+      reductionPlan: { ...rp, baselineCigarettes: 0, onboardingEstimate: 0, planStartedAt: '2026-01-01', automaticReductionEnabled: false },
+    });
+    expect(useAppStore.getState().getSuggestedGoal(shift(date, 1))).toBe(0);
+    const plan = buildPlan();
+    for (let i = 0; i < 3; i++) expect(plan[shift(date, i)]).toEqual([]);
+  });
+
   it('Nachtplan 08:00–05:00: frühe Morgenzeiten gelten als Tagesende', () => {
     vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
     const date = formatLocalDate();
