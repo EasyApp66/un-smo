@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Input } from './ui/input';
 import {
   formatMoney,
+  MINUTES_PER_CIGARETTE,
   formatSavedTime,
   pauseStats,
   savedSummary,
