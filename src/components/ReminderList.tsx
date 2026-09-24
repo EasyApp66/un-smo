@@ -243,7 +243,7 @@ const ReminderRow = memo(
 );
 ReminderRow.displayName = 'ReminderRow';
 
-const ReminderList = ({ reminders, wakeTime, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
+const ReminderList = ({ reminders, wakeTime, date, goal, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
