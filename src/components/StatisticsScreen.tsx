@@ -188,7 +188,7 @@ const StatisticsScreen = () => {
                 <div className="flex items-center gap-3"><span className="t-16 font-medium text-foreground w-8">{day.day}</span><span className="t-12 num text-subtle">{formatDate(day.date)}</span></div>
                 {day.hasData ? (
                   <div className="flex items-center gap-3">
-                     <div className="w-20 h-1.5 bg-border rounded-pill overflow-hidden"><div className={`h-full rounded-pill ${{ ok: 'bg-success', warn: 'bg-warning', over: 'bg-destructive' }[dayStatus(day.smoked, day.goal)]}`} style={{ width: `${day.goal > 0 ? Math.min((day.smoked / day.goal) * 100, 100) : 0}%` }} /></div>
+                     <div className="w-20 h-1.5 bg-border rounded-pill overflow-hidden"><div className={`h-full rounded-pill ${{ ok: 'bg-success', warn: 'bg-warning', over: 'bg-destructive' }[dayStatus(day.smoked, day.goal)]}`} style={{ width: `${day.goal > 0 ? Math.min((day.smoked / day.goal) * 100, 100) : day.smoked > 0 ? 100 : 0}%` }} /></div>
                      <span className="flex items-baseline gap-1 num"><span className={`t-16 font-medium ${{ ok: 'text-success', warn: 'text-warning', over: 'text-destructive' }[dayStatus(day.smoked, day.goal)]}`}>{day.smoked}</span><span className="t-14 text-subtle">/ {day.goal} {t('Ziel', 'goal')}</span></span>
                   </div>
                 ) : <span className="t-12 text-subtle">{t('Keine Daten', 'No data')}</span>}
