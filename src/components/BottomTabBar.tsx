@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Settings, BarChart3, ArrowUp, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useT } from '../lib/i18n';
 
 interface BottomTabBarProps {
   activeTab: 'home' | 'stats' | 'settings';
@@ -10,10 +11,11 @@ interface BottomTabBarProps {
 }
 
 const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps) => {
+  const t = useT();
   const tabs = [
-    { id: 'home' as const, icon: Home, label: 'Home' },
-    { id: 'stats' as const, icon: BarChart3, label: 'Statistik' },
-    { id: 'settings' as const, icon: Settings, label: 'Einstellungen' },
+    { id: 'home' as const, icon: Home, label: t('Home', 'Home') },
+    { id: 'stats' as const, icon: BarChart3, label: t('Statistik', 'Statistics') },
+    { id: 'settings' as const, icon: Settings, label: t('Einstellungen', 'Settings') },
   ];
 
   // Tastatur wird über den Fokus erkannt, nicht über die Fensterhöhe
@@ -182,7 +184,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
                 exit={{ opacity: 0, scale: 0.92 }}
                 transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
                 whileTap={{ scale: 0.94 }}
-                aria-label="Nach oben"
+                aria-label={t('Nach oben', 'Scroll to top')}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="glass pointer-events-auto w-16 h-16 rounded-pill flex items-center justify-center text-subtle"
               >
@@ -199,7 +201,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
               whileTap={{ scale: 0.94 }}
               transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               onClick={onAddExtra}
-              aria-label="Zusätzliche Zigarette eintragen"
+              aria-label={t('Zusätzliche Zigarette eintragen', 'Log an extra cigarette')}
               className="glass-tint pointer-events-auto w-16 h-16 rounded-pill flex items-center justify-center"
             >
               <Plus className="w-6 h-6" strokeWidth={1.75} />

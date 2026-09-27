@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { DayData } from '../store/appStore';
+import { useT } from '../lib/i18n';
 
 interface ExtraCounterCardProps {
   dayData: DayData;
@@ -7,6 +8,7 @@ interface ExtraCounterCardProps {
 
 /** Zeigt, wie viele Extra-Zigaretten an diesem Tag geraucht wurden */
 const ExtraCounterCard = ({ dayData }: ExtraCounterCardProps) => {
+  const t = useT();
   const extras = dayData.reminders.filter((r) => r.extra).length;
   const skipped = dayData.reminders.filter((r) => r.skipped).length;
 
@@ -19,7 +21,7 @@ const ExtraCounterCard = ({ dayData }: ExtraCounterCardProps) => {
     >
       <span className="flex items-baseline gap-2">
         <span className="num t-32 text-destructive">{extras}</span>
-        <span className="t-14 text-subtle">{extras === 1 ? 'Extra' : 'Extras'}</span>
+        <span className="t-14 text-subtle">{extras === 1 ? t('Extra', 'Extra') : t('Extras', 'Extras')}</span>
       </span>
 
       <span className="h-6 w-px bg-border" aria-hidden />
@@ -28,7 +30,7 @@ const ExtraCounterCard = ({ dayData }: ExtraCounterCardProps) => {
         <span className="num t-32" style={{ color: 'hsl(var(--success))' }}>
           {skipped}
         </span>
-        <span className="t-14 text-subtle">übersprungen</span>
+        <span className="t-14 text-subtle">{t('übersprungen', 'skipped')}</span>
       </span>
     </motion.div>
   );

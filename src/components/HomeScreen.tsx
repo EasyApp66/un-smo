@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useT } from '@/lib/i18n';
 import { useAppStore, formatLocalDate, sortKey, toMinutes } from '../store/appStore';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
@@ -27,6 +28,7 @@ const targetTime = (timeString: string, now: number, wakeMin: number): number =>
 
 
 const HomeScreen = () => {
+  const t = useT();
   const [selectedDate, setSelectedDate] = useState(() => formatLocalDate());
 
   const {
@@ -135,7 +137,7 @@ const HomeScreen = () => {
             <span className="icon-tile mb-3">
               <Flame className="w-6 h-6" strokeWidth={1.5} />
             </span>
-            <p className="t-14 text-subtle">Heute</p>
+            <p className="t-14 text-subtle">{t('Heute', 'Today')}</p>
             <p className="flex items-baseline gap-1">
               <span className="t-36 num text-foreground">{completedCount}</span>
               <span className="t-20 num text-subtle">/{totalCount}</span>
@@ -146,7 +148,7 @@ const HomeScreen = () => {
             <span className="icon-tile mb-3">
               <Timer className="w-6 h-6" strokeWidth={1.5} />
             </span>
-            <p className="t-14 text-subtle">Abstand</p>
+            <p className="t-14 text-subtle">{t('Abstand', 'Interval')}</p>
             <p className="t-32 num text-foreground">
               {nextTarget ? <Countdown target={nextTarget} /> : '–'}
             </p>
@@ -157,8 +159,8 @@ const HomeScreen = () => {
       {!needsSetup && measurementLeft > 0 && (
         <div className="px-4 pt-[10px]">
           <div className="surface-card p-4">
-            <p className="t-14 text-foreground">Messwoche</p>
-            <p className="t-12 text-subtle">Noch {measurementLeft} Tag{measurementLeft === 1 ? '' : 'e'}, dann startet dein Abbauplan.</p>
+            <p className="t-14 text-foreground">{t('Messwoche', 'Measurement week')}</p>
+            <p className="t-12 text-subtle">{t(`Noch ${measurementLeft} Tag${measurementLeft === 1 ? '' : 'e'}, dann startet dein Abbauplan.`, `${measurementLeft} day${measurementLeft === 1 ? '' : 's'} left, then your reduction plan starts.`)}</p>
           </div>
         </div>
       )}
@@ -167,11 +169,11 @@ const HomeScreen = () => {
         <div className="px-4 pt-[10px]">
           <div className="surface-card p-4 grid grid-cols-2 gap-3">
             <div>
-              <p className="t-14 text-subtle">Gespart</p>
+              <p className="t-14 text-subtle">{t('Gespart', 'Saved')}</p>
               <p className="t-24 num text-foreground">{formatMoney(savings.savedMoney, reductionPlan.currency)}</p>
             </div>
             <div>
-              <p className="t-14 text-subtle">Zeit</p>
+              <p className="t-14 text-subtle">{t('Zeit', 'Time')}</p>
               <p className="t-24 num text-foreground">{formatSavedTime(savings.savedMinutes)}</p>
             </div>
           </div>
