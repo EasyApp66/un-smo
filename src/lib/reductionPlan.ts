@@ -1,4 +1,5 @@
 import type { DayData, ReminderTime } from '@/store/appStore';
+import { tr, currentLocale } from '@/lib/i18n';
 
 export const REQUIRED_ONBOARDING_VERSION = 2;
 export const MEASUREMENT_DAYS = 7;
@@ -142,7 +143,7 @@ export const buildReductionPlan = (state: ReductionPlanState, maxRows = 80): Pla
   const reduction = Math.max(1, Math.round(state.reductionPerWeek || 1));
   const start = state.planStartedAt ?? normalizeDate(new Date());
   const rows: PlanWeekRow[] = [
-    { week: 1, label: 'Woche 1', target: baseline, isMeasurement: true, isSmokeFree: false, date: start },
+    { week: 1, label: tr('Woche 1', 'Week 1'), target: baseline, isMeasurement: true, isSmokeFree: false, date: start },
   ];
 
   let target = baseline;
@@ -151,7 +152,7 @@ export const buildReductionPlan = (state: ReductionPlanState, maxRows = 80): Pla
     target = Math.max(0, baseline - reduction * (week - 1));
     rows.push({
       week,
-      label: `Woche ${week}`,
+      label: tr(`Woche ${week}`, `Week ${week}`),
       target,
       isMeasurement: false,
       isSmokeFree: target === 0,
@@ -167,7 +168,7 @@ export const unitPrice = (state: Pick<ReductionPlanState, 'packPrice' | 'packSiz
   state.packSize > 0 ? state.packPrice / state.packSize : 0;
 
 export const formatMoney = (amount: number, currency: string) =>
-  new Intl.NumberFormat('de-CH', {
+  new Intl.NumberFormat(currentLocale(), {
     style: 'currency',
     currency,
     minimumFractionDigits: amount >= 100 ? 0 : 2,
@@ -200,10 +201,10 @@ export const savedSummary = (days: Record<string, DayData>, state: ReductionPlan
 
 export const formatSavedTime = (minutes: number) => {
   const days = Math.floor(minutes / 1440);
-  if (days > 0) return `${days} Tag${days === 1 ? '' : 'e'}`;
+  if (days > 0) return tr(`${days} Tag${days === 1 ? '' : 'e'}`, `${days} day${days === 1 ? '' : 's'}`);
   const hours = Math.floor(minutes / 60);
-  if (hours > 0) return `${hours} Std.`;
-  return `${Math.max(0, Math.round(minutes))} Min.`;
+  if (hours > 0) return tr(`${hours} Std.`, `${hours} hr${hours === 1 ? '' : 's'}`);
+  return tr(`${Math.max(0, Math.round(minutes))} Min.`, `${Math.max(0, Math.round(minutes))} min`);
 };
 
 export const weeklyActuals = (days: Record<string, DayData>, state: ReductionPlanState): WeeklyActualRow[] => {
