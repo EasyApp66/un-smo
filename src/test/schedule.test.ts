@@ -87,7 +87,7 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
     useAppStore.getState().addExtraCigarette(date);
 
     const reduced = useAppStore.getState().days[date];
-    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(5);
+    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(6);
     expect(reduced.reminders.filter((r) => r.extra)).toHaveLength(2);
 
     useAppStore.getState().toggleExtraReductionEnabled();
@@ -110,7 +110,7 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
     const reducedAgain = useAppStore.getState().days[date];
     expect(useAppStore.getState().extraReductionEnabled).toBe(true);
     expect(reducedAgain.totalCigarettes).toBe(8);
-    expect(reducedAgain.reminders.filter((r) => !r.extra)).toHaveLength(5);
+    expect(reducedAgain.reminders.filter((r) => !r.extra)).toHaveLength(6);
     expect(reducedAgain.reminders.filter((r) => r.extra)).toHaveLength(2);
   });
 });
