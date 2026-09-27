@@ -6,14 +6,7 @@ import { Cigarette, Calendar, Target, Search, Lock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from './ui/input';
-import {
-  formatMoney,
-  MINUTES_PER_CIGARETTE,
-  formatSavedTime,
-  pauseStats,
-  savedSummary,
-  weeklyActuals,
-} from '@/lib/reductionPlan';
+import { dayStatus, pauseStats } from '@/lib/reductionPlan';
 import { defaultAccountStatus, fetchAccountStatus, type AccountStatus } from '@/lib/account';
 import { useT, useLocale } from '@/lib/i18n';
 
@@ -53,7 +46,7 @@ const StatisticsScreen = () => {
         day: dayNames[date.getDay()],
         date: dateString,
         smoked: dayData?.cigarettesSmoked || 0,
-        goal: dayData?.totalCigarettes || dailyCigarettes,
+         goal: dayData?.totalCigarettes ?? dailyCigarettes,
         hasData: !!dayData,
       });
     }
@@ -89,8 +82,6 @@ const StatisticsScreen = () => {
     return current - previous;
   }, [days]);
 
-  const savings = useMemo(() => savedSummary(days, reductionPlan), [days, reductionPlan]);
-  const weeklySavings = useMemo(() => weeklyActuals(days, reductionPlan).slice(0, 8), [days, reductionPlan]);
   const pauses = useMemo(() => pauseStats(days), [days]);
 
   const milestones = useMemo(() => {
@@ -122,7 +113,7 @@ const StatisticsScreen = () => {
       const goal = entries.reduce((sum, day) => sum + day.totalCigarettes, 0);
       const extras = entries.reduce((sum, day) => sum + day.reminders.filter((reminder) => reminder.extra).length, 0);
       const skipped = entries.reduce((sum, day) => sum + day.reminders.filter((reminder) => reminder.skipped).length, 0);
-      return { month, label, activeDays: entries.length, smoked, goal, extras, skipped, overGoal: goal > 0 && smoked > goal };
+       return { month, label, activeDays: entries.length, smoked, goal, extras, skipped, status: dayStatus(smoked, goal) };
     });
   }, [days, locale]);
 
@@ -167,12 +158,15 @@ const StatisticsScreen = () => {
                 <YAxis hide />
                 <Bar dataKey="smoked" radius={[8, 8, 0, 0]}>
                   {weekData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.hasData ? (entry.smoked <= entry.goal ? 'hsl(var(--success))' : 'hsl(var(--destructive))') : 'hsl(var(--border))'} opacity={entry.hasData ? 1 : 0.4} />
+                     <Cell key={`cell-${index}`} fill={entry.hasData ? `hsl(var(--${{ ok: 'success', warn: 'warning', over: 'destructive' }[dayStatus(entry.smoked, entry.goal)]}))` : 'hsl(var(--border))'} opacity={entry.hasData ? 1 : 0.4} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
+           <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 t-12 text-subtle">
+             {([['bg-success', t('im Ziel', 'on target')], ['bg-warning', t('bis 2 darüber', 'up to 2 over')], ['bg-destructive', t('mehr als 2 darüber', 'more than 2 over')]] as const).map(([color, label]) => <span key={color} className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-pill ${color}`} />{label}</span>)}
+           </div>
         </motion.div>
 
         {!locked && (
@@ -194,8 +188,8 @@ const StatisticsScreen = () => {
                 <div className="flex items-center gap-3"><span className="t-16 font-medium text-foreground w-8">{day.day}</span><span className="t-12 num text-subtle">{formatDate(day.date)}</span></div>
                 {day.hasData ? (
                   <div className="flex items-center gap-3">
-                    <div className="w-20 h-1.5 bg-border rounded-pill overflow-hidden"><div className={`h-full rounded-pill ${day.smoked <= day.goal ? 'bg-success' : 'bg-destructive'}`} style={{ width: `${day.goal > 0 ? Math.min((day.smoked / day.goal) * 100, 100) : 0}%` }} /></div>
-                    <span className="flex items-baseline gap-1 num"><span className={`t-16 font-medium ${day.smoked <= day.goal ? 'text-foreground' : 'text-destructive'}`}>{day.smoked}</span><span className="t-14 text-subtle">/ {day.goal} {t('Ziel', 'goal')}</span></span>
+                     <div className="w-20 h-1.5 bg-border rounded-pill overflow-hidden"><div className={`h-full rounded-pill ${{ ok: 'bg-success', warn: 'bg-warning', over: 'bg-destructive' }[dayStatus(day.smoked, day.goal)]}`} style={{ width: `${day.goal > 0 ? Math.min((day.smoked / day.goal) * 100, 100) : 0}%` }} /></div>
+                     <span className="flex items-baseline gap-1 num"><span className={`t-16 font-medium ${{ ok: 'text-success', warn: 'text-warning', over: 'text-destructive' }[dayStatus(day.smoked, day.goal)]}`}>{day.smoked}</span><span className="t-14 text-subtle">/ {day.goal} {t('Ziel', 'goal')}</span></span>
                   </div>
                 ) : <span className="t-12 text-subtle">{t('Keine Daten', 'No data')}</span>}
               </div>
@@ -217,7 +211,7 @@ const StatisticsScreen = () => {
                   <div key={memory.month} className="rounded-inner bg-muted px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <div><p className="t-16 text-foreground capitalize">{memory.label}</p><p className="t-12 text-subtle">{memory.activeDays} {t('Tage gespeichert', 'days saved')}</p></div>
-                      <span className="flex items-baseline gap-1 num"><span className={`t-24 ${memory.overGoal ? 'text-destructive' : 'text-foreground'}`}>{memory.smoked}</span><span className="t-12 text-subtle">/ {memory.goal}</span></span>
+                       <span className="flex items-baseline gap-1 num"><span className={`t-24 ${{ ok: 'text-success', warn: 'text-warning', over: 'text-destructive' }[memory.status]}`}>{memory.smoked}</span><span className="t-12 text-subtle">/ {memory.goal}</span></span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <span className="rounded-pill bg-card px-3 py-2 flex items-center justify-between"><span className="t-12 text-subtle">{t('Extra', 'Extra')}</span><span className="num t-16 text-destructive">{memory.extras}</span></span>
@@ -258,20 +252,6 @@ const StatisticsScreen = () => {
               <p className="t-12 text-subtle mt-4">{t('Hinweis nach WHO/NHS. Keine medizinische Beratung.', 'Based on WHO/NHS. Not medical advice.')}</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.02 }} className="surface-card p-5">
-              <h2 className="t-18 text-foreground mb-4">{t('Gewonnene Zeit', 'Time gained')}</h2>
-              <div className="mb-4">
-                <div className="rounded-inner bg-muted p-4"><p className="t-12 text-subtle">{t('Zeit', 'Time')}</p><p className="t-24 num text-foreground">{formatSavedTime(savings.savedMinutes)}</p></div>
-              </div>
-              <div className="space-y-2">
-                {weeklySavings.map((row) => (
-                  <div key={row.week} className="flex items-center justify-between rounded-inner bg-muted px-4 py-3">
-                    <span className="t-14 text-foreground">{row.label}</span>
-                    <span className="t-16 num text-foreground">{formatSavedTime(row.savedCigarettes * MINUTES_PER_CIGARETTE)}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
           </>
         )}
       </div>

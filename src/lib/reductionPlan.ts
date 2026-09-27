@@ -5,6 +5,9 @@ export const REQUIRED_ONBOARDING_VERSION = 2;
 export const MEASUREMENT_DAYS = 7;
 export const MINUTES_PER_CIGARETTE = 11;
 
+export const dayStatus = (smoked: number, goal: number): 'ok' | 'warn' | 'over' =>
+  smoked <= goal ? 'ok' : smoked <= goal + 2 ? 'warn' : 'over';
+
 export type CurrencyCode = 'CHF' | 'EUR' | 'USD' | 'GBP';
 
 export interface ReductionPlanState {
