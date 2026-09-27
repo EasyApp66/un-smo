@@ -37,7 +37,7 @@ const SettingsGroup = ({ id, icon: Icon, title, summary, open, onToggle, childre
       <span className="min-w-0 flex-1"><span className="block t-16 text-foreground">{title}</span><span className="block t-12 text-subtle font-normal break-words">{summary}</span></span>
       <ChevronDown className={`w-5 h-5 shrink-0 text-subtle transition-transform duration-200 ease-smooth ${open ? 'rotate-180' : ''}`} strokeWidth={1.75} />
     </Button>
-    <div id={`settings-${id}`} className={`grid transition-[grid-template-rows] duration-200 ease-smooth ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`} aria-hidden={!open} inert={!open}>
+    <div id={`settings-${id}`} className={`grid transition-[grid-template-rows] duration-200 ease-smooth ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`} aria-hidden={!open} {...(!open ? { inert: '' } : {})}>
       <div className="min-h-0 overflow-hidden"><div className="space-y-[10px] pt-[10px]">{children}</div></div>
     </div>
   </section>;

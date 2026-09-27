@@ -84,7 +84,8 @@ const Features = () => {
     message.onboundary = (event) => {
       if (id !== generation.current || event.name && event.name !== 'word') return;
       boundarySeen = true;
-      const found = positions.findLastIndex((entry) => entry.start <= event.charIndex);
+      let found = 0;
+      positions.forEach((entry, position) => { if (entry.start <= event.charIndex) found = position; });
       setWord(Math.max(0, found));
     };
     message.onend = () => { if (id !== generation.current) return; stopTimer(); speak(next + 1); };
