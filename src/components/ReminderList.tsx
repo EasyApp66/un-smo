@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { ReminderTime, formatLocalDate } from '../store/appStore';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
 import { MINUTES_PER_CIGARETTE } from '../lib/reductionPlan';
 import Countdown from './Countdown';
@@ -249,6 +249,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
+  const scrollOnOpen = useRef(false);
 
   const reduceMotion = !!useReducedMotion();
 
@@ -355,6 +356,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
           type="button"
           onClick={() => {
             if (doneRows.length === 0) return;
+            scrollOnOpen.current = !showCompleted;
             setShowCompleted((v) => !v);
             tap();
           }}
@@ -387,7 +389,18 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
         </button>
 
         {showCompleted && doneRows.length > 0 && (
-          <div className="pt-[10px]">
+          <div
+            className="pt-[10px]"
+            ref={(el) => {
+              if (!el || !scrollOnOpen.current) return;
+              scrollOnOpen.current = false;
+              // Die zuletzt eingetragenen Zigaretten mittig zeigen
+              requestAnimationFrame(() => {
+                const last = el.lastElementChild as HTMLElement | null;
+                last?.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+              });
+            }}
+          >
             <p className="px-1 pb-2 t-14 text-subtle">{smokedCount} geraucht</p>
             {doneRows.map(renderRow)}
           </div>

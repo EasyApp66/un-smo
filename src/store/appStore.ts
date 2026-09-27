@@ -238,7 +238,8 @@ const reconcileExtraReduction = (
       .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
 
     if (open.length > 0) {
-      const dropCount = Math.min(open.length, extras.length + Math.floor(extras.length / 2));
+      // Jedes Extra ersetzt genau einen späteren Wecker – die Tagessumme bleibt stimmig.
+      const dropCount = Math.min(open.length, extras.length);
       const dropIds = new Set(open.slice(open.length - dropCount).map((r) => r.id));
       reminders = reminders.filter((r) => r.extra || !dropIds.has(r.id));
     }
