@@ -139,7 +139,9 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     const evaluate = () => {
       frame = 0;
       const scrollable = scrollHeight - viewport;
-      setShowTop(scrollable > 200 && window.scrollY > scrollable * 0.5 && window.scrollY > 200);
+       setShowTop(activeTab === 'home'
+         ? scrollable > 200 && window.scrollY > scrollable * 0.5 && window.scrollY > 200
+         : window.scrollY > 120);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(evaluate);
@@ -161,7 +163,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
       window.removeEventListener('resize', remeasure);
       ro.disconnect();
     };
-  }, []);
+   }, [activeTab]);
 
   return createPortal(
     <div
