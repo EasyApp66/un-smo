@@ -1,4 +1,4 @@
-import { ChevronRight, AlertTriangle, Globe, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ChevronRight, AlertTriangle, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useT, useLocale } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store/appStore';

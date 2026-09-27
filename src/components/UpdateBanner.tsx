@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 /**
  * Prüft regelmäßig (beim Öffnen, bei Rückkehr in die App und alle 5 Minuten),
@@ -23,6 +24,7 @@ const fetchSignature = async (): Promise<string | null> => {
 };
 
 const UpdateBanner = () => {
+  const t = useT();
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [reloading, setReloading] = useState(false);
   const initialRef = useRef<string | null>(null);
@@ -91,15 +93,15 @@ const UpdateBanner = () => {
               <RefreshCw className="w-5 h-5 text-primary" strokeWidth={1.75} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="t-16 font-medium text-foreground">Neue Version verfügbar</p>
-              <p className="t-12 text-subtle">Bitte aktualisieren, um weiterzumachen.</p>
+              <p className="t-16 font-medium text-foreground">{t('Neue Version verfügbar', 'New version available')}</p>
+              <p className="t-12 text-subtle">{t('Bitte aktualisieren, um weiterzumachen.', 'Please update to continue.')}</p>
             </div>
             <button
               onClick={handleReload}
               disabled={reloading}
               className="btn-pill btn-primary px-4 shrink-0 disabled:opacity-60"
             >
-              {reloading ? '…' : 'Aktualisieren'}
+              {reloading ? '…' : t('Aktualisieren', 'Update')}
             </button>
           </div>
         </motion.div>
