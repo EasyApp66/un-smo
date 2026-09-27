@@ -27,7 +27,6 @@ const Features = () => {
   const [rate, setRate] = useState(1);
   const generation = useRef(0);
   const current = useRef(0);
-  const pending = useRef(false);
   const utterance = useRef<SpeechSynthesisUtterance | null>(null);
   const fallback = useRef<ReturnType<typeof setInterval> | null>(null);
   const readStart = useRef(0);
@@ -40,7 +39,6 @@ const Features = () => {
     stopTimer();
     if (supported) window.speechSynthesis.cancel();
     utterance.current = null;
-    pending.current = false;
     current.current = 0;
     setIndex(0); setWord(-1); setState('stopped');
   }, [supported]);

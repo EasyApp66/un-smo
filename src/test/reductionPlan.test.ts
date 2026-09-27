@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildReductionPlan,
+  dayStatus,
   isMeasurementDate,
   measuredAverage,
   plannedTargetForDate,
@@ -40,6 +41,13 @@ const day = (date: string, smoked: number, goal = 20): DayData => ({
 });
 
 describe('Messwoche und Abbauplan', () => {
+  it('stuft das Tagesziel einheitlich in grün, orange und rot ein', () => {
+    expect(dayStatus(10, 10)).toBe('ok');
+    expect(dayStatus(11, 10)).toBe('warn');
+    expect(dayStatus(12, 10)).toBe('warn');
+    expect(dayStatus(13, 10)).toBe('over');
+    expect(dayStatus(1, 0)).toBe('warn');
+  });
   it('hält Woche 1 als Messwoche und senkt danach montags', () => {
     expect(isMeasurementDate(plan, '2026-09-14')).toBe(true);
     expect(plannedTargetForDate(plan, '2026-09-20')).toBe(20);
