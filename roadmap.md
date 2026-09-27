@@ -22,4 +22,5 @@
 - [x] App-Store-Icon, zweisprachige Datenschutz-URL und Support-URL vorbereiten
 - [ ] Stripe-Kundenportal und echte Kündigung — wartet auf Zahlungsanbieter-Aktivierung
 
-- [ ] Englische Version der ganzen App (Schalter in Einstellungen, inkl. Rechtstexte) – in Arbeit
+- [x] Englische Version der ganzen App (Schalter in Einstellungen, inkl. Rechtstexte)
+- [ ] Push-Meldungstext auf Englisch (Server kennt die Sprache noch nicht) – auf Wunsch
