@@ -280,7 +280,7 @@ const SettingsSheet = () => {
       </div>
 
        <div className="space-y-[10px]">
-         <SettingsGroup id="schedule" icon=Clock title={t('Tagesablauf', 'Daily routine')} summary={`${wakeTime} – ${sleepTime} · ${t('Ziel', 'Goal')} ${dailyCigarettes}`} open={openGroups.includes('schedule')} onToggle={() => toggleGroup('schedule')}>
+         <SettingsGroup id="schedule" icon={Clock} title={t('Tagesablauf', 'Daily routine')} summary={`${wakeTime} – ${sleepTime} · ${t('Ziel', 'Goal')} ${dailyCigarettes}`} open={openGroups.includes('schedule')} onToggle={() => toggleGroup('schedule')}>
               {/* Aufsteh- & Schlafenszeiten */}
               <section>
                 <div className="grid grid-cols-2 gap-[10px]">
@@ -329,7 +329,7 @@ const SettingsSheet = () => {
                 </button>
               </section>
          </SettingsGroup>
-         <SettingsGroup id="plan" icon=TrendingDown title={t('Abbauplan', 'Reduction plan')} summary={`${reductionPlan.automaticReductionEnabled ? t('Automatisch', 'Automatic') : t('Manuell', 'Manual')} · −${reductionPlan.reductionPerWeek} ${t('pro Woche', 'per week')}`} open={openGroups.includes('plan')} onToggle={() => toggleGroup('plan')}>
+         <SettingsGroup id="plan" icon={TrendingDown} title={t('Abbauplan', 'Reduction plan')} summary={`${reductionPlan.automaticReductionEnabled ? t('Automatisch', 'Automatic') : t('Manuell', 'Manual')} · −${reductionPlan.reductionPerWeek} ${t('pro Woche', 'per week')}`} open={openGroups.includes('plan')} onToggle={() => toggleGroup('plan')}>
               {/* Abbauplan */}
               <section>
                 <div className="surface-card p-5 space-y-4">
@@ -398,7 +398,7 @@ const SettingsSheet = () => {
                 </button>
               </section>
          </SettingsGroup>
-         <SettingsGroup id="push" icon=Bell title={t('Benachrichtigungen', 'Notifications')} summary={pushEnabled ? t('An', 'On') : t('Aus', 'Off')} open={openGroups.includes('push')} onToggle={() => toggleGroup('push')}>
+         <SettingsGroup id="push" icon={Bell} title={t('Benachrichtigungen', 'Notifications')} summary={pushEnabled ? t('An', 'On') : t('Aus', 'Off')} open={openGroups.includes('push')} onToggle={() => toggleGroup('push')}>
               {/* Push-Meldungen */}
               <section>
                 <div className="surface-card p-5">
@@ -436,7 +436,7 @@ const SettingsSheet = () => {
                 </div>
               </section>
          </SettingsGroup>
-         <SettingsGroup id="extras" icon=Sparkles title={t('Zusätzliche Funktionen', 'Additional features')} summary={`${extraButtonEnabled ? t('Extras an', 'Extras on') : t('Extras aus', 'Extras off')} · ${reductionPlan.currency}`} open={openGroups.includes('extras')} onToggle={() => toggleGroup('extras')}>
+         <SettingsGroup id="extras" icon={Sparkles} title={t('Zusätzliche Funktionen', 'Additional features')} summary={`${extraButtonEnabled ? t('Extras an', 'Extras on') : t('Extras aus', 'Extras off')} · ${reductionPlan.currency}`} open={openGroups.includes('extras')} onToggle={() => toggleGroup('extras')}>
               {/* Extra-Knopf */}
               <section>
                 <button
@@ -523,7 +523,7 @@ const SettingsSheet = () => {
                 </div>
               </section>
          </SettingsGroup>
-         <SettingsGroup id="appearance" icon=Palette title={t('Darstellung & Sprache', 'Appearance & language')} summary={`${t(themeMode === 'dark' ? 'Dunkel' : themeMode === 'light' ? 'Hell' : 'System', themeMode === 'dark' ? 'Dark' : themeMode === 'light' ? 'Light' : 'System')} · ${language === 'de' ? 'Deutsch' : 'English'}`} open={openGroups.includes('appearance')} onToggle={() => toggleGroup('appearance')}>
+         <SettingsGroup id="appearance" icon={Palette} title={t('Darstellung & Sprache', 'Appearance & language')} summary={`${t(themeMode === 'dark' ? 'Dunkel' : themeMode === 'light' ? 'Hell' : 'System', themeMode === 'dark' ? 'Dark' : themeMode === 'light' ? 'Light' : 'System')} · ${language === 'de' ? 'Deutsch' : 'English'}`} open={openGroups.includes('appearance')} onToggle={() => toggleGroup('appearance')}>
               {/* Darstellung */}
               <section>
                 <div className="surface-card p-1.5 grid grid-cols-3 gap-1">
@@ -576,7 +576,7 @@ const SettingsSheet = () => {
                 </div>
               </section>
          </SettingsGroup>
-         <SettingsGroup id="account" icon=User title={t('Konto & Pläne', 'Account & plans')} summary={account.signedIn ? account.userEmail ?? t('Angemeldet', 'Signed in') : t('Ohne Anmeldung', 'Not signed in')} open={openGroups.includes('account')} onToggle={() => toggleGroup('account')}>
+         <SettingsGroup id="account" icon={User} title={t('Konto & Pläne', 'Account & plans')} summary={account.signedIn ? account.userEmail ?? t('Angemeldet', 'Signed in') : t('Ohne Anmeldung', 'Not signed in')} open={openGroups.includes('account')} onToggle={() => toggleGroup('account')}>
               {/* Konto & Premium */}
               <section>
                 <div className="surface-card p-5 space-y-3">
@@ -678,7 +678,7 @@ const SettingsSheet = () => {
               </section>
               )}
          </SettingsGroup>
-         <SettingsGroup id="data" icon=Database title={t('Deine Daten', 'Your data')} summary={t('Exportieren & löschen', 'Export & delete')} open={openGroups.includes('data')} onToggle={() => toggleGroup('data')}>
+         <SettingsGroup id="data" icon={Database} title={t('Deine Daten', 'Your data')} summary={t('Exportieren & löschen', 'Export & delete')} open={openGroups.includes('data')} onToggle={() => toggleGroup('data')}>
               {/* Daten exportieren */}
               <section>
                 <div className="surface-card p-5 space-y-3">
@@ -743,7 +743,7 @@ const SettingsSheet = () => {
                 </AlertDialog>
               </section>
          </SettingsGroup>
-         <SettingsGroup id="help" icon=Info title={t('Hilfe & Rechtliches', 'Help & legal')} summary={t('Funktionen · Support · Rechtliches', 'Features · Support · legal')} open={openGroups.includes('help')} onToggle={() => toggleGroup('help')}>
+         <SettingsGroup id="help" icon={Info} title={t('Hilfe & Rechtliches', 'Help & legal')} summary={t('Funktionen · Support · Rechtliches', 'Features · Support · legal')} open={openGroups.includes('help')} onToggle={() => toggleGroup('help')}>
               {/* Rechtliches */}
               <section>
                 <div className="surface-card overflow-hidden">
