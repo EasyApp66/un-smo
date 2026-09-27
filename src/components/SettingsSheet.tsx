@@ -522,7 +522,7 @@ const SettingsSheet = () => {
 
               {/* Push-Meldungen */}
               <section>
-                <GroupTitle>Erinnerungen</GroupTitle>
+                <GroupTitle>{t('Erinnerungen', 'Reminders')}</GroupTitle>
                 <div className="surface-card p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
