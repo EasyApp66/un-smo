@@ -30,6 +30,7 @@ const Features = () => {
   const utterance = useRef<SpeechSynthesisUtterance | null>(null);
   const fallback = useRef<ReturnType<typeof setInterval> | null>(null);
   const readStart = useRef(0);
+  const elapsedBeforePause = useRef(0);
   const manualScrollUntil = useRef(0);
   const nodes = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -91,10 +92,11 @@ const Features = () => {
     message.onend = () => { if (id !== generation.current) return; stopTimer(); speak(next + 1); };
     message.onerror = (event) => { if (id !== generation.current || event.error === 'interrupted' || event.error === 'canceled') return; cancel(); };
     utterance.current = message;
+    elapsedBeforePause.current = 0;
     readStart.current = Date.now();
     fallback.current = setInterval(() => {
       if (id !== generation.current || boundarySeen || window.speechSynthesis.paused) return;
-      const elapsed = Date.now() - readStart.current;
+      const elapsed = elapsedBeforePause.current + Date.now() - readStart.current;
       setWord(Math.min(positions.length - 1, Math.floor(elapsed / (380 / rate))));
     }, 120);
     window.speechSynthesis.speak(message);
@@ -104,6 +106,7 @@ const Features = () => {
     if (state === 'paused') {
       window.speechSynthesis.resume(); readStart.current = Date.now(); setState('playing');
     } else if (state === 'playing') {
+      elapsedBeforePause.current += Date.now() - readStart.current;
       window.speechSynthesis.pause(); setState('paused');
     } else speak(0);
   };
