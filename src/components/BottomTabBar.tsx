@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Settings, BarChart3, ArrowUp, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface BottomTabBarProps {
   activeTab: 'home' | 'stats' | 'settings';
@@ -69,6 +70,15 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
       maxSeen = Math.max(window.innerHeight, vv?.height ?? 0);
       update();
       scheduleSafety();
+      // iOS verliert nach dem Zurückkehren teils die Fixierung: einmal neu erzwingen
+      const bar = document.getElementById('bottom-tab-bar');
+      if (bar) {
+        bar.classList.add('tabbar-refix');
+        requestAnimationFrame(() => {
+          bar.classList.remove('tabbar-refix');
+          window.scrollTo(window.scrollX, window.scrollY);
+        });
+      }
     };
     const onFocusIn = () => update();
     const onFocusOut = () => {
@@ -151,16 +161,16 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     };
   }, []);
 
-  return (
+  return createPortal(
     <div
-      className="fixed left-1/2 z-50"
+      id="bottom-tab-bar"
+      className="fixed left-0 right-0 z-50 flex justify-center pointer-events-none"
       style={{
-        bottom: 'max(env(safe-area-inset-bottom), 12px)',
-        transform: `translate3d(-50%, ${-offset}px, 0)`,
+        bottom: `calc(max(env(safe-area-inset-bottom), 12px) + ${offset}px)`,
         visibility: keyboardOpen ? 'hidden' : 'visible',
       }}
     >
-      <div className="relative flex items-center">
+      <div className="relative flex items-center pointer-events-auto">
         {/* Linker Steckplatz */}
         <div className="absolute inset-y-0 right-full mr-[10px] flex items-center pointer-events-none">
           <AnimatePresence>
@@ -221,7 +231,8 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

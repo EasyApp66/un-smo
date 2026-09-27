@@ -448,3 +448,13 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
+/* Kurzzeitig gesetzt, damit iOS die fixierte Menüleiste neu verankert */
+#bottom-tab-bar.tabbar-refix {
+  position: absolute;
+}
