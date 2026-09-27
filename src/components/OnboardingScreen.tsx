@@ -125,7 +125,7 @@ const OnboardingScreen = () => {
                     { id: 1, title: t('Sanft', 'Gentle'), text: t('1 Zigarette weniger pro Woche', '1 fewer cigarette per week'), badge: null },
                     { id: 2, title: t('Empfohlen', 'Recommended'), text: t('2 weniger pro Woche', '2 fewer per week'), badge: t('Empfohlen', 'Recommended') },
                     { id: 3, title: t('Zügig', 'Fast'), text: t('3 weniger pro Woche', '3 fewer per week'), badge: null },
-                  ]).map((item) => (
+                  ] as const).map((item) => (
                     <button key={item.id} type="button" onClick={() => setSpeed(item.id)} className={`surface-card w-full p-4 text-left border ${speed === item.id ? 'border-primary' : 'border-transparent'}`}>
                       <span className="flex items-center justify-between">
                         <span className="t-18 text-foreground">{item.title}</span>

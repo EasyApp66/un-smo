@@ -139,7 +139,9 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     const evaluate = () => {
       frame = 0;
       const scrollable = scrollHeight - viewport;
-      setShowTop(scrollable > 200 && window.scrollY > scrollable * 0.5 && window.scrollY > 200);
+       setShowTop(activeTab === 'home'
+         ? scrollable > 200 && window.scrollY > scrollable * 0.5 && window.scrollY > 200
+         : window.scrollY > 120);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(evaluate);
@@ -161,7 +163,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
       window.removeEventListener('resize', remeasure);
       ro.disconnect();
     };
-  }, []);
+   }, [activeTab]);
 
   return createPortal(
     <div
@@ -173,8 +175,8 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
       }}
     >
       <div className="relative flex items-center pointer-events-auto">
-        {/* Linker Steckplatz */}
-        <div className="absolute inset-y-0 right-full mr-[10px] flex items-center pointer-events-none">
+       {/* Linker Steckplatz nur auf der Startseite */}
+         {activeTab === 'home' && <div className="absolute inset-y-0 right-full mr-[10px] flex items-center pointer-events-none">
           <AnimatePresence>
             {showTop && (
               <motion.button
@@ -192,10 +194,10 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
               </motion.button>
             )}
           </AnimatePresence>
-        </div>
+         </div>}
 
         {/* Rechter Steckplatz */}
-        {onAddExtra && (
+         {activeTab === 'home' && onAddExtra && (
           <div className="absolute inset-y-0 left-full ml-[10px] flex items-center pointer-events-none">
             <motion.button
               whileTap={{ scale: 0.94 }}
@@ -208,6 +210,13 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
             </motion.button>
           </div>
         )}
+         {activeTab !== 'home' && (
+           <div className="absolute inset-y-0 left-full ml-[10px] flex items-center pointer-events-none">
+             <AnimatePresence>
+               {showTop && <motion.button key="top-right" initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }} whileTap={{ scale: 0.94 }} aria-label={t('Nach oben', 'Scroll to top')} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="glass pointer-events-auto w-16 h-16 rounded-pill flex items-center justify-center text-subtle"><ArrowUp className="w-5 h-5" strokeWidth={1.75} /></motion.button>}
+             </AnimatePresence>
+           </div>
+         )}
 
         <div className="glass rounded-pill h-16 px-1 flex items-center">
           <div className="flex items-center gap-1">

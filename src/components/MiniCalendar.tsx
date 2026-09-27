@@ -5,6 +5,7 @@ import { de, enGB } from 'date-fns/locale';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { useLang, useT } from '../lib/i18n';
+import { dayStatus } from '../lib/reductionPlan';
 
 interface MiniCalendarProps {
   selectedDate: string;
@@ -26,7 +27,7 @@ interface DayCell {
   isFuture: boolean;
   hasData: boolean;
   smoked: number;
-  overGoal: boolean;
+  status: ReturnType<typeof dayStatus>;
 }
 
 const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>, locale: typeof de): DayCell[] =>
@@ -35,10 +36,10 @@ const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>
     const dateString = toDateString(date);
     const data = daysData[dateString];
     let smoked = 0;
-    let overGoal = false;
-    if (data && data.totalCigarettes > 0) {
+    let status: DayCell['status'] = 'ok';
+    if (data) {
       smoked = data.reminders.filter((r: any) => r.completed).length;
-      overGoal = smoked > data.totalCigarettes;
+      status = dayStatus(smoked, data.totalCigarettes);
     }
     return {
       date: dateString,
@@ -48,7 +49,7 @@ const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>
       isFuture: dateString > today,
       hasData: !!data,
       smoked,
-      overGoal,
+      status,
     };
   });
 
@@ -90,7 +91,7 @@ const DayButton = ({
 
     <span
       className={`mt-2 h-2 w-2 rounded-pill ${
-        day.hasData && !day.isToday ? (day.overGoal ? 'bg-destructive' : 'bg-success') : 'bg-transparent'
+          day.hasData ? ({ ok: 'bg-success', warn: 'bg-warning', over: 'bg-destructive' }[day.status]) : 'bg-transparent'
       }`}
     />
   </button>

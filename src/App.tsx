@@ -9,6 +9,7 @@ const LegalRoute = lazy(() => import("./pages/LegalRoute"));
 const LegalCheck = lazy(() => import("./pages/LegalCheck"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Support = lazy(() => import("./pages/Support"));
+const Features = lazy(() => import("./pages/Features"));
 
 const LEGAL_SLUGS = ['impressum', 'datenschutz', 'agb', 'gesundheitshinweis'];
 
@@ -35,6 +36,8 @@ const App = () => {
     <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
       <Support />
     </Suspense>
+  ) : slug === 'funktionen' ? (
+    <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}><Features /></Suspense>
   ) : LEGAL_SLUGS.includes(slug) ? (
     <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
       <LegalRoute slug={slug} />

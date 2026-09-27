@@ -1,6 +1,7 @@
-import { ChevronRight, AlertTriangle, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ChevronRight, ChevronDown, AlertTriangle, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck, Clock, TrendingDown, Sparkles, Palette, User, Database, Info, type LucideIcon } from 'lucide-react';
 import { useT, useLocale } from '@/lib/i18n';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { Button } from './ui/button';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
@@ -24,9 +25,23 @@ import {
   AlertDialogTrigger,
 } from './ui/alert-dialog';
 
-const GroupTitle = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="t-12 font-medium uppercase tracking-[0.08em] text-subtle mb-3">{children}</h3>
-);
+const SettingsGroup = ({ id, icon: Icon, title, summary, open, onToggle, children }: { id: string; icon: LucideIcon; title: string; summary: string; open: boolean; onToggle: () => void; children: React.ReactNode }) => {
+  const header = useRef<HTMLButtonElement>(null);
+  const toggle = () => {
+    onToggle();
+    if (!open) requestAnimationFrame(() => header.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }));
+  };
+  return <section>
+    <Button ref={header} variant="ghost" aria-expanded={open} aria-controls={`settings-${id}`} onClick={toggle} className="surface-card w-full min-h-16 h-auto p-4 flex items-center justify-between gap-3 text-left whitespace-normal scroll-mt-6 hover:bg-card">
+      <Icon className="w-5 h-5 shrink-0 text-primary" strokeWidth={1.75} />
+      <span className="min-w-0 flex-1"><span className="block t-16 text-foreground">{title}</span><span className="block t-12 text-subtle font-normal break-words">{summary}</span></span>
+      <ChevronDown className={`w-5 h-5 shrink-0 text-subtle transition-transform duration-200 ease-smooth ${open ? 'rotate-180' : ''}`} strokeWidth={1.75} />
+    </Button>
+    <div id={`settings-${id}`} className={`grid transition-[grid-template-rows] duration-200 ease-smooth ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`} aria-hidden={!open} {...(!open ? { inert: '' } : {})}>
+      <div className="min-h-0 overflow-hidden"><div className="space-y-[10px] pt-[10px]">{children}</div></div>
+    </div>
+  </section>;
+};
 
 const Toggle = ({ on }: { on: boolean }) => (
   <span
@@ -88,6 +103,15 @@ const SettingsSheet = () => {
   const [withdrawalConsent, setWithdrawalConsent] = useState(false);
   const [subBusy, setSubBusy] = useState(false);
   const [subMessage, setSubMessage] = useState<string | null>(null);
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    try { return JSON.parse(sessionStorage.getItem('un-smo-settings-groups') || '[]') as string[]; }
+    catch { return []; }
+  });
+  const toggleGroup = (id: string) => setOpenGroups((current) => {
+    const next = current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id];
+    sessionStorage.setItem('un-smo-settings-groups', JSON.stringify(next));
+    return next;
+  });
 
 
   useEffect(() => {
@@ -255,7 +279,42 @@ const SettingsSheet = () => {
         <h2 className="t-24 text-foreground">{t('Einstellungen', 'Settings')}</h2>
       </div>
 
-      <div className="space-y-6">
+       <div className="space-y-[10px]">
+         <SettingsGroup id="schedule" icon={Clock} title={t('Tagesablauf', 'Daily routine')} summary={`${wakeTime} – ${sleepTime} · ${t('Ziel', 'Goal')} ${dailyCigarettes}`} open={openGroups.includes('schedule')} onToggle={() => toggleGroup('schedule')}>
+              {/* Aufsteh- & Schlafenszeiten */}
+              <section>
+                <div className="grid grid-cols-2 gap-[10px]">
+                  <TimePicker value={wakeTime} onChange={setWakeTime} label={t('Aufstehzeit', 'Wake-up time')} compact />
+                  <TimePicker value={sleepTime} onChange={setSleepTime} label={t('Schlafenszeit', 'Bedtime')} compact />
+                </div>
+                <p className="t-12 text-subtle mt-3 px-1">
+                  {applyScheduleToAllDays
+                    ? t('Gilt für alle Tage.', 'Applies to all days.')
+                    : t('Standard für neue Tage. Bereits eingerichtete Tage änderst du direkt auf der Startseite.', 'Default for new days. You can change already set up days directly on the home screen.')}
+                </p>
+              </section>
+              {/* Tagesziel Zigaretten */}
+              <section>
+                <div className="surface-card p-5">
+                  <WheelPicker
+                    value={dailyCigarettes}
+                    min={0}
+                    max={60}
+                    step={1}
+                    onChange={setDailyCigarettes}
+                    label={t('Zigaretten pro Tag', 'Cigarettes per day')}
+                    compact
+                  />
+                  <p className="text-center t-12 text-subtle mt-3">
+                    {t('Weniger = längere Pausen = mehr Stärke', 'Less = longer breaks = more strength')}
+                  </p>
+                  <p className="text-center t-12 text-subtle mt-1">
+                    {applyScheduleToAllDays
+                      ? t('Gilt für alle Tage.', 'Applies to all days.')
+                      : t('Standard für neue Tage.', 'Default for new days.')}
+                  </p>
+                </div>
+              </section>
               {/* Zeitplan für alle Tage */}
               <section>
                 <button
@@ -269,69 +328,10 @@ const SettingsSheet = () => {
                   <Toggle on={applyScheduleToAllDays} />
                 </button>
               </section>
-
-              {/* Extra-Knopf */}
-              <section>
-                <button
-                  onClick={toggleExtraButtonEnabled}
-                  className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
-                >
-                  <span>
-                    <span className="t-16 block text-foreground">{t('Extra-Knopf anzeigen', 'Show extra button')}</span>
-                    <span className="t-12 text-subtle">{t('Zusätzliche Zigaretten unten eintragen', 'Log extra cigarettes below')}</span>
-                  </span>
-                  <Toggle on={extraButtonEnabled} />
-                </button>
-              </section>
-
-              {/* Extra-Regel */}
-              <section>
-                <button
-                  onClick={toggleExtraReductionEnabled}
-                  disabled={!extraButtonEnabled}
-                  aria-disabled={!extraButtonEnabled}
-                  className={`surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left ${
-                    extraButtonEnabled ? '' : 'opacity-45'
-                  }`}
-                >
-                  <span>
-                    <span className="t-16 block text-foreground">{t('Wecker bei Extras entfernen', 'Remove alarm on extras')}</span>
-                    <span className="t-12 text-subtle">{t('Geklickte Extras kürzen den heutigen Ablauf', 'Logged extras shorten today\'s schedule')}</span>
-                  </span>
-                  <Toggle on={extraButtonEnabled && extraReductionEnabled} />
-                </button>
-              </section>
-
-              <section>
-                <button
-                  onClick={toggleHomeSavingsEnabled}
-                  className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
-                >
-                  <span>
-                    <span className="t-16 block text-foreground">{t('Gespartes auf Startseite', 'Savings on home screen')}</span>
-                    <span className="t-12 text-subtle">{t('Geld und Zeit auf der Startseite anzeigen', 'Show money and time saved on the home screen')}</span>
-                  </span>
-                  <Toggle on={homeSavingsEnabled} />
-                </button>
-              </section>
-
-              {/* Aufsteh- & Schlafenszeiten */}
-              <section>
-                <GroupTitle>{t('Dein Zeitplan', 'Your schedule')}</GroupTitle>
-                <div className="grid grid-cols-2 gap-[10px]">
-                  <TimePicker value={wakeTime} onChange={setWakeTime} label={t('Aufstehzeit', 'Wake-up time')} compact />
-                  <TimePicker value={sleepTime} onChange={setSleepTime} label={t('Schlafenszeit', 'Bedtime')} compact />
-                </div>
-                <p className="t-12 text-subtle mt-3 px-1">
-                  {applyScheduleToAllDays
-                    ? t('Gilt für alle Tage.', 'Applies to all days.')
-                    : t('Standard für neue Tage. Bereits eingerichtete Tage änderst du direkt auf der Startseite.', 'Default for new days. You can change already set up days directly on the home screen.')}
-                </p>
-              </section>
-
+         </SettingsGroup>
+         <SettingsGroup id="plan" icon={TrendingDown} title={t('Abbauplan', 'Reduction plan')} summary={`${reductionPlan.automaticReductionEnabled ? t('Automatisch', 'Automatic') : t('Manuell', 'Manual')} · −${reductionPlan.reductionPerWeek} ${t('pro Woche', 'per week')}`} open={openGroups.includes('plan')} onToggle={() => toggleGroup('plan')}>
               {/* Abbauplan */}
               <section>
-                <GroupTitle>{t('Abbauplan', 'Reduction plan')}</GroupTitle>
                 <div className="surface-card p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <WheelPicker
@@ -384,10 +384,105 @@ const SettingsSheet = () => {
                   </div>
                 </div>
               </section>
+              {/* Plan neu erstellen */}
+              <section>
+                <button onClick={resetOnboarding} className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left">
+                  <span className="flex items-center gap-3">
+                    <RotateCcw className="w-5 h-5 text-primary" strokeWidth={1.75} />
+                    <span>
+                      <span className="t-16 block text-foreground">{t('Plan neu erstellen', 'Recreate plan')}</span>
+                      <span className="t-12 text-subtle">{t('Onboarding erneut durchlaufen', 'Go through onboarding again')}</span>
+                    </span>
+                  </span>
+                  <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
+                </button>
+              </section>
+         </SettingsGroup>
+         <SettingsGroup id="push" icon={Bell} title={t('Benachrichtigungen', 'Notifications')} summary={pushEnabled ? t('An', 'On') : t('Aus', 'Off')} open={openGroups.includes('push')} onToggle={() => toggleGroup('push')}>
+              {/* Push-Meldungen */}
+              <section>
+                <div className="surface-card p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {pushEnabled ? (
+                        <Bell className="w-5 h-5 text-primary" strokeWidth={1.75} />
+                      ) : (
+                        <BellOff className="w-5 h-5 text-subtle" strokeWidth={1.75} />
+                      )}
+                      <div>
+                        <span className="t-16 block text-foreground">{t('Push-Meldungen', 'Push notifications')}</span>
+                        <span className="t-12 text-subtle">{t('Auch bei geschlossener App', 'Even when the app is closed')}</span>
+                      </div>
+                    </div>
+                    <button
+                      disabled={pushBusy}
+                      onClick={handleTogglePush}
+                      aria-label={t('Push-Meldungen umschalten', 'Toggle push notifications')}
+                      className={`shrink-0 flex items-center ${pushBusy ? 'opacity-60' : ''}`}
+                    >
+                      <Toggle on={pushEnabled} />
+                    </button>
+                  </div>
+                  {pushEnabled && pushToken && (
+                    <button
+                      disabled={pushBusy}
+                      onClick={handleTestPush}
+                      className="btn-pill btn-secondary w-full mt-4 disabled:opacity-60"
+                    >
+                      {t('Test-Meldung senden', 'Send test notification')}
+                    </button>
+                  )}
+                  {pushMessage && <p className="t-12 text-subtle mt-3">{pushMessage}</p>}
+                </div>
+              </section>
+         </SettingsGroup>
+         <SettingsGroup id="extras" icon={Sparkles} title={t('Zusätzliche Funktionen', 'Additional features')} summary={`${extraButtonEnabled ? t('Extras an', 'Extras on') : t('Extras aus', 'Extras off')} · ${reductionPlan.currency}`} open={openGroups.includes('extras')} onToggle={() => toggleGroup('extras')}>
+              {/* Extra-Knopf */}
+              <section>
+                <button
+                  onClick={toggleExtraButtonEnabled}
+                  className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
+                >
+                  <span>
+                    <span className="t-16 block text-foreground">{t('Extra-Knopf anzeigen', 'Show extra button')}</span>
+                    <span className="t-12 text-subtle">{t('Zusätzliche Zigaretten unten eintragen', 'Log extra cigarettes below')}</span>
+                  </span>
+                  <Toggle on={extraButtonEnabled} />
+                </button>
+              </section>
 
+              {/* Extra-Regel */}
+              <section>
+                <button
+                  onClick={toggleExtraReductionEnabled}
+                  disabled={!extraButtonEnabled}
+                  aria-disabled={!extraButtonEnabled}
+                  className={`surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left ${
+                    extraButtonEnabled ? '' : 'opacity-45'
+                  }`}
+                >
+                  <span>
+                    <span className="t-16 block text-foreground">{t('Wecker bei Extras entfernen', 'Remove alarm on extras')}</span>
+                    <span className="t-12 text-subtle">{t('Geklickte Extras kürzen den heutigen Ablauf', 'Logged extras shorten today\'s schedule')}</span>
+                  </span>
+                  <Toggle on={extraButtonEnabled && extraReductionEnabled} />
+                </button>
+              </section>
+
+              <section>
+                <button
+                  onClick={toggleHomeSavingsEnabled}
+                  className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
+                >
+                  <span>
+                    <span className="t-16 block text-foreground">{t('Gespartes auf Startseite', 'Savings on home screen')}</span>
+                    <span className="t-12 text-subtle">{t('Geld und Zeit auf der Startseite anzeigen', 'Show money and time saved on the home screen')}</span>
+                  </span>
+                  <Toggle on={homeSavingsEnabled} />
+                </button>
+              </section>
               {/* Geld & Zeit */}
               <section>
-                <GroupTitle>{t('Gespartes', 'Savings')}</GroupTitle>
                 <div className="surface-card p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="block">
@@ -427,48 +522,10 @@ const SettingsSheet = () => {
                   <p className="t-12 text-subtle">{t('Zeitgewinn: 11 Minuten pro Zigarette. Quellenhinweis: WHO/NHS.', 'Time gained: 11 minutes per cigarette. Source: WHO/NHS.')}</p>
                 </div>
               </section>
-
-              {/* Plan neu erstellen */}
-              <section>
-                <button onClick={resetOnboarding} className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left">
-                  <span className="flex items-center gap-3">
-                    <RotateCcw className="w-5 h-5 text-primary" strokeWidth={1.75} />
-                    <span>
-                      <span className="t-16 block text-foreground">{t('Plan neu erstellen', 'Recreate plan')}</span>
-                      <span className="t-12 text-subtle">{t('Onboarding erneut durchlaufen', 'Go through onboarding again')}</span>
-                    </span>
-                  </span>
-                  <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
-                </button>
-              </section>
-
-              {/* Tagesziel Zigaretten */}
-              <section>
-                <GroupTitle>{t('Tagesziel', 'Daily target')}</GroupTitle>
-                <div className="surface-card p-5">
-                  <WheelPicker
-                    value={dailyCigarettes}
-                    min={0}
-                    max={60}
-                    step={1}
-                    onChange={setDailyCigarettes}
-                    label={t('Zigaretten pro Tag', 'Cigarettes per day')}
-                    compact
-                  />
-                  <p className="text-center t-12 text-subtle mt-3">
-                    {t('Weniger = längere Pausen = mehr Stärke', 'Less = longer breaks = more strength')}
-                  </p>
-                  <p className="text-center t-12 text-subtle mt-1">
-                    {applyScheduleToAllDays
-                      ? t('Gilt für alle Tage.', 'Applies to all days.')
-                      : t('Standard für neue Tage.', 'Default for new days.')}
-                  </p>
-                </div>
-              </section>
-
+         </SettingsGroup>
+         <SettingsGroup id="appearance" icon={Palette} title={t('Darstellung & Sprache', 'Appearance & language')} summary={`${t(themeMode === 'dark' ? 'Dunkel' : themeMode === 'light' ? 'Hell' : 'System', themeMode === 'dark' ? 'Dark' : themeMode === 'light' ? 'Light' : 'System')} · ${language === 'de' ? 'Deutsch' : 'English'}`} open={openGroups.includes('appearance')} onToggle={() => toggleGroup('appearance')}>
               {/* Darstellung */}
               <section>
-                <GroupTitle>{t('Darstellung', 'Appearance')}</GroupTitle>
                 <div className="surface-card p-1.5 grid grid-cols-3 gap-1">
                   {(
                     [
@@ -496,7 +553,6 @@ const SettingsSheet = () => {
 
               {/* Sprache-Umschalter */}
               <section>
-                <GroupTitle>{t('Sprache', 'Language')}</GroupTitle>
                 <div className="surface-card p-1.5 grid grid-cols-2 gap-1">
                   {(
                     [
@@ -519,48 +575,10 @@ const SettingsSheet = () => {
                   })}
                 </div>
               </section>
-
-              {/* Push-Meldungen */}
-              <section>
-                <GroupTitle>{t('Erinnerungen', 'Reminders')}</GroupTitle>
-                <div className="surface-card p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {pushEnabled ? (
-                        <Bell className="w-5 h-5 text-primary" strokeWidth={1.75} />
-                      ) : (
-                        <BellOff className="w-5 h-5 text-subtle" strokeWidth={1.75} />
-                      )}
-                      <div>
-                        <span className="t-16 block text-foreground">{t('Push-Meldungen', 'Push notifications')}</span>
-                        <span className="t-12 text-subtle">{t('Auch bei geschlossener App', 'Even when the app is closed')}</span>
-                      </div>
-                    </div>
-                    <button
-                      disabled={pushBusy}
-                      onClick={handleTogglePush}
-                      aria-label={t('Push-Meldungen umschalten', 'Toggle push notifications')}
-                      className={`shrink-0 flex items-center ${pushBusy ? 'opacity-60' : ''}`}
-                    >
-                      <Toggle on={pushEnabled} />
-                    </button>
-                  </div>
-                  {pushEnabled && pushToken && (
-                    <button
-                      disabled={pushBusy}
-                      onClick={handleTestPush}
-                      className="btn-pill btn-secondary w-full mt-4 disabled:opacity-60"
-                    >
-                      {t('Test-Meldung senden', 'Send test notification')}
-                    </button>
-                  )}
-                  {pushMessage && <p className="t-12 text-subtle mt-3">{pushMessage}</p>}
-                </div>
-              </section>
-
+         </SettingsGroup>
+         <SettingsGroup id="account" icon={User} title={t('Konto & Pläne', 'Account & plans')} summary={account.signedIn ? account.userEmail ?? t('Angemeldet', 'Signed in') : t('Ohne Anmeldung', 'Not signed in')} open={openGroups.includes('account')} onToggle={() => toggleGroup('account')}>
               {/* Konto & Premium */}
               <section>
-                <GroupTitle>{t('Konto', 'Account')}</GroupTitle>
                 <div className="surface-card p-5 space-y-3">
                   <p className="t-12 text-subtle">{t('Optional — für Sicherung und mehrere Geräte', 'Optional — for backup and multiple devices')}</p>
                   <div className="flex items-center gap-3">
@@ -591,7 +609,6 @@ const SettingsSheet = () => {
               {/* Abonnement – nur für Zahlende */}
               {isPaying && (
                 <section>
-                  <GroupTitle>{isLifetime ? t('Dein Kauf', 'Your purchase') : t('Abonnement', 'Subscription')}</GroupTitle>
                   <div className="surface-card p-5 space-y-3">
                     <div>
                       <p className="t-16 text-foreground">{planLabel}</p>
@@ -621,7 +638,6 @@ const SettingsSheet = () => {
 
               {!isPaying && (
               <section>
-                <GroupTitle>{t('Mehr freischalten', 'Unlock more')}</GroupTitle>
                 <div className="space-y-[10px]">
                   <button className="surface-card w-full p-5 text-left">
                     <p className="t-16 font-medium text-foreground">{t('Monatlich', 'Monthly')}</p>
@@ -661,10 +677,10 @@ const SettingsSheet = () => {
                 </div>
               </section>
               )}
-
+         </SettingsGroup>
+         <SettingsGroup id="data" icon={Database} title={t('Deine Daten', 'Your data')} summary={t('Exportieren & löschen', 'Export & delete')} open={openGroups.includes('data')} onToggle={() => toggleGroup('data')}>
               {/* Daten exportieren */}
               <section>
-                <GroupTitle>{t('Deine Daten', 'Your data')}</GroupTitle>
                 <div className="surface-card p-5 space-y-3">
                   <button onClick={handleExport} className="btn-pill btn-secondary w-full">{t('Daten exportieren', 'Export data')}</button>
                   <p className="t-12 text-subtle">{t('Alle Angaben als Datei zum Mitnehmen (Art. 20 DSGVO).', 'All your data as a file to take with you (Art. 20 GDPR).')}</p>
@@ -694,34 +710,6 @@ const SettingsSheet = () => {
                   )}
                 </div>
               </section>
-
-              {/* Rechtliches */}
-              <section>
-                <GroupTitle>{t('Rechtliches', 'Legal')}</GroupTitle>
-                <div className="surface-card overflow-hidden">
-                  {[
-                    { slug: 'impressum', label: t('Impressum', 'Imprint') },
-                    { slug: 'datenschutz', label: t('Datenschutzerklärung', 'Privacy policy') },
-                    { slug: 'agb', label: t('Allgemeine Geschäftsbedingungen', 'Terms and conditions') },
-                    { slug: 'gesundheitshinweis', label: t('Gesundheitshinweis', 'Health notice') },
-                  ].map((item, index, list) => (
-                    <button
-                      key={item.slug}
-                      onClick={() => goTo(`/${item.slug}`)}
-                      className={`w-full px-4 min-h-[56px] flex items-center justify-between ${index < list.length - 1 ? 'border-b border-border/60' : ''}`}
-                    >
-                      <span className="t-16 text-foreground text-left">{item.label}</span>
-                      <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
-                    </button>
-                  ))}
-                </div>
-                {account.role === 'admin' && (
-                  <button onClick={() => goTo('/rechtliches-check')} className="btn-pill btn-secondary w-full mt-3">
-                    {t('Offene Stellen prüfen', 'Check open items')}
-                  </button>
-                )}
-              </section>
-
 
               {/* Gefahrenzone */}
               <section className="pb-6">
@@ -754,6 +742,36 @@ const SettingsSheet = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               </section>
+         </SettingsGroup>
+         <SettingsGroup id="help" icon={Info} title={t('Hilfe & Rechtliches', 'Help & legal')} summary={t('Funktionen · Support · Rechtliches', 'Features · Support · legal')} open={openGroups.includes('help')} onToggle={() => toggleGroup('help')}>
+              {/* Rechtliches */}
+              <section>
+                <div className="surface-card overflow-hidden">
+                  {[
+                    { slug: 'funktionen', label: t('Funktionen', 'Features') },
+                    { slug: 'support', label: t('Support', 'Support') },
+                    { slug: 'impressum', label: t('Impressum', 'Imprint') },
+                    { slug: 'datenschutz', label: t('Datenschutzerklärung', 'Privacy policy') },
+                    { slug: 'agb', label: t('Allgemeine Geschäftsbedingungen', 'Terms and conditions') },
+                    { slug: 'gesundheitshinweis', label: t('Gesundheitshinweis', 'Health notice') },
+                  ].map((item, index, list) => (
+                    <button
+                      key={item.slug}
+                      onClick={() => goTo(`/${item.slug}`)}
+                      className={`w-full px-4 min-h-[56px] flex items-center justify-between ${index < list.length - 1 ? 'border-b border-border/60' : ''}`}
+                    >
+                      <span className="t-16 text-foreground text-left">{item.label}</span>
+                      <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
+                    </button>
+                  ))}
+                </div>
+                {account.role === 'admin' && (
+                  <button onClick={() => goTo('/rechtliches-check')} className="btn-pill btn-secondary w-full mt-3">
+                    {t('Offene Stellen prüfen', 'Check open items')}
+                  </button>
+                )}
+              </section>
+         </SettingsGroup>
 
               {/* Version – siebenmal antippen öffnet die Freischaltung */}
               <section className="pb-10">

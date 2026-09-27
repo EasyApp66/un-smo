@@ -34,6 +34,7 @@ export default {
           tint: "hsl(var(--success-tint))",
         },
         info: "hsl(var(--info))",
+        warning: "hsl(var(--warning))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
