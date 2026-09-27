@@ -117,14 +117,14 @@ const Index = () => {
       <AnimatePresence>
         {extraFeedback && (
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed left-1/2 z-[60]"
+            className="fixed left-0 right-0 z-[60] flex justify-center pointer-events-none"
             style={{ top: 'max(env(safe-area-inset-top), 12px)' }}
           >
-            <div className="surface-float -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-pill backdrop-blur-xl">
+            <div className="surface-float flex items-center gap-2 px-4 py-2 rounded-pill backdrop-blur-xl">
               <span className="w-5 h-5 rounded-pill bg-primary flex items-center justify-center shrink-0">
                 <svg width="12" height="12" viewBox="0 0 10 10" fill="none" className="text-primary-foreground">
                   <path d="M2 5L4 7L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
