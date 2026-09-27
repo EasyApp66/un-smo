@@ -91,7 +91,7 @@ const DayButton = ({
 
     <span
       className={`mt-2 h-2 w-2 rounded-pill ${
-         day.hasData && !day.isToday ? ({ ok: 'bg-success', warn: 'bg-warning', over: 'bg-destructive' }[day.status]) : 'bg-transparent'
+          day.hasData ? ({ ok: 'bg-success', warn: 'bg-warning', over: 'bg-destructive' }[day.status]) : 'bg-transparent'
       }`}
     />
   </button>
