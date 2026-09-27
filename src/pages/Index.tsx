@@ -36,18 +36,34 @@ const Index = () => {
   }, [completeMeasurementIfNeeded, days]);
 
 
-  // Zeitplan-Änderungen an den Push-Server übertragen (entprellt)
+  // Zeitplan-Änderungen sofort an den Push-Server übertragen – ein als geraucht
+  // markierter Wecker darf kurz danach keine Meldung mehr auslösen.
   useEffect(() => {
     if (!pushToken) return;
-    const t = setTimeout(() => {
+    const run = () =>
       syncPushSchedule(pushToken, { wakeTime, sleepTime, dailyCigarettes })
         .then(() => { pushSyncFailed.current = false; })
         .catch((e) => {
           pushSyncFailed.current = true;
           console.warn('Push-Sync fehlgeschlagen', e);
         });
-    }, 1500);
-    return () => clearTimeout(t);
+    let pending = true;
+    const t = setTimeout(() => { pending = false; run(); }, 150);
+    // App wird verlassen, bevor die Übertragung lief: sofort nachholen
+    const flush = () => {
+      if (pending && document.visibilityState === 'hidden') {
+        pending = false;
+        clearTimeout(t);
+        run();
+      }
+    };
+    document.addEventListener('visibilitychange', flush);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('visibilitychange', flush);
+      window.removeEventListener('pagehide', flush);
+    };
   }, [pushToken, wakeTime, sleepTime, dailyCigarettes, days]);
 
   // Fehlgeschlagenen Abgleich (z. B. offline) beim nächsten Online-/Sichtbar-Ereignis nachholen
