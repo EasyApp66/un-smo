@@ -4,6 +4,7 @@ import HomeScreen from '../components/HomeScreen';
 import BottomTabBar from '../components/BottomTabBar';
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useT } from '../lib/i18n';
 
 
 const StatisticsScreen = lazy(() => import('../components/StatisticsScreen'));
@@ -11,6 +12,7 @@ const SettingsSheet = lazy(() => import('../components/SettingsSheet'));
 import { syncPushSchedule } from '../lib/push';
 
 const Index = () => {
+  const t = useT();
   const {
     hasCompletedOnboarding,
     themeMode,
@@ -133,7 +135,7 @@ const Index = () => {
               <div className="flex items-baseline gap-1">
                 <span className="t-16 font-medium num text-foreground leading-none">{extraFeedback}</span>
                 <span className="t-14 text-subtle leading-none">
-                  Extra-Zigarette{extraFeedback !== 1 ? 'n' : ''}
+                  {t(`Extra-Zigarette${extraFeedback !== 1 ? 'n' : ''}`, `Extra cigarette${extraFeedback !== 1 ? 's' : ''}`)}
                 </span>
               </div>
             </div>

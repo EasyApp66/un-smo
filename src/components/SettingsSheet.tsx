@@ -1,4 +1,5 @@
-import { ChevronRight, AlertTriangle, Globe, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ChevronRight, AlertTriangle, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck } from 'lucide-react';
+import { useT, useLocale } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import TimePicker from './TimePicker';
@@ -41,6 +42,8 @@ const Toggle = ({ on }: { on: boolean }) => (
 );
 
 const SettingsSheet = () => {
+  const t = useT();
+  const locale = useLocale();
   const {
     wakeTime,
     sleepTime,
@@ -54,6 +57,8 @@ const SettingsSheet = () => {
     homeSavingsEnabled,
     reductionPlan,
     days,
+    language,
+    setLanguage,
     setWakeTime,
     setSleepTime,
     setDailyCigarettes,
@@ -98,13 +103,16 @@ const SettingsSheet = () => {
 
   const isLifetime = account.paymentStatus === 'lifetime';
   const isPaying = account.paymentStatus === 'active' || isLifetime;
-  const purchasedAt = account.paidSince ? new Date(account.paidSince).toLocaleDateString('de-CH') : null;
+  const purchasedAt = account.paidSince ? new Date(account.paidSince).toLocaleDateString(locale) : null;
   const planLabel = isLifetime
-    ? `Lebenslang — einmalig bezahlt${purchasedAt ? ` am ${purchasedAt}` : ''}. Es fallen keine weiteren Kosten an.`
-    : 'Abonnement, laufend';
+    ? t(
+        `Lebenslang — einmalig bezahlt${purchasedAt ? ` am ${purchasedAt}` : ''}. Es fallen keine weiteren Kosten an.`,
+        `Lifetime — paid once${purchasedAt ? ` on ${purchasedAt}` : ''}. No further costs.`,
+      )
+    : t('Abonnement, laufend', 'Subscription, ongoing');
   const renewalLabel = account.trialEndsAt
-    ? `Nächste Abbuchung: ${new Date(account.trialEndsAt).toLocaleDateString('de-CH')}`
-    : 'Nächste Abbuchung: wird nach der Zahlung angezeigt';
+    ? t(`Nächste Abbuchung: ${new Date(account.trialEndsAt).toLocaleDateString(locale)}`, `Next charge: ${new Date(account.trialEndsAt).toLocaleDateString(locale)}`)
+    : t('Nächste Abbuchung: wird nach der Zahlung angezeigt', 'Next charge: shown after payment');
 
 
 
@@ -120,16 +128,16 @@ const SettingsSheet = () => {
     setPushMessage(null);
     try {
       await sendTestPush(pushToken);
-      setPushMessage('Test gesendet – die Meldung sollte in wenigen Sekunden erscheinen.');
+      setPushMessage(t('Test gesendet – die Meldung sollte in wenigen Sekunden erscheinen.', 'Test sent – the notification should appear in a few seconds.'));
     } catch {
-      setPushMessage('Test fehlgeschlagen. Bitte Push aus- und wieder einschalten.');
+      setPushMessage(t('Test fehlgeschlagen. Bitte Push aus- und wieder einschalten.', 'Test failed. Please turn push off and on again.'));
     } finally {
       setPushBusy(false);
     }
   };
 
   const handleSignedIn = () => {
-    setAccountMessage('Angemeldet.');
+    setAccountMessage(t('Angemeldet.', 'Signed in.'));
     fetchAccountStatus().then(setAccount).catch(() => undefined);
   };
 
@@ -152,9 +160,9 @@ const SettingsSheet = () => {
       setAccount(defaultAccountStatus);
       setShowAccountDelete(false);
       setDeleteWord('');
-      setAccountMessage('Konto und Daten wurden gelöscht.');
+      setAccountMessage(t('Konto und Daten wurden gelöscht.', 'Account and data have been deleted.'));
     } catch {
-      setAccountMessage('Konto konnte nicht gelöscht werden.');
+      setAccountMessage(t('Konto konnte nicht gelöscht werden.', 'The account could not be deleted.'));
     } finally {
       setAccountBusy(false);
     }
@@ -178,7 +186,10 @@ const SettingsSheet = () => {
     URL.revokeObjectURL(url);
   };
 
-  const notReady = 'Zahlungen sind noch nicht freigeschaltet. Sobald der Zahlungsanbieter aktiv ist, öffnet sich hier das Kundenportal.';
+  const notReady = t(
+    'Zahlungen sind noch nicht freigeschaltet. Sobald der Zahlungsanbieter aktiv ist, öffnet sich hier das Kundenportal.',
+    'Payments are not enabled yet. Once the payment provider is active, the customer portal will open here.',
+  );
 
   const handleOpenPortal = async () => {
     setSubBusy(true);
@@ -198,9 +209,9 @@ const SettingsSheet = () => {
     try {
       const status = await fetchAccountStatus();
       setAccount(status);
-      setSubMessage(status.access ? 'Kauf wiederhergestellt.' : 'Kein aktiver Kauf gefunden.');
+      setSubMessage(status.access ? t('Kauf wiederhergestellt.', 'Purchase restored.') : t('Kein aktiver Kauf gefunden.', 'No active purchase found.'));
     } catch {
-      setSubMessage('Wiederherstellen hat nicht geklappt. Bitte später erneut versuchen.');
+      setSubMessage(t('Wiederherstellen hat nicht geklappt. Bitte später erneut versuchen.', 'Restoring did not work. Please try again later.'));
     } finally {
       setSubBusy(false);
     }
@@ -214,25 +225,25 @@ const SettingsSheet = () => {
       if (pushEnabled) {
         if (pushToken) await disablePush(pushToken);
         setPushEnabled(false);
-        setPushMessage('Push-Meldungen sind aus.');
+        setPushMessage(t('Push-Meldungen sind aus.', 'Push notifications are off.'));
       } else {
         const result = await enablePush({ wakeTime, sleepTime, dailyCigarettes });
         if (result.status === 'registered') {
           setPushEnabled(true, result.token);
-          setPushMessage('Aktiv. Du erhältst zu jeder Erinnerungszeit eine Meldung.');
+          setPushMessage(t('Aktiv. Du erhältst zu jeder Erinnerungszeit eine Meldung.', 'Active. You will get a notification at every reminder time.'));
         } else if (result.status === 'open-in-new-tab') {
-          setPushMessage('Bitte die App in einem eigenen Tab oder vom Home-Bildschirm öffnen – in der Vorschau geht das nicht.');
+          setPushMessage(t('Bitte die App in einem eigenen Tab oder vom Home-Bildschirm öffnen – in der Vorschau geht das nicht.', 'Please open the app in its own tab or from the home screen – this does not work in the preview.'));
         } else if (result.status === 'denied') {
-          setPushMessage('Erlaubnis abgelehnt. Bitte in den iPhone-Einstellungen unter Mitteilungen erlauben.');
+          setPushMessage(t('Erlaubnis abgelehnt. Bitte in den iPhone-Einstellungen unter Mitteilungen erlauben.', 'Permission denied. Please allow it under Notifications in your iPhone settings.'));
         } else if (result.status === 'unsupported') {
-          setPushMessage('Auf diesem Gerät nur möglich, wenn die App zum Home-Bildschirm hinzugefügt wurde (Safari → Teilen → Zum Home-Bildschirm).');
+          setPushMessage(t('Auf diesem Gerät nur möglich, wenn die App zum Home-Bildschirm hinzugefügt wurde (Safari → Teilen → Zum Home-Bildschirm).', 'On this device this only works if the app was added to the home screen (Safari → Share → Add to Home Screen).'));
         } else {
-          setPushMessage('Push ist noch nicht eingerichtet (Verbindung fehlt).');
+          setPushMessage(t('Push ist noch nicht eingerichtet (Verbindung fehlt).', 'Push is not set up yet (connection missing).'));
         }
       }
     } catch (e) {
       console.error(e);
-      setPushMessage('Das hat nicht geklappt. Bitte später erneut versuchen.');
+      setPushMessage(t('Das hat nicht geklappt. Bitte später erneut versuchen.', 'That did not work. Please try again later.'));
     } finally {
       setPushBusy(false);
     }
@@ -241,7 +252,7 @@ const SettingsSheet = () => {
   return (
     <div className="min-h-[100dvh] bg-background px-4 pb-32 safe-top">
       <div className="pt-3 pb-5">
-        <h2 className="t-24 text-foreground">Einstellungen</h2>
+        <h2 className="t-24 text-foreground">{t('Einstellungen', 'Settings')}</h2>
       </div>
 
       <div className="space-y-6">
@@ -252,8 +263,8 @@ const SettingsSheet = () => {
                   className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
                 >
                   <span>
-                    <span className="t-16 block text-foreground">Zeitplan für alle Tage</span>
-                    <span className="t-12 text-subtle">Änderungen auf alle Tage anwenden</span>
+                    <span className="t-16 block text-foreground">{t('Zeitplan für alle Tage', 'Schedule for all days')}</span>
+                    <span className="t-12 text-subtle">{t('Änderungen auf alle Tage anwenden', 'Apply changes to all days')}</span>
                   </span>
                   <Toggle on={applyScheduleToAllDays} />
                 </button>
@@ -266,8 +277,8 @@ const SettingsSheet = () => {
                   className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
                 >
                   <span>
-                    <span className="t-16 block text-foreground">Extra-Knopf anzeigen</span>
-                    <span className="t-12 text-subtle">Zusätzliche Zigaretten unten eintragen</span>
+                    <span className="t-16 block text-foreground">{t('Extra-Knopf anzeigen', 'Show extra button')}</span>
+                    <span className="t-12 text-subtle">{t('Zusätzliche Zigaretten unten eintragen', 'Log extra cigarettes below')}</span>
                   </span>
                   <Toggle on={extraButtonEnabled} />
                 </button>
@@ -284,8 +295,8 @@ const SettingsSheet = () => {
                   }`}
                 >
                   <span>
-                    <span className="t-16 block text-foreground">Wecker bei Extras entfernen</span>
-                    <span className="t-12 text-subtle">Geklickte Extras kürzen den heutigen Ablauf</span>
+                    <span className="t-16 block text-foreground">{t('Wecker bei Extras entfernen', 'Remove alarm on extras')}</span>
+                    <span className="t-12 text-subtle">{t('Geklickte Extras kürzen den heutigen Ablauf', 'Logged extras shorten today\'s schedule')}</span>
                   </span>
                   <Toggle on={extraButtonEnabled && extraReductionEnabled} />
                 </button>
@@ -297,8 +308,8 @@ const SettingsSheet = () => {
                   className="surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
                 >
                   <span>
-                    <span className="t-16 block text-foreground">Gespartes auf Startseite</span>
-                    <span className="t-12 text-subtle">Geld und Zeit auf der Startseite anzeigen</span>
+                    <span className="t-16 block text-foreground">{t('Gespartes auf Startseite', 'Savings on home screen')}</span>
+                    <span className="t-12 text-subtle">{t('Geld und Zeit auf der Startseite anzeigen', 'Show money and time saved on the home screen')}</span>
                   </span>
                   <Toggle on={homeSavingsEnabled} />
                 </button>
@@ -306,21 +317,21 @@ const SettingsSheet = () => {
 
               {/* Aufsteh- & Schlafenszeiten */}
               <section>
-                <GroupTitle>Dein Zeitplan</GroupTitle>
+                <GroupTitle>{t('Dein Zeitplan', 'Your schedule')}</GroupTitle>
                 <div className="grid grid-cols-2 gap-[10px]">
-                  <TimePicker value={wakeTime} onChange={setWakeTime} label="Aufstehzeit" compact />
-                  <TimePicker value={sleepTime} onChange={setSleepTime} label="Schlafenszeit" compact />
+                  <TimePicker value={wakeTime} onChange={setWakeTime} label={t('Aufstehzeit', 'Wake-up time')} compact />
+                  <TimePicker value={sleepTime} onChange={setSleepTime} label={t('Schlafenszeit', 'Bedtime')} compact />
                 </div>
                 <p className="t-12 text-subtle mt-3 px-1">
                   {applyScheduleToAllDays
-                    ? 'Gilt für alle Tage.'
-                    : 'Standard für neue Tage. Bereits eingerichtete Tage änderst du direkt auf der Startseite.'}
+                    ? t('Gilt für alle Tage.', 'Applies to all days.')
+                    : t('Standard für neue Tage. Bereits eingerichtete Tage änderst du direkt auf der Startseite.', 'Default for new days. You can change already set up days directly on the home screen.')}
                 </p>
               </section>
 
               {/* Abbauplan */}
               <section>
-                <GroupTitle>Abbauplan</GroupTitle>
+                <GroupTitle>{t('Abbauplan', 'Reduction plan')}</GroupTitle>
                 <div className="surface-card p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <WheelPicker
@@ -328,7 +339,7 @@ const SettingsSheet = () => {
                       min={0}
                       max={60}
                       onChange={(value) => updateReductionPlan({ baselineCigarettes: value })}
-                      label="Ausgangswert"
+                      label={t('Ausgangswert', 'Starting value')}
                       compact
                     />
                     <WheelPicker
@@ -336,7 +347,7 @@ const SettingsSheet = () => {
                       min={1}
                       max={5}
                       onChange={(value) => updateReductionPlan({ reductionPerWeek: value })}
-                      label="Pro Woche"
+                      label={t('Pro Woche', 'Per week')}
                       compact
                     />
                   </div>
@@ -345,8 +356,8 @@ const SettingsSheet = () => {
                     className="rounded-inner bg-muted w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
                   >
                     <span>
-                      <span className="t-16 block text-foreground">Automatisch senken</span>
-                      <span className="t-12 text-subtle">Jeden Montag um den gewählten Wert</span>
+                      <span className="t-16 block text-foreground">{t('Automatisch senken', 'Reduce automatically')}</span>
+                      <span className="t-12 text-subtle">{t('Jeden Montag um den gewählten Wert', 'Every Monday by the chosen amount')}</span>
                     </span>
                     <Toggle on={reductionPlan.automaticReductionEnabled} />
                   </button>
@@ -355,8 +366,8 @@ const SettingsSheet = () => {
                     className="rounded-inner bg-muted w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left"
                   >
                     <span>
-                      <span className="t-16 block text-foreground">Diese Woche pausieren</span>
-                      <span className="t-12 text-subtle">Ziel bleibt für diese Woche gleich</span>
+                      <span className="t-16 block text-foreground">{t('Diese Woche pausieren', 'Pause this week')}</span>
+                      <span className="t-12 text-subtle">{t('Ziel bleibt für diese Woche gleich', 'Target stays the same this week')}</span>
                     </span>
                     <Toggle on={thisWeekPaused} />
                   </button>
@@ -365,7 +376,7 @@ const SettingsSheet = () => {
                       <div key={row.week} className="rounded-inner bg-muted px-4 py-3 flex items-center justify-between">
                         <span>
                           <span className="t-14 text-foreground block">{row.label}</span>
-                          <span className="t-12 text-subtle">Ø {row.actual ?? '–'} tatsächlich</span>
+                          <span className="t-12 text-subtle">Ø {row.actual ?? '–'} {t('tatsächlich', 'actual')}</span>
                         </span>
                         <span className="t-18 num text-foreground">{row.target}</span>
                       </div>
@@ -376,11 +387,11 @@ const SettingsSheet = () => {
 
               {/* Geld & Zeit */}
               <section>
-                <GroupTitle>Gespartes</GroupTitle>
+                <GroupTitle>{t('Gespartes', 'Savings')}</GroupTitle>
                 <div className="surface-card p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="block">
-                      <span className="t-12 text-subtle">Packungspreis</span>
+                      <span className="t-12 text-subtle">{t('Packungspreis', 'Pack price')}</span>
                       <input
                         type="number"
                         min="0"
@@ -391,7 +402,7 @@ const SettingsSheet = () => {
                       />
                     </label>
                     <label className="block">
-                      <span className="t-12 text-subtle">Packungsgröße</span>
+                      <span className="t-12 text-subtle">{t('Packungsgröße', 'Pack size')}</span>
                       <input
                         type="number"
                         min="1"
@@ -413,7 +424,7 @@ const SettingsSheet = () => {
                       </button>
                     ))}
                   </div>
-                  <p className="t-12 text-subtle">Zeitgewinn: 11 Minuten pro Zigarette. Quellenhinweis: WHO/NHS.</p>
+                  <p className="t-12 text-subtle">{t('Zeitgewinn: 11 Minuten pro Zigarette. Quellenhinweis: WHO/NHS.', 'Time gained: 11 minutes per cigarette. Source: WHO/NHS.')}</p>
                 </div>
               </section>
 
@@ -423,8 +434,8 @@ const SettingsSheet = () => {
                   <span className="flex items-center gap-3">
                     <RotateCcw className="w-5 h-5 text-primary" strokeWidth={1.75} />
                     <span>
-                      <span className="t-16 block text-foreground">Plan neu erstellen</span>
-                      <span className="t-12 text-subtle">Onboarding erneut durchlaufen</span>
+                      <span className="t-16 block text-foreground">{t('Plan neu erstellen', 'Recreate plan')}</span>
+                      <span className="t-12 text-subtle">{t('Onboarding erneut durchlaufen', 'Go through onboarding again')}</span>
                     </span>
                   </span>
                   <ChevronRight className="w-5 h-5 text-subtle" strokeWidth={1.75} />
@@ -433,7 +444,7 @@ const SettingsSheet = () => {
 
               {/* Tagesziel Zigaretten */}
               <section>
-                <GroupTitle>Tagesziel</GroupTitle>
+                <GroupTitle>{t('Tagesziel', 'Daily target')}</GroupTitle>
                 <div className="surface-card p-5">
                   <WheelPicker
                     value={dailyCigarettes}
@@ -441,29 +452,29 @@ const SettingsSheet = () => {
                     max={60}
                     step={1}
                     onChange={setDailyCigarettes}
-                    label="Zigaretten pro Tag"
+                    label={t('Zigaretten pro Tag', 'Cigarettes per day')}
                     compact
                   />
                   <p className="text-center t-12 text-subtle mt-3">
-                    Weniger = längere Pausen = mehr Stärke
+                    {t('Weniger = längere Pausen = mehr Stärke', 'Less = longer breaks = more strength')}
                   </p>
                   <p className="text-center t-12 text-subtle mt-1">
                     {applyScheduleToAllDays
-                      ? 'Gilt für alle Tage.'
-                      : 'Standard für neue Tage.'}
+                      ? t('Gilt für alle Tage.', 'Applies to all days.')
+                      : t('Standard für neue Tage.', 'Default for new days.')}
                   </p>
                 </div>
               </section>
 
               {/* Darstellung */}
               <section>
-                <GroupTitle>Darstellung</GroupTitle>
+                <GroupTitle>{t('Darstellung', 'Appearance')}</GroupTitle>
                 <div className="surface-card p-1.5 grid grid-cols-3 gap-1">
                   {(
                     [
-                      { id: 'light', label: 'Hell', Icon: Sun },
-                      { id: 'dark', label: 'Dunkel', Icon: Moon },
-                      { id: 'system', label: 'System', Icon: Smartphone },
+                      { id: 'light', label: t('Hell', 'Light'), Icon: Sun },
+                      { id: 'dark', label: t('Dunkel', 'Dark'), Icon: Moon },
+                      { id: 'system', label: t('System', 'System'), Icon: Smartphone },
                     ] as const
                   ).map(({ id, label, Icon }) => {
                     const active = themeMode === id;
@@ -483,9 +494,35 @@ const SettingsSheet = () => {
                 </div>
               </section>
 
+              {/* Sprache-Umschalter */}
+              <section>
+                <GroupTitle>{t('Sprache', 'Language')}</GroupTitle>
+                <div className="surface-card p-1.5 grid grid-cols-2 gap-1">
+                  {(
+                    [
+                      { id: 'de', label: 'Deutsch' },
+                      { id: 'en', label: 'English' },
+                    ] as const
+                  ).map(({ id, label }) => {
+                    const active = language === id;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setLanguage(id)}
+                        className={`h-12 rounded-md flex items-center justify-center gap-1.5 t-14 font-medium [transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+                          active ? 'bg-primary text-primary-foreground' : 'text-subtle'
+                        }`}
+                      >
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
               {/* Push-Meldungen */}
               <section>
-                <GroupTitle>Erinnerungen</GroupTitle>
+                <GroupTitle>{t('Erinnerungen', 'Reminders')}</GroupTitle>
                 <div className="surface-card p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -495,14 +532,14 @@ const SettingsSheet = () => {
                         <BellOff className="w-5 h-5 text-subtle" strokeWidth={1.75} />
                       )}
                       <div>
-                        <span className="t-16 block text-foreground">Push-Meldungen</span>
-                        <span className="t-12 text-subtle">Auch bei geschlossener App</span>
+                        <span className="t-16 block text-foreground">{t('Push-Meldungen', 'Push notifications')}</span>
+                        <span className="t-12 text-subtle">{t('Auch bei geschlossener App', 'Even when the app is closed')}</span>
                       </div>
                     </div>
                     <button
                       disabled={pushBusy}
                       onClick={handleTogglePush}
-                      aria-label="Push-Meldungen umschalten"
+                      aria-label={t('Push-Meldungen umschalten', 'Toggle push notifications')}
                       className={`shrink-0 flex items-center ${pushBusy ? 'opacity-60' : ''}`}
                     >
                       <Toggle on={pushEnabled} />
@@ -514,40 +551,28 @@ const SettingsSheet = () => {
                       onClick={handleTestPush}
                       className="btn-pill btn-secondary w-full mt-4 disabled:opacity-60"
                     >
-                      Test-Meldung senden
+                      {t('Test-Meldung senden', 'Send test notification')}
                     </button>
                   )}
                   {pushMessage && <p className="t-12 text-subtle mt-3">{pushMessage}</p>}
                 </div>
               </section>
 
-              {/* Sprache */}
-              <section>
-                <GroupTitle>Sprache</GroupTitle>
-                <div className="surface-card px-4 min-h-[56px] flex items-center justify-between">
-                  <span className="flex items-center gap-3">
-                    <Globe className="w-5 h-5 text-subtle" strokeWidth={1.75} />
-                    <span className="t-16 text-foreground">Deutsch</span>
-                  </span>
-                  <span className="t-12 text-primary">Aktiv</span>
-                </div>
-              </section>
-
               {/* Konto & Premium */}
               <section>
-                <GroupTitle>Konto</GroupTitle>
+                <GroupTitle>{t('Konto', 'Account')}</GroupTitle>
                 <div className="surface-card p-5 space-y-3">
-                  <p className="t-12 text-subtle">Optional — für Sicherung und mehrere Geräte</p>
+                  <p className="t-12 text-subtle">{t('Optional — für Sicherung und mehrere Geräte', 'Optional — for backup and multiple devices')}</p>
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="w-5 h-5 text-primary" strokeWidth={1.75} />
                     <div>
-                      <p className="t-16 text-foreground">{account.signedIn ? account.userEmail : 'Nicht angemeldet'}</p>
+                      <p className="t-16 text-foreground">{account.signedIn ? account.userEmail : t('Nicht angemeldet', 'Not signed in')}</p>
                       <p className="t-12 text-subtle">
                         {account.role === 'admin'
-                          ? 'Admin dauerhaft freigeschaltet'
+                          ? t('Admin dauerhaft freigeschaltet', 'Admin, permanently unlocked')
                           : account.access
-                            ? `${account.trialDaysRemaining} Tage Testzeit übrig`
-                            : 'Testzeit abgelaufen'}
+                            ? t(`${account.trialDaysRemaining} Tage Testzeit übrig`, `${account.trialDaysRemaining} days of trial left`)
+                            : t('Testzeit abgelaufen', 'Trial expired')}
                       </p>
                     </div>
                   </div>
@@ -555,7 +580,7 @@ const SettingsSheet = () => {
                     <EmailCodeSignIn onSignedIn={handleSignedIn} />
                   ) : (
                     <>
-                      <button onClick={handleLogout} className="btn-pill btn-secondary w-full">Abmelden</button>
+                      <button onClick={handleLogout} className="btn-pill btn-secondary w-full">{t('Abmelden', 'Sign out')}</button>
                     </>
 
                   )}
@@ -566,7 +591,7 @@ const SettingsSheet = () => {
               {/* Abonnement – nur für Zahlende */}
               {isPaying && (
                 <section>
-                  <GroupTitle>{isLifetime ? 'Dein Kauf' : 'Abonnement'}</GroupTitle>
+                  <GroupTitle>{isLifetime ? t('Dein Kauf', 'Your purchase') : t('Abonnement', 'Subscription')}</GroupTitle>
                   <div className="surface-card p-5 space-y-3">
                     <div>
                       <p className="t-16 text-foreground">{planLabel}</p>
@@ -575,18 +600,18 @@ const SettingsSheet = () => {
                     {!isLifetime && (
                       <>
                         <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
-                          Abonnement kündigen
+                          {t('Abonnement kündigen', 'Cancel subscription')}
                         </button>
                         <button onClick={handleCancelInApp} disabled={subBusy} className="btn-pill w-full text-destructive disabled:opacity-60">
-                          Direkt in der App kündigen
+                          {t('Direkt in der App kündigen', 'Cancel directly in the app')}
                         </button>
                       </>
                     )}
                     <button onClick={handleOpenPortal} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
-                      {isLifetime ? 'Rechnung herunterladen' : 'Rechnungen'}
+                      {isLifetime ? t('Rechnung herunterladen', 'Download invoice') : t('Rechnungen', 'Invoices')}
                     </button>
                     <button onClick={handleRestore} disabled={subBusy} className="btn-pill btn-secondary w-full disabled:opacity-60">
-                      Kauf wiederherstellen
+                      {t('Kauf wiederherstellen', 'Restore purchase')}
                     </button>
                     {subMessage && <p className="t-12 text-subtle">{subMessage}</p>}
                   </div>
@@ -596,32 +621,32 @@ const SettingsSheet = () => {
 
               {!isPaying && (
               <section>
-                <GroupTitle>Mehr freischalten</GroupTitle>
+                <GroupTitle>{t('Mehr freischalten', 'Unlock more')}</GroupTitle>
                 <div className="space-y-[10px]">
                   <button className="surface-card w-full p-5 text-left">
-                    <p className="t-16 font-medium text-foreground">Monatlich</p>
-                    <p className="t-12 text-subtle">CHF 4.90 / Monat</p>
+                    <p className="t-16 font-medium text-foreground">{t('Monatlich', 'Monthly')}</p>
+                    <p className="t-12 text-subtle">{t('CHF 4.90 / Monat', 'CHF 4.90 / month')}</p>
                   </button>
 
                   <button className="surface-card w-full p-5 text-left">
-                    <p className="t-16 font-medium text-foreground">Jährlich</p>
-                    <p className="t-12 text-subtle">CHF 29 / Jahr</p>
+                    <p className="t-16 font-medium text-foreground">{t('Jährlich', 'Yearly')}</p>
+                    <p className="t-12 text-subtle">{t('CHF 29 / Jahr', 'CHF 29 / year')}</p>
                   </button>
 
                   <button className="w-full p-5 rounded-card bg-primary text-left">
-                    <p className="t-16 font-medium text-primary-foreground">Lebenslang</p>
+                    <p className="t-16 font-medium text-primary-foreground">{t('Lebenslang', 'Lifetime')}</p>
                     <p className="t-12 text-primary-foreground/70">{formatMoney(79, 'CHF')}</p>
-                    <p className="t-14 text-primary-foreground mt-1">Einmal bezahlen. Nie wieder. Kein Abo, keine Verlängerung.</p>
+                    <p className="t-14 text-primary-foreground mt-1">{t('Einmal bezahlen. Nie wieder. Kein Abo, keine Verlängerung.', 'Pay once. Never again. No subscription, no renewal.')}</p>
 
                   </button>
                 </div>
 
                 <div className="mt-3 space-y-2">
-                  <p className="t-12 text-subtle">Verlängert sich automatisch. Jederzeit kündbar.</p>
+                  <p className="t-12 text-subtle">{t('Verlängert sich automatisch. Jederzeit kündbar.', 'Renews automatically. Cancel anytime.')}</p>
                   <p className="t-12 text-subtle">
-                    <button type="button" onClick={() => goTo('/agb')} className="underline">AGB</button>
+                    <button type="button" onClick={() => goTo('/agb')} className="underline">{t('AGB', 'Terms')}</button>
                     {' · '}
-                    <button type="button" onClick={() => goTo('/datenschutz')} className="underline">Datenschutzerklärung</button>
+                    <button type="button" onClick={() => goTo('/datenschutz')} className="underline">{t('Datenschutzerklärung', 'Privacy policy')}</button>
                   </p>
                   <label className="flex items-start gap-2 t-12 text-foreground">
                     <input
@@ -630,28 +655,28 @@ const SettingsSheet = () => {
                       onChange={(e) => setWithdrawalConsent(e.target.checked)}
                       className="mt-0.5"
                     />
-                    <span>Ich verlange die sofortige Bereitstellung und weiss, dass mein Widerrufsrecht damit erlischt.</span>
+                    <span>{t('Ich verlange die sofortige Bereitstellung und weiss, dass mein Widerrufsrecht damit erlischt.', 'I request immediate provision and understand that my right of withdrawal expires as a result.')}</span>
                   </label>
-                  {!withdrawalConsent && <p className="t-12 text-subtle">Ohne dieses Häkchen ist kein Kauf möglich.</p>}
+                  {!withdrawalConsent && <p className="t-12 text-subtle">{t('Ohne dieses Häkchen ist kein Kauf möglich.', 'A purchase is not possible without this checkbox.')}</p>}
                 </div>
               </section>
               )}
 
               {/* Daten exportieren */}
               <section>
-                <GroupTitle>Deine Daten</GroupTitle>
+                <GroupTitle>{t('Deine Daten', 'Your data')}</GroupTitle>
                 <div className="surface-card p-5 space-y-3">
-                  <button onClick={handleExport} className="btn-pill btn-secondary w-full">Daten exportieren</button>
-                  <p className="t-12 text-subtle">Alle Angaben als Datei zum Mitnehmen (Art. 20 DSGVO).</p>
+                  <button onClick={handleExport} className="btn-pill btn-secondary w-full">{t('Daten exportieren', 'Export data')}</button>
+                  <p className="t-12 text-subtle">{t('Alle Angaben als Datei zum Mitnehmen (Art. 20 DSGVO).', 'All your data as a file to take with you (Art. 20 GDPR).')}</p>
                   <button
                     onClick={() => setShowAccountDelete(true)}
                     className="btn-pill w-full text-destructive"
                   >
-                    Konto und alle Daten löschen
+                    {t('Konto und alle Daten löschen', 'Delete account and all data')}
                   </button>
                   {showAccountDelete && (
                     <div className="space-y-2">
-                      <p className="t-12 text-subtle">Zum Bestätigen bitte das Wort LÖSCHEN eintippen. Ein laufendes Abonnement wird dabei gekündigt.</p>
+                      <p className="t-12 text-subtle">{t('Zum Bestätigen bitte das Wort LÖSCHEN eintippen. Ein laufendes Abonnement wird dabei gekündigt.', 'To confirm, please type the word LÖSCHEN. Any running subscription will be cancelled.')}</p>
                       <input
                         value={deleteWord}
                         onChange={(e) => setDeleteWord(e.target.value)}
@@ -663,7 +688,7 @@ const SettingsSheet = () => {
                         disabled={deleteWord.trim().toUpperCase() !== 'LÖSCHEN' || accountBusy}
                         className="btn-pill w-full text-destructive disabled:opacity-40"
                       >
-                        Endgültig löschen
+                        {t('Endgültig löschen', 'Delete permanently')}
                       </button>
                     </div>
                   )}
@@ -672,13 +697,13 @@ const SettingsSheet = () => {
 
               {/* Rechtliches */}
               <section>
-                <GroupTitle>Rechtliches</GroupTitle>
+                <GroupTitle>{t('Rechtliches', 'Legal')}</GroupTitle>
                 <div className="surface-card overflow-hidden">
                   {[
-                    { slug: 'impressum', label: 'Impressum' },
-                    { slug: 'datenschutz', label: 'Datenschutzerklärung' },
-                    { slug: 'agb', label: 'Allgemeine Geschäftsbedingungen' },
-                    { slug: 'gesundheitshinweis', label: 'Gesundheitshinweis' },
+                    { slug: 'impressum', label: t('Impressum', 'Imprint') },
+                    { slug: 'datenschutz', label: t('Datenschutzerklärung', 'Privacy policy') },
+                    { slug: 'agb', label: t('Allgemeine Geschäftsbedingungen', 'Terms and conditions') },
+                    { slug: 'gesundheitshinweis', label: t('Gesundheitshinweis', 'Health notice') },
                   ].map((item, index, list) => (
                     <button
                       key={item.slug}
@@ -692,7 +717,7 @@ const SettingsSheet = () => {
                 </div>
                 {account.role === 'admin' && (
                   <button onClick={() => goTo('/rechtliches-check')} className="btn-pill btn-secondary w-full mt-3">
-                    Offene Stellen prüfen
+                    {t('Offene Stellen prüfen', 'Check open items')}
                   </button>
                 )}
               </section>
@@ -704,24 +729,26 @@ const SettingsSheet = () => {
                   <AlertDialogTrigger asChild>
                     <button className="btn-pill w-full text-destructive gap-2">
                       <AlertTriangle className="w-4 h-4" strokeWidth={1.75} />
-                      Alle Daten löschen
+                      {t('Alle Daten löschen', 'Delete all data')}
                     </button>
                   </AlertDialogTrigger>
                   <AlertDialogContent className="max-w-sm mx-4 rounded-card">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="t-20">Wirklich alle Daten löschen?</AlertDialogTitle>
+                      <AlertDialogTitle className="t-20">{t('Wirklich alle Daten löschen?', 'Really delete all data?')}</AlertDialogTitle>
                       <AlertDialogDescription className="t-14 text-subtle">
-                        Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Einstellungen,
-                        Erinnerungen und Fortschritte werden dauerhaft gelöscht.
+                        {t(
+                          'Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Einstellungen, Erinnerungen und Fortschritte werden dauerhaft gelöscht.',
+                          'This action cannot be undone. All your settings, reminders and progress will be permanently deleted.',
+                        )}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="rounded-pill">Abbrechen</AlertDialogCancel>
+                      <AlertDialogCancel className="rounded-pill">{t('Abbrechen', 'Cancel')}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDeleteAllData}
                         className="rounded-pill bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Ja, alle löschen
+                        {t('Ja, alle löschen', 'Yes, delete all')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -743,7 +770,7 @@ const SettingsSheet = () => {
                   }}
                   className="w-full py-3 t-12 text-subtle text-center"
                 >
-                  Version {APP_VERSION}
+                  {t('Version', 'Version')} {APP_VERSION}
                 </button>
               </section>
       </div>

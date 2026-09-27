@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { sendEmailCode, verifyEmailCode } from '@/lib/account';
+import { useT } from '@/lib/i18n';
 
 /**
  * Anmeldung mit sechsstelligem Code aus der E-Mail – die Sitzung entsteht
  * direkt in der App, deshalb funktioniert es auch als Home-Bildschirm-App.
  */
 const EmailCodeSignIn = ({ onSignedIn }: { onSignedIn: () => void }) => {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
@@ -22,7 +24,7 @@ const EmailCodeSignIn = ({ onSignedIn }: { onSignedIn: () => void }) => {
 
   const request = async () => {
     if (!email.includes('@')) {
-      setMessage('Bitte gib eine gültige E-Mail ein.');
+      setMessage(t('Bitte gib eine gültige E-Mail ein.', 'Please enter a valid email address.'));
       return;
     }
     setBusy(true);
@@ -31,9 +33,9 @@ const EmailCodeSignIn = ({ onSignedIn }: { onSignedIn: () => void }) => {
       await sendEmailCode(email.trim());
       setStep('code');
       setCooldown(60);
-      setMessage('Code gesendet. Er gilt wenige Minuten.');
+      setMessage(t('Code gesendet. Er gilt wenige Minuten.', 'Code sent. It is valid for a few minutes.'));
     } catch {
-      setMessage('Der Code konnte nicht gesendet werden.');
+      setMessage(t('Der Code konnte nicht gesendet werden.', 'The code could not be sent.'));
     } finally {
       setBusy(false);
     }
@@ -46,7 +48,7 @@ const EmailCodeSignIn = ({ onSignedIn }: { onSignedIn: () => void }) => {
       await verifyEmailCode(email.trim(), code);
       onSignedIn();
     } catch {
-      setMessage('Der Code stimmt nicht.');
+      setMessage(t('Der Code stimmt nicht.', 'The code is not correct.'));
     } finally {
       setBusy(false);
     }
@@ -79,11 +81,11 @@ const EmailCodeSignIn = ({ onSignedIn }: { onSignedIn: () => void }) => {
           onChange={(e) => setEmail(e.target.value)}
           inputMode="email"
           autoComplete="email"
-          placeholder="E-Mail"
+          placeholder={t('E-Mail', 'Email')}
           className="w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none"
         />
         <button disabled={busy} onClick={request} className="btn-pill btn-secondary w-full disabled:opacity-60">
-          Code per E-Mail senden
+          {t('Code per E-Mail senden', 'Send code by email')}
         </button>
         {message && <p className="t-12 text-subtle">{message}</p>}
       </>
@@ -114,7 +116,7 @@ const EmailCodeSignIn = ({ onSignedIn }: { onSignedIn: () => void }) => {
         onClick={request}
         className="btn-pill btn-secondary w-full disabled:opacity-60"
       >
-        {cooldown > 0 ? `Code erneut senden (${cooldown})` : 'Code erneut senden'}
+        {cooldown > 0 ? t(`Code erneut senden (${cooldown})`, `Resend code (${cooldown})`) : t('Code erneut senden', 'Resend code')}
       </button>
       {message && <p className="t-12 text-subtle">{message}</p>}
     </>

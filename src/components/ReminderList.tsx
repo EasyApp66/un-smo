@@ -3,6 +3,7 @@ import { Check, X, ChevronDown } from 'lucide-react';
 import { ReminderTime, formatLocalDate } from '../store/appStore';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
+import { tr, useT } from '../lib/i18n';
 import { MINUTES_PER_CIGARETTE } from '../lib/reductionPlan';
 import Countdown from './Countdown';
 import Mark from './Mark';
@@ -71,11 +72,11 @@ const targetTime = (timeString: string, now: number, wakeMin: number): number =>
 
 const timeUntilLabel = (timeString: string, now: number, wakeMin: number): string => {
   const diffMins = Math.floor((targetTime(timeString, now, wakeMin) - now) / 60000);
-  if (diffMins <= 0) return 'jetzt';
-  if (diffMins < 60) return `in ${diffMins} Min`;
+  if (diffMins <= 0) return tr('jetzt', 'now');
+  if (diffMins < 60) return tr(`in ${diffMins} Min`, `in ${diffMins} min`);
   const h = Math.floor(diffMins / 60);
   const m = diffMins % 60;
-  return `in ${h}h ${m}m`;
+  return tr(`in ${h}h ${m}m`, `in ${h}h ${m}m`);
 };
 
 
@@ -105,6 +106,7 @@ const ReminderRow = memo(
     onToggle,
     onSkip,
   }: RowProps) => {
+    const t = useT();
     const isSkipped = !!reminder.skipped;
     const dimmed = isSkipped
       ? 'opacity-30'
@@ -162,17 +164,17 @@ const ReminderRow = memo(
             </span>
             {reminder.extra && (
               <span className="shrink-0 rounded-pill border border-destructive/40 px-2 py-0.5 t-12 uppercase text-destructive">
-                Extra
+                {t('Extra', 'Extra')}
               </span>
             )}
             {isSkipped && (
               <span className="shrink-0 rounded-pill border border-subtle/40 px-2 py-0.5 t-12 uppercase text-subtle">
-                Übersprungen
+                {t('Übersprungen', 'Skipped')}
               </span>
             )}
             {isPassed && !isSkipped && !reminder.completed && (
               <span className="shrink-0 rounded-pill border border-primary/50 px-2 py-0.5 t-12 uppercase text-primary">
-                Vorbei
+                {t('Vorbei', 'Passed')}
               </span>
             )}
           </span>
@@ -190,7 +192,7 @@ const ReminderRow = memo(
           <span className="relative z-10 flex items-center gap-1 shrink-0">
             <button
               type="button"
-              aria-label={reminder.completed ? 'Zurücksetzen' : 'Als geraucht markieren'}
+              aria-label={reminder.completed ? t('Zurücksetzen', 'Reset') : t('Als geraucht markieren', 'Mark as smoked')}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggle(reminder);
@@ -220,7 +222,7 @@ const ReminderRow = memo(
             {!reminder.extra && (
               <button
                 type="button"
-                aria-label={isSkipped ? 'Überspringen rückgängig' : 'Zigarette überspringen'}
+                aria-label={isSkipped ? t('Überspringen rückgängig', 'Undo skip') : t('Zigarette überspringen', 'Skip cigarette')}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSkip?.(reminder.id);
@@ -246,6 +248,7 @@ const ReminderRow = memo(
 ReminderRow.displayName = 'ReminderRow';
 
 const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, onUncomplete, onSkip }: ReminderListProps) => {
+  const t = useT();
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
@@ -361,12 +364,12 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
             tap();
           }}
           aria-expanded={showCompleted}
-          aria-label={doneRows.length > 0 ? 'Zigarettenverlauf auf- oder zuklappen' : 'Noch kein Zigarettenverlauf'}
+          aria-label={doneRows.length > 0 ? t('Zigarettenverlauf auf- oder zuklappen', 'Expand or collapse cigarette history') : t('Noch kein Zigarettenverlauf', 'No cigarette history yet')}
           className="surface-card w-full px-5 py-4 flex items-center justify-center gap-5"
         >
           <span className="flex flex-1 items-baseline justify-end gap-2">
             <span className="num t-32 text-destructive">{extraCount}</span>
-            <span className="t-14 text-subtle">{extraCount === 1 ? 'Extra' : 'Extras'}</span>
+            <span className="t-14 text-subtle">{extraCount === 1 ? t('Extra', 'Extra') : t('Extras', 'Extras')}</span>
           </span>
 
           <span className="h-6 w-px bg-border shrink-0" aria-hidden />
@@ -375,7 +378,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
             <span className="num t-32" style={{ color: 'hsl(var(--success))' }}>
               {skippedCount}
             </span>
-            <span className="t-14 text-subtle">übersprungen</span>
+            <span className="t-14 text-subtle">{t('übersprungen', 'skipped')}</span>
           </span>
 
           {doneRows.length > 0 && (
@@ -401,7 +404,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
               });
             }}
           >
-            <p className="px-1 pb-2 t-14 text-subtle">{smokedCount} geraucht</p>
+            <p className="px-1 pb-2 t-14 text-subtle">{t(`${smokedCount} geraucht`, `${smokedCount} smoked`)}</p>
             {doneRows.map(renderRow)}
           </div>
         )}
@@ -421,20 +424,20 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
           {isToday && goal !== undefined && smokedCount < goal ? (
             <>
               <Mark size={28} className="text-primary mb-3" />
-              <p className="t-18 text-foreground">Stark. {goal - smokedCount} weniger als geplant.</p>
+              <p className="t-18 text-foreground">{t(`Stark. ${goal - smokedCount} weniger als geplant.`, `Great. ${goal - smokedCount} fewer than planned.`)}</p>
               <p className="t-14 text-subtle mt-1">
-                Das sind {(goal - smokedCount) * MINUTES_PER_CIGARETTE} Minuten gewonnene Zeit.
+                {t(`Das sind ${(goal - smokedCount) * MINUTES_PER_CIGARETTE} Minuten gewonnene Zeit.`, `That's ${(goal - smokedCount) * MINUTES_PER_CIGARETTE} minutes of time gained.`)}
               </p>
             </>
           ) : isToday && goal !== undefined && smokedCount === goal ? (
             <>
-              <p className="t-18 text-foreground">Ziel eingehalten.</p>
-              <p className="t-14 text-subtle mt-1">Morgen geht es genauso weiter.</p>
+              <p className="t-18 text-foreground">{t('Ziel eingehalten.', 'Goal met.')}</p>
+              <p className="t-14 text-subtle mt-1">{t('Morgen geht es genauso weiter.', 'Keep it up tomorrow.')}</p>
             </>
           ) : (
             <>
-              <p className="t-18 text-foreground">Bleib stark, rauche nicht weiter.</p>
-              <p className="t-14 text-subtle mt-1">Denk an deine Gesundheit.</p>
+              <p className="t-18 text-foreground">{t('Bleib stark, rauche nicht weiter.', 'Stay strong, don\u2019t smoke more.')}</p>
+              <p className="t-14 text-subtle mt-1">{t('Denk an deine Gesundheit.', 'Think of your health.')}</p>
             </>
           )}
         </motion.div>

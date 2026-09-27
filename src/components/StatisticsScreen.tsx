@@ -15,6 +15,7 @@ import {
   weeklyActuals,
 } from '@/lib/reductionPlan';
 import { defaultAccountStatus, fetchAccountStatus, type AccountStatus } from '@/lib/account';
+import { useT, useLocale } from '@/lib/i18n';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const hour = () => new Date().getHours();
@@ -22,14 +23,16 @@ const quietOrTyping = () => {
   const active = document.activeElement?.tagName?.toLowerCase();
   return hour() >= 23 || hour() < 7 || active === 'input' || active === 'textarea';
 };
-const fmtDuration = (ms: number) => {
+const fmtDuration = (ms: number, t: <T,>(de: T, en: T) => T) => {
   const hours = Math.floor(ms / 3_600_000);
-  if (hours >= 24) return `${Math.floor(hours / 24)} Tag${Math.floor(hours / 24) === 1 ? '' : 'e'}`;
-  return `${Math.max(0, hours)} Std.`;
+  if (hours >= 24) return t(`${Math.floor(hours / 24)} Tag${Math.floor(hours / 24) === 1 ? '' : 'e'}`, `${Math.floor(hours / 24)} day${Math.floor(hours / 24) === 1 ? '' : 's'}`);
+  return t(`${Math.max(0, hours)} Std.`, `${Math.max(0, hours)} hr`);
 };
 
 const StatisticsScreen = () => {
   const { days, dailyCigarettes, reductionPlan, milestoneSeenIds, markMilestoneSeen } = useAppStore();
+  const t = useT();
+  const locale = useLocale();
   const [monthSearch, setMonthSearch] = useState('');
   const [account, setAccount] = useState<AccountStatus>(defaultAccountStatus);
 
@@ -45,7 +48,7 @@ const StatisticsScreen = () => {
       date.setDate(date.getDate() - i);
       const dateString = formatLocalDate(date);
       const dayData = days[dateString];
-      const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+      const dayNames = t(['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']);
       data.push({
         day: dayNames[date.getDay()],
         date: dateString,
@@ -55,7 +58,7 @@ const StatisticsScreen = () => {
       });
     }
     return data;
-  }, [days, dailyCigarettes]);
+  }, [days, dailyCigarettes, t]);
 
   const stats = useMemo(() => {
     const daysWithData = weekData.filter((d) => d.hasData);
@@ -93,12 +96,12 @@ const StatisticsScreen = () => {
   const milestones = useMemo(() => {
     const longTermActive = !!reductionPlan.zeroReachedAt && formatLocalDate() >= reductionPlan.zeroReachedAt;
     return [
-      { id: 'short-20m', label: '20 Minuten', detail: 'Puls und Blutdruck beginnen sich zu normalisieren.', done: pauses.currentMs >= 20 * 60_000 },
-      { id: 'short-8h', label: '8 Stunden', detail: 'Der Sauerstoffgehalt verbessert sich.', done: pauses.currentMs >= 8 * 3_600_000 },
-      { id: 'short-24h', label: '24 Stunden', detail: 'Das Herzinfarkt-Risiko beginnt zu sinken.', done: pauses.currentMs >= 24 * 3_600_000 },
-      { id: 'long-2w', label: '2 Wochen', detail: 'Kreislauf und Lungenfunktion können sich verbessern.', done: longTermActive && reductionPlan.zeroReachedAt ? formatLocalDate() >= new Date(new Date(`${reductionPlan.zeroReachedAt}T12:00:00`).getTime() + 14 * 86_400_000).toISOString().slice(0, 10) : false },
+      { id: 'short-20m', label: t('20 Minuten', '20 minutes'), detail: t('Puls und Blutdruck beginnen sich zu normalisieren.', 'Pulse and blood pressure start to normalize.'), done: pauses.currentMs >= 20 * 60_000 },
+      { id: 'short-8h', label: t('8 Stunden', '8 hours'), detail: t('Der Sauerstoffgehalt verbessert sich.', 'Oxygen levels improve.'), done: pauses.currentMs >= 8 * 3_600_000 },
+      { id: 'short-24h', label: t('24 Stunden', '24 hours'), detail: t('Das Herzinfarkt-Risiko beginnt zu sinken.', 'Heart attack risk starts to decrease.'), done: pauses.currentMs >= 24 * 3_600_000 },
+      { id: 'long-2w', label: t('2 Wochen', '2 weeks'), detail: t('Kreislauf und Lungenfunktion können sich verbessern.', 'Circulation and lung function can improve.'), done: longTermActive && reductionPlan.zeroReachedAt ? formatLocalDate() >= new Date(new Date(`${reductionPlan.zeroReachedAt}T12:00:00`).getTime() + 14 * 86_400_000).toISOString().slice(0, 10) : false },
     ];
-  }, [pauses.currentMs, reductionPlan.zeroReachedAt]);
+  }, [pauses.currentMs, reductionPlan.zeroReachedAt, t]);
 
   useEffect(() => {
     if (quietOrTyping()) return;
@@ -114,22 +117,22 @@ const StatisticsScreen = () => {
     return months.map((month) => {
       const entries = Object.values(days).filter((day) => day.date.startsWith(month));
       const [year, monthNumber] = month.split('-').map(Number);
-      const label = new Date(year, monthNumber - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+      const label = new Date(year, monthNumber - 1, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
       const smoked = entries.reduce((sum, day) => sum + day.cigarettesSmoked, 0);
       const goal = entries.reduce((sum, day) => sum + day.totalCigarettes, 0);
       const extras = entries.reduce((sum, day) => sum + day.reminders.filter((reminder) => reminder.extra).length, 0);
       const skipped = entries.reduce((sum, day) => sum + day.reminders.filter((reminder) => reminder.skipped).length, 0);
       return { month, label, activeDays: entries.length, smoked, goal, extras, skipped, overGoal: goal > 0 && smoked > goal };
     });
-  }, [days]);
+  }, [days, locale]);
 
   const visibleMonthMemories = useMemo(() => {
-    const query = monthSearch.trim().toLocaleLowerCase('de-DE');
+    const query = monthSearch.trim().toLocaleLowerCase(locale);
     if (!query) return monthMemories;
-    return monthMemories.filter((memory) => memory.label.toLocaleLowerCase('de-DE').includes(query) || memory.month.includes(query));
-  }, [monthMemories, monthSearch]);
+    return monthMemories.filter((memory) => memory.label.toLocaleLowerCase(locale).includes(query) || memory.month.includes(query));
+  }, [monthMemories, monthSearch, locale]);
 
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 
   const Metric = ({ icon: Icon, label, children, delay }: { icon: typeof Cigarette; label: string; children: React.ReactNode; delay: number }) => (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay }} className="surface-card p-4">
@@ -148,14 +151,14 @@ const StatisticsScreen = () => {
           <div className="surface-card p-5 flex items-start gap-3">
             <Lock className="w-5 h-5 text-primary mt-1" strokeWidth={1.75} />
             <div>
-              <p className="t-16 text-foreground">Testzeit abgelaufen</p>
-              <p className="t-12 text-subtle">Statistik, Verlauf, Meilensteine und Export werden nach Freischaltung wieder sichtbar.</p>
+              <p className="t-16 text-foreground">{t('Testzeit abgelaufen', 'Trial period expired')}</p>
+              <p className="t-12 text-subtle">{t('Statistik, Verlauf, Meilensteine und Export werden nach Freischaltung wieder sichtbar.', 'Statistics, history, milestones and export will be visible again after unlocking.')}</p>
             </div>
           </div>
         )}
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.04 }} className="surface-card p-5">
-          <h2 className="t-18 text-foreground mb-4">Wochenübersicht</h2>
+          <h2 className="t-18 text-foreground mb-4">{t('Wochenübersicht', 'Weekly overview')}</h2>
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weekData} barCategoryGap="30%">
@@ -175,16 +178,16 @@ const StatisticsScreen = () => {
         {!locked && (
           <>
             <div className="grid grid-cols-2 gap-[10px]">
-              <Metric icon={Cigarette} label="Gesamt geraucht" delay={0.06}><p className="t-32 num text-foreground">{stats.totalSmoked}</p></Metric>
-              <Metric icon={Calendar} label="Ø pro Tag" delay={0.08}><p className="t-32 num text-foreground">{stats.avgPerDay}</p></Metric>
-              <Metric icon={Target} label="Zur Vorwoche" delay={0.1}>{weekDelta === null ? <p className="t-14 text-subtle">Keine Daten</p> : <p className="flex items-baseline gap-1"><span className={`t-32 num ${weekDelta <= 0 ? 'text-success' : 'text-destructive'}`}>{weekDelta > 0 ? `+${weekDelta}` : weekDelta < 0 ? `−${Math.abs(weekDelta)}` : '0'}</span><span className="t-14 text-subtle">{weekDelta < 0 ? 'weniger' : weekDelta > 0 ? 'mehr' : 'gleich'}</span></p>}</Metric>
-              <Metric icon={Calendar} label="Bester Tag" delay={0.12}>{stats.bestDay ? <p className="flex items-baseline gap-1"><span className="t-32 num text-foreground">{stats.bestDay.smoked}</span><span className="t-14 num text-subtle">({formatDate(stats.bestDay.date)})</span></p> : <p className="t-14 text-subtle">Keine Daten</p>}</Metric>
+              <Metric icon={Cigarette} label={t('Gesamt geraucht', 'Total smoked')} delay={0.06}><p className="t-32 num text-foreground">{stats.totalSmoked}</p></Metric>
+              <Metric icon={Calendar} label={t('Ø pro Tag', 'Avg per day')} delay={0.08}><p className="t-32 num text-foreground">{stats.avgPerDay}</p></Metric>
+              <Metric icon={Target} label={t('Zur Vorwoche', 'Vs. last week')} delay={0.1}>{weekDelta === null ? <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p> : <p className="flex items-baseline gap-1"><span className={`t-32 num ${weekDelta <= 0 ? 'text-success' : 'text-destructive'}`}>{weekDelta > 0 ? `+${weekDelta}` : weekDelta < 0 ? `−${Math.abs(weekDelta)}` : '0'}</span><span className="t-14 text-subtle">{weekDelta < 0 ? t('weniger', 'less') : weekDelta > 0 ? t('mehr', 'more') : t('gleich', 'same')}</span></p>}</Metric>
+              <Metric icon={Calendar} label={t('Bester Tag', 'Best day')} delay={0.12}>{stats.bestDay ? <p className="flex items-baseline gap-1"><span className="t-32 num text-foreground">{stats.bestDay.smoked}</span><span className="t-14 num text-subtle">({formatDate(stats.bestDay.date)})</span></p> : <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p>}</Metric>
             </div>
           </>
         )}
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.16 }} className="surface-card p-5">
-          <h2 className="t-18 text-foreground mb-3">Ziel &amp; erreicht pro Tag</h2>
+          <h2 className="t-18 text-foreground mb-3">{t('Ziel & erreicht pro Tag', 'Goal & achieved per day')}</h2>
           <div>
             {weekData.map((day) => (
               <div key={day.date} className="flex items-center justify-between py-3 border-b border-border/60 last:border-0">
@@ -192,9 +195,9 @@ const StatisticsScreen = () => {
                 {day.hasData ? (
                   <div className="flex items-center gap-3">
                     <div className="w-20 h-1.5 bg-border rounded-pill overflow-hidden"><div className={`h-full rounded-pill ${day.smoked <= day.goal ? 'bg-success' : 'bg-destructive'}`} style={{ width: `${day.goal > 0 ? Math.min((day.smoked / day.goal) * 100, 100) : 0}%` }} /></div>
-                    <span className="flex items-baseline gap-1 num"><span className={`t-16 font-medium ${day.smoked <= day.goal ? 'text-foreground' : 'text-destructive'}`}>{day.smoked}</span><span className="t-14 text-subtle">/ {day.goal} Ziel</span></span>
+                    <span className="flex items-baseline gap-1 num"><span className={`t-16 font-medium ${day.smoked <= day.goal ? 'text-foreground' : 'text-destructive'}`}>{day.smoked}</span><span className="t-14 text-subtle">/ {day.goal} {t('Ziel', 'goal')}</span></span>
                   </div>
-                ) : <span className="t-12 text-subtle">Keine Daten</span>}
+                ) : <span className="t-12 text-subtle">{t('Keine Daten', 'No data')}</span>}
               </div>
             ))}
           </div>
@@ -203,26 +206,26 @@ const StatisticsScreen = () => {
         {!locked && (
           <>
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.14 }} className="surface-card p-5">
-              <div className="flex items-center justify-between gap-3 mb-4"><h2 className="t-18 text-foreground">Monats-Memory</h2><span className="t-12 text-subtle">{monthMemories.length}</span></div>
+              <div className="flex items-center justify-between gap-3 mb-4"><h2 className="t-18 text-foreground">{t('Monats-Memory', 'Monthly memory')}</h2><span className="t-12 text-subtle">{monthMemories.length}</span></div>
               <label className="relative block mb-3">
-                <span className="sr-only">Monat suchen</span>
+                <span className="sr-only">{t('Monat suchen', 'Search month')}</span>
                 <Search className="absolute left-4 top-1/2 w-4 h-4 -translate-y-1/2 text-subtle" strokeWidth={1.75} />
-                <Input value={monthSearch} onChange={(event) => setMonthSearch(event.target.value)} placeholder="Monat suchen" className="h-12 rounded-pill bg-muted border-transparent pl-11 t-16" />
+                <Input value={monthSearch} onChange={(event) => setMonthSearch(event.target.value)} placeholder={t('Monat suchen', 'Search month')} className="h-12 rounded-pill bg-muted border-transparent pl-11 t-16" />
               </label>
               <div className="space-y-[10px]">
                 {visibleMonthMemories.map((memory) => (
                   <div key={memory.month} className="rounded-inner bg-muted px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
-                      <div><p className="t-16 text-foreground capitalize">{memory.label}</p><p className="t-12 text-subtle">{memory.activeDays} Tage gespeichert</p></div>
+                      <div><p className="t-16 text-foreground capitalize">{memory.label}</p><p className="t-12 text-subtle">{memory.activeDays} {t('Tage gespeichert', 'days saved')}</p></div>
                       <span className="flex items-baseline gap-1 num"><span className={`t-24 ${memory.overGoal ? 'text-destructive' : 'text-foreground'}`}>{memory.smoked}</span><span className="t-12 text-subtle">/ {memory.goal}</span></span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
-                      <span className="rounded-pill bg-card px-3 py-2 flex items-center justify-between"><span className="t-12 text-subtle">Extra</span><span className="num t-16 text-destructive">{memory.extras}</span></span>
-                      <span className="rounded-pill bg-card px-3 py-2 flex items-center justify-between"><span className="t-12 text-subtle">Übersprungen</span><span className="num t-16 text-success">{memory.skipped}</span></span>
+                      <span className="rounded-pill bg-card px-3 py-2 flex items-center justify-between"><span className="t-12 text-subtle">{t('Extra', 'Extra')}</span><span className="num t-16 text-destructive">{memory.extras}</span></span>
+                      <span className="rounded-pill bg-card px-3 py-2 flex items-center justify-between"><span className="t-12 text-subtle">{t('Übersprungen', 'Skipped')}</span><span className="num t-16 text-success">{memory.skipped}</span></span>
                     </div>
                   </div>
                 ))}
-                {visibleMonthMemories.length === 0 && <p className="t-14 text-subtle text-center py-4">Kein Monat gefunden</p>}
+                {visibleMonthMemories.length === 0 && <p className="t-14 text-subtle text-center py-4">{t('Kein Monat gefunden', 'No month found')}</p>}
               </div>
             </motion.div>
           </>
@@ -231,15 +234,15 @@ const StatisticsScreen = () => {
         {!locked && (
           <>
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE }} className="surface-card p-5">
-              <h2 className="t-18 text-foreground mb-4">Dein Körper</h2>
+              <h2 className="t-18 text-foreground mb-4">{t('Dein Körper', 'Your body')}</h2>
               <div className="mb-4 grid grid-cols-2 gap-3">
                 <div className="rounded-inner bg-muted p-4">
-                  <p className="t-12 text-subtle">Aktuelle Pause</p>
-                  <p className="t-24 num text-foreground">{fmtDuration(pauses.currentMs)}</p>
+                  <p className="t-12 text-subtle">{t('Aktuelle Pause', 'Current pause')}</p>
+                  <p className="t-24 num text-foreground">{fmtDuration(pauses.currentMs, t)}</p>
                 </div>
                 <div className="rounded-inner bg-muted p-4">
-                  <p className="t-12 text-subtle">Längste Pause</p>
-                  <p className="t-24 num text-foreground">{fmtDuration(pauses.longestMs)}</p>
+                  <p className="t-12 text-subtle">{t('Längste Pause', 'Longest pause')}</p>
+                  <p className="t-24 num text-foreground">{fmtDuration(pauses.longestMs, t)}</p>
                 </div>
               </div>
               <div className="space-y-0">
@@ -252,13 +255,13 @@ const StatisticsScreen = () => {
                   </div>
                 ))}
               </div>
-              <p className="t-12 text-subtle mt-4">Hinweis nach WHO/NHS. Keine medizinische Beratung.</p>
+              <p className="t-12 text-subtle mt-4">{t('Hinweis nach WHO/NHS. Keine medizinische Beratung.', 'Based on WHO/NHS. Not medical advice.')}</p>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.02 }} className="surface-card p-5">
-              <h2 className="t-18 text-foreground mb-4">Gewonnene Zeit</h2>
+              <h2 className="t-18 text-foreground mb-4">{t('Gewonnene Zeit', 'Time gained')}</h2>
               <div className="mb-4">
-                <div className="rounded-inner bg-muted p-4"><p className="t-12 text-subtle">Zeit</p><p className="t-24 num text-foreground">{formatSavedTime(savings.savedMinutes)}</p></div>
+                <div className="rounded-inner bg-muted p-4"><p className="t-12 text-subtle">{t('Zeit', 'Time')}</p><p className="t-24 num text-foreground">{formatSavedTime(savings.savedMinutes)}</p></div>
               </div>
               <div className="space-y-2">
                 {weeklySavings.map((row) => (

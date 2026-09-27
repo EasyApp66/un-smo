@@ -3,8 +3,10 @@ import { ShieldCheck } from 'lucide-react';
 import { adminUnlock } from '@/lib/account';
 import { goTo } from '@/lib/navigate';
 import Mark from '@/components/Mark';
+import { useT } from '@/lib/i18n';
 
 const Unlock = () => {
+  const t = useT();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,7 +32,7 @@ const Unlock = () => {
     } catch (error) {
       const text = error instanceof Error ? error.message : '';
       setMessage(
-        text.includes('429') ? 'Zu viele Versuche. Bitte später erneut probieren.' : 'Code ungültig.',
+        text.includes('429') ? t('Zu viele Versuche. Bitte später erneut probieren.', 'Too many attempts. Please try again later.') : t('Code ungültig.', 'Invalid code.'),
       );
     } finally {
       setBusy(false);
@@ -49,25 +51,25 @@ const Unlock = () => {
             <span className="icon-tile mx-auto">
               <ShieldCheck className="w-6 h-6" strokeWidth={1.5} />
             </span>
-            <p className="t-24 text-foreground">Als Admin angemeldet</p>
+            <p className="t-24 text-foreground">{t('Als Admin angemeldet', 'Signed in as admin')}</p>
             <p className="t-14 text-subtle">
-              Alles ist dauerhaft freigeschaltet. Du musst dich nicht erneut anmelden.
+              {t('Alles ist dauerhaft freigeschaltet. Du musst dich nicht erneut anmelden.', 'Everything is permanently unlocked. You do not need to sign in again.')}
             </p>
             <button type="button" onClick={() => goTo('/')} className="btn-pill btn-primary w-full">
-              Zur App
+              {t('Zur App', 'Go to app')}
             </button>
           </div>
         ) : (
           <>
-            <h1 className="t-24 text-foreground mb-2">Freischalten</h1>
-            <p className="t-14 text-subtle mb-5">Code eingeben, um dauerhaft freizuschalten.</p>
+            <h1 className="t-24 text-foreground mb-2">{t('Freischalten', 'Unlock')}</h1>
+            <p className="t-14 text-subtle mb-5">{t('Code eingeben, um dauerhaft freizuschalten.', 'Enter the code to unlock permanently.')}</p>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
               autoComplete="off"
               autoCapitalize="none"
               spellCheck={false}
-              placeholder="Code"
+              placeholder={t('Code', 'Code')}
               className="w-full h-12 rounded-pill bg-muted px-4 t-16 text-foreground outline-none mb-3"
             />
             <button
@@ -76,11 +78,11 @@ const Unlock = () => {
               disabled={busy}
               className="btn-pill btn-primary w-full disabled:opacity-60"
             >
-              {busy ? '…' : 'Freischalten'}
+              {busy ? '…' : t('Freischalten', 'Unlock')}
             </button>
             {message && <p className="t-12 text-subtle mt-3">{message}</p>}
             <button type="button" onClick={() => goTo('/')} className="btn-pill btn-secondary w-full mt-3">
-              Zurück
+              {t('Zurück', 'Back')}
             </button>
           </>
         )}

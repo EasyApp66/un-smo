@@ -5,6 +5,7 @@ import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
+import { useLocale, useT } from '../lib/i18n';
 
 interface DaySetupCardProps {
   selectedDate: string;
@@ -28,6 +29,8 @@ const fmtGap = (mins: number) => {
 };
 
 const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupCardProps) => {
+  const t = useT();
+  const locale = useLocale();
   const {
     wakeTime: defaultWake,
     sleepTime: defaultSleep,
@@ -95,10 +98,10 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowString = formatLocalDate(tomorrow);
 
-    if (dateString === todayString) return 'Heute';
-    if (dateString === tomorrowString) return 'Morgen';
+    if (dateString === todayString) return t('Heute', 'Today');
+    if (dateString === tomorrowString) return t('Morgen', 'Tomorrow');
     const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+    return date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
   };
 
   const Stat = ({ value, label }: { value: string; label: string }) => (
@@ -119,12 +122,12 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
             {!isEditing && (
-              <h3 className="t-18 text-foreground mb-3">{formatDate(selectedDate)} einrichten</h3>
+              <h3 className="t-18 text-foreground mb-3">{t(`${formatDate(selectedDate)} einrichten`, `Set up ${formatDate(selectedDate)}`)}</h3>
             )}
             <div className="grid grid-cols-[1.5fr_0.7fr_1fr] gap-2 items-end">
-              <Stat value={`${wake} – ${sleep}`} label="Wach" />
-              <Stat value={`${goal}`} label="Ziel" />
-              <Stat value={schedule.interval ? fmtGap(schedule.interval) : '–'} label="Abstand" />
+              <Stat value={`${wake} – ${sleep}`} label={t('Wach', 'Awake')} />
+              <Stat value={`${goal}`} label={t('Ziel', 'Goal')} />
+              <Stat value={schedule.interval ? fmtGap(schedule.interval) : '–'} label={t('Abstand', 'Interval')} />
             </div>
           </div>
 
@@ -133,7 +136,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
               type="button"
               onClick={() => setExpanded((e) => !e)}
               aria-expanded={isOpen}
-              aria-label="Zeitplan auf- oder zuklappen"
+              aria-label={t('Zeitplan auf- oder zuklappen', 'Expand or collapse schedule')}
               className="glass-flat w-11 h-11 shrink-0 rounded-pill flex items-center justify-center"
             >
               <ChevronDown
@@ -154,8 +157,8 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
           <div className="overflow-hidden min-h-0">
             <div className="pt-5">
               <div className="grid grid-cols-2 gap-3 mb-5">
-                <TimePicker value={wake} onChange={setWake} label="Aufstehzeit" />
-                <TimePicker value={sleep} onChange={setSleep} label="Schlafenszeit" />
+                <TimePicker value={wake} onChange={setWake} label={t('Aufstehzeit', 'Wake time')} />
+                <TimePicker value={sleep} onChange={setSleep} label={t('Schlafenszeit', 'Sleep time')} />
               </div>
 
               <WheelPicker
@@ -164,15 +167,15 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
                 max={60}
                 step={1}
                 onChange={setGoal}
-                label="Zigaretten pro Tag"
+                label={t('Zigaretten pro Tag', 'Cigarettes per day')}
                 horizontal
                 viewportWidth={280}
               />
 
               <p className="mt-3 mb-5 text-center t-12 num text-subtle">
                 {goal > 0 && schedule.first
-                  ? `${goal} Zigaretten · alle ${fmtGap(schedule.interval)} · erste um ${schedule.first}, letzte um ${schedule.last}`
-                  : 'Kein Tagesziel gesetzt'}
+                  ? t(`${goal} Zigaretten · alle ${fmtGap(schedule.interval)} · erste um ${schedule.first}, letzte um ${schedule.last}`, `${goal} cigarettes · every ${fmtGap(schedule.interval)} · first at ${schedule.first}, last at ${schedule.last}`)
+                  : t('Kein Tagesziel gesetzt', 'No daily goal set')}
               </p>
 
               <button
@@ -180,7 +183,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
                 onClick={handleSave}
                 className="btn-pill glass-tint-flat w-full"
               >
-                {isEditing ? 'Zeitplan aktualisieren' : 'Tag einrichten'}
+                {isEditing ? t('Zeitplan aktualisieren', 'Update schedule') : t('Tag einrichten', 'Set up day')}
               </button>
             </div>
           </div>

@@ -1,9 +1,10 @@
 import { motion, useMotionValue, animate, PanInfo } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, addWeeks, format, startOfWeek } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { de, enGB } from 'date-fns/locale';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
+import { useLang, useT } from '../lib/i18n';
 
 interface MiniCalendarProps {
   selectedDate: string;
@@ -28,7 +29,7 @@ interface DayCell {
   overGoal: boolean;
 }
 
-const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>): DayCell[] =>
+const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>, locale: typeof de): DayCell[] =>
   Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
     const dateString = toDateString(date);
@@ -42,7 +43,7 @@ const buildWeek = (weekStart: Date, today: string, daysData: Record<string, any>
     return {
       date: dateString,
       dayNumber: date.getDate(),
-      weekday: format(date, 'EEEEEE', { locale: de }),
+      weekday: format(date, 'EEEEEE', { locale }),
       isToday: dateString === today,
       isFuture: dateString > today,
       hasData: !!data,
@@ -96,6 +97,9 @@ const DayButton = ({
 );
 
 const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
+  const t = useT();
+  const lang = useLang();
+  const dateLocale = lang === 'en' ? enGB : de;
   const daysData = useAppStore((s) => s.days);
   const [today, setToday] = useState(() => toDateString(new Date()));
   const [weekOffset, setWeekOffset] = useState(0);
@@ -140,12 +144,12 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
     () =>
       [-1, 0, 1].map((o) => ({
         key: toDateString(addWeeks(weekStart, o)),
-        days: buildWeek(addWeeks(weekStart, o), today, daysData),
+        days: buildWeek(addWeeks(weekStart, o), today, daysData, dateLocale),
       })),
-    [weekStart, today, daysData]
+    [weekStart, today, daysData, dateLocale]
   );
 
-  const monthLabel = format(weekStart, 'MMMM yyyy', { locale: de });
+  const monthLabel = format(weekStart, 'MMMM yyyy', { locale: dateLocale });
   const weekTotal = weeks[1]?.days.reduce((sum, day) => sum + day.smoked, 0) ?? 0;
 
   // Fairer Vergleich mit der Vorwoche über den gleichen Zeitraum
@@ -160,11 +164,11 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
     const a = cur.slice(0, len).reduce((s, d) => s + d.smoked, 0);
     const b = prevSlice.reduce((s, d) => s + d.smoked, 0);
     if (a === b) return null;
-    const weekdayName = format(addDays(weekStart, len - 1), 'EEEE', { locale: de });
+    const weekdayName = format(addDays(weekStart, len - 1), 'EEEE', { locale: dateLocale });
     const diff = Math.abs(a - b);
-    const suffix = len === 7 ? 'als letzte Woche' : `als letzte Woche bis ${weekdayName}`;
-    return { down: a < b, label: `${diff} ${a < b ? 'weniger' : 'mehr'} ${suffix}` };
-  }, [weeks, weekOffset, weekStart]);
+    const suffix = len === 7 ? t('als letzte Woche', 'than last week') : t(`als letzte Woche bis ${weekdayName}`, `than last week up to ${weekdayName}`);
+    return { down: a < b, label: `${diff} ${t(a < b ? 'weniger' : 'mehr', a < b ? 'fewer' : 'more')} ${suffix}` };
+  }, [weeks, weekOffset, weekStart, t, dateLocale]);
 
   const goToWeek = (delta: number) => {
     if ('vibrate' in navigator) navigator.vibrate(5);
@@ -197,8 +201,8 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
       <div className="flex items-center justify-between gap-2 px-1 mb-3 min-h-8">
         <span className="t-16 font-medium text-foreground capitalize">{monthLabel}</span>
         <span className="flex items-center gap-2">
-          <span className="rounded-pill bg-muted px-3 h-8 flex items-center gap-1.5" aria-label={`Woche gesamt: ${weekTotal}`}>
-            <span className="t-12 text-subtle">Woche</span>
+          <span className="rounded-pill bg-muted px-3 h-8 flex items-center gap-1.5" aria-label={t(`Woche gesamt: ${weekTotal}`, `Week total: ${weekTotal}`)}>
+            <span className="t-12 text-subtle">{t('Woche', 'Week')}</span>
             <span className="t-18 num text-foreground">{weekTotal}</span>
             {trend && (
               <span role="img" aria-label={trend.label} className={trend.down ? 'text-success' : 'text-destructive'}>
@@ -219,7 +223,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
               }}
               className="px-4 h-8 rounded-pill bg-primary/[0.12] text-primary t-12 font-medium"
             >
-              Heute
+              {t('Heute', 'Today')}
             </motion.button>
           )}
         </span>

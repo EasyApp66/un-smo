@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from 'react';
+import { tr } from '../lib/i18n';
 
 interface CountdownProps {
   /** Zielzeitpunkt in Millisekunden */
@@ -8,7 +9,7 @@ interface CountdownProps {
 
 const format = (target: number) => {
   const diff = Math.floor((target - Date.now()) / 1000);
-  if (diff <= 0) return 'jetzt';
+  if (diff <= 0) return tr('jetzt', 'now');
   const hrs = Math.floor(diff / 3600);
   const mins = Math.floor((diff % 3600) / 60);
   const secs = diff % 60;
