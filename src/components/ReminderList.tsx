@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { ReminderTime, formatLocalDate } from '../store/appStore';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
 import { MINUTES_PER_CIGARETTE } from '../lib/reductionPlan';
 import Countdown from './Countdown';
@@ -249,6 +249,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
   // Nur Minutentakt – die Sekunden laufen in <Countdown /> und betreffen nur eine Zahl
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
+  const scrollOnOpen = useRef(false);
 
   const reduceMotion = !!useReducedMotion();
 
