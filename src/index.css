@@ -26,6 +26,7 @@
 
 @layer base {
   :root {
+    --action-axis: calc((100vw - min(100vw, 28rem)) / 2 + 16px + 38px);
     --background: 250 24% 96%;
     --foreground: 222 32% 8%;
 
