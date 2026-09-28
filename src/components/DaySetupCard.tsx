@@ -119,7 +119,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
       className={isEditing ? 'px-0' : 'flex-1 px-4 pb-36 overflow-y-auto'}
     >
       <div className="surface-card p-5">
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isEditing ? '-mr-1' : ''}`}>
           <div className="flex-1 min-w-0">
             {!isEditing && (
               <h3 className="t-18 text-foreground mb-3">{t(`${formatDate(selectedDate)} einrichten`, `Set up ${formatDate(selectedDate)}`)}</h3>

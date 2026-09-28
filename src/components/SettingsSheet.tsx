@@ -2,7 +2,8 @@ import { ChevronRight, ChevronDown, AlertTriangle, Sun, Moon, Smartphone, Bell, 
 import { useT, useLocale } from '@/lib/i18n';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Button } from './ui/button';
-import { useAppStore } from '../store/appStore';
+import { useAppStore, resolveIsDark } from '../store/appStore';
+import { tap } from '../lib/haptics';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
 
@@ -90,6 +91,15 @@ const SettingsSheet = () => {
     toggleApplyScheduleToAllDays,
     deleteAllData,
   } = useAppStore();
+  const [systemDark, setSystemDark] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setSystemDark(query.matches);
+    query.addEventListener('change', update);
+    update();
+    return () => query.removeEventListener('change', update);
+  }, []);
+  const isDark = themeMode === 'system' ? systemDark : resolveIsDark(themeMode);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -275,8 +285,23 @@ const SettingsSheet = () => {
 
   return (
     <div className="min-h-[100dvh] bg-background px-4 pb-32 safe-top">
-      <div className="pt-3 pb-5">
+      <div className="pt-3 pb-5 flex items-center justify-between gap-4">
         <h2 className="t-24 text-foreground">{t('Einstellungen', 'Settings')}</h2>
+        <Button
+          type="button"
+          variant="ghost"
+          role="switch"
+          aria-label={t('Dunkelmodus', 'Dark mode')}
+          aria-checked={isDark}
+          onClick={() => { setThemeMode(isDark ? 'light' : 'dark'); tap(); }}
+          className="relative w-16 h-8 shrink-0 rounded-pill border border-border bg-muted p-0 hover:bg-muted"
+        >
+          <Sun className="absolute left-[9px] top-[8px] w-[14px] h-[14px] text-subtle" strokeWidth={1.75} />
+          <Moon className="absolute right-[9px] top-[8px] w-[14px] h-[14px] text-subtle" strokeWidth={1.75} />
+          <span className={`absolute left-[2px] top-[2px] w-[26px] h-[26px] rounded-pill bg-primary text-primary-foreground flex items-center justify-center [transition:transform_200ms_cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${isDark ? 'translate-x-8' : 'translate-x-0'}`}>
+            {isDark ? <Moon className="w-[14px] h-[14px]" strokeWidth={1.75} /> : <Sun className="w-[14px] h-[14px]" strokeWidth={1.75} />}
+          </span>
+        </Button>
       </div>
 
        <div className="space-y-[10px]">

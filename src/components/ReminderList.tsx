@@ -365,30 +365,30 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
           }}
           aria-expanded={showCompleted}
           aria-label={doneRows.length > 0 ? t('Zigarettenverlauf auf- oder zuklappen', 'Expand or collapse cigarette history') : t('Noch kein Zigarettenverlauf', 'No cigarette history yet')}
-          className="surface-card w-full px-5 py-4 flex items-center justify-center gap-5"
+          className="surface-card w-full pl-5 pr-4 py-4 flex items-center justify-center gap-5"
         >
-          <span className="flex flex-1 items-baseline justify-end gap-2">
+          <span className="flex flex-1 items-baseline justify-end gap-2 min-w-0">
             <span className="num t-32 text-destructive">{extraCount}</span>
             <span className="t-14 text-subtle">{extraCount === 1 ? t('Extra', 'Extra') : t('Extras', 'Extras')}</span>
           </span>
 
           <span className="h-6 w-px bg-border shrink-0" aria-hidden />
 
-          <span className="flex flex-1 items-baseline gap-2">
+          <span className="flex flex-1 items-baseline gap-2 min-w-0">
             <span className="num t-32" style={{ color: 'hsl(var(--success))' }}>
               {skippedCount}
             </span>
             <span className="t-14 text-subtle">{t('übersprungen', 'skipped')}</span>
           </span>
 
-          {doneRows.length > 0 && (
+          <span className="glass-flat w-11 h-11 shrink-0 rounded-pill flex items-center justify-center" aria-hidden="true">
             <ChevronDown
-              className={`w-5 h-5 shrink-0 text-subtle [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1)] ${
+              className={`w-5 h-5 text-subtle [transition:transform_200ms_cubic-bezier(0.22,1,0.36,1)] ${
                 showCompleted ? 'rotate-180' : ''
               }`}
               strokeWidth={1.75}
             />
-          )}
+          </span>
         </button>
 
         {showCompleted && doneRows.length > 0 && (
