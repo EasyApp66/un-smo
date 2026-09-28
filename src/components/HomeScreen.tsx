@@ -6,7 +6,9 @@ import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
 import Countdown from './Countdown';
 import { Timer, Flame } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
+  dayStatus,
   formatMoney,
   formatSavedTime,
   measurementDaysLeft,
@@ -117,9 +119,14 @@ const HomeScreen = () => {
   const needsSetup = !dayData;
   const measurementLeft = measurementDaysLeft(reductionPlan, formatLocalDate());
   const savings = useMemo(() => savedSummary(days, reductionPlan), [days, reductionPlan]);
+  const reduceMotion = useReducedMotion();
+  const status = dayStatus(completedCount, totalCount);
+  const progress = totalCount > 0 ? Math.min(1, completedCount / totalCount) : completedCount > 0 ? 1 : 0;
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col">
+    <div className="min-h-[100dvh] bg-background flex flex-col relative isolate">
+      <div className="home-glow" aria-hidden />
+      <div className="relative z-[1] flex flex-col flex-1">
       {/* Kalender */}
       <div
         className="px-4 pb-0"
@@ -139,9 +146,28 @@ const HomeScreen = () => {
             </span>
             <p className="t-14 text-subtle">{t('Heute', 'Today')}</p>
             <p className="flex items-baseline gap-1">
-              <span className="t-36 num text-foreground">{completedCount}</span>
+              <span className="relative inline-flex overflow-hidden">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={completedCount}
+                    className="t-36 num text-foreground inline-block"
+                    initial={reduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={reduceMotion ? { opacity: 0 } : { y: -8, opacity: 0 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {completedCount}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
               <span className="t-20 num text-subtle">/{totalCount}</span>
             </p>
+            <div className="mt-[10px] h-1 w-full rounded-pill bg-muted overflow-hidden">
+              <div
+                className={`h-full w-full rounded-pill origin-left ${{ ok: 'bg-success', warn: 'bg-warning', over: 'bg-destructive' }[status]}`}
+                style={{ transform: `scaleX(${progress})`, transition: 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)' }}
+              />
+            </div>
           </div>
 
           <div className="surface-card p-4">
@@ -152,6 +178,11 @@ const HomeScreen = () => {
             <p className="t-32 num text-foreground">
               {nextTarget ? <Countdown target={nextTarget} /> : '–'}
             </p>
+            {nextTarget && (
+              <p className="t-12 text-subtle">
+                {t('um', 'at')} {new Date(nextTarget).toTimeString().slice(0, 5)}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -209,6 +240,7 @@ const HomeScreen = () => {
             />
           </>
         )}
+      </div>
       </div>
     </div>
   );
