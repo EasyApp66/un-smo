@@ -1,6 +1,6 @@
 import { motion, useMotionValue, animate, PanInfo } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { addDays, addWeeks, format, startOfWeek } from 'date-fns';
+import { addDays, addWeeks, format, getISOWeek, startOfWeek } from 'date-fns';
 import { de, enGB } from 'date-fns/locale';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
@@ -151,6 +151,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   );
 
   const monthLabel = format(weekStart, 'MMMM yyyy', { locale: dateLocale });
+  const weekNo = getISOWeek(weekStart);
   const weekTotal = weeks[1]?.days.reduce((sum, day) => sum + day.smoked, 0) ?? 0;
 
   // Fairer Vergleich mit der Vorwoche über den gleichen Zeitraum
@@ -202,8 +203,9 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
       <div className="flex items-center justify-between gap-2 px-1 mb-3 min-h-8">
         <span className="t-16 font-medium text-foreground capitalize">{monthLabel}</span>
         <span className="flex items-center gap-2">
-          <span className="rounded-pill bg-muted px-3 h-8 flex items-center gap-1.5" aria-label={t(`Woche gesamt: ${weekTotal}`, `Week total: ${weekTotal}`)}>
-            <span className="t-12 text-subtle">{t('Woche', 'Week')}</span>
+          <span className="rounded-pill bg-muted px-3 h-8 flex items-center gap-1.5" role="group" aria-label={t(`Kalenderwoche ${weekNo}, ${weekTotal} Zigaretten`, `Calendar week ${weekNo}, ${weekTotal} cigarettes`) + (trend ? `, ${trend.label}` : '')}>
+            <span className="t-12 font-medium text-subtle">{t('KW', 'Wk')} {weekNo}</span>
+            <span className="w-px h-[14px] bg-border" aria-hidden />
             <span className="t-18 num text-foreground">{weekTotal}</span>
             {trend && (
               <span role="img" aria-label={trend.label} className={trend.down ? 'text-success' : 'text-destructive'}>

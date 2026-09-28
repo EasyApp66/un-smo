@@ -170,6 +170,15 @@
   }
   .dark .surface-card {
     border-color: hsl(var(--border) / 0.28);
+    box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+  .home-glow {
+    position: absolute; top: 0; left: 0; right: 0; height: 360px;
+    pointer-events: none; z-index: 0;
+    background: radial-gradient(70% 60% at 50% 0%, hsl(var(--primary) / 0.06), transparent 70%);
+  }
+  .dark .home-glow {
+    background: radial-gradient(70% 60% at 50% 0%, hsl(var(--primary) / 0.08), transparent 70%);
   }
 
   .surface-card-lg {
