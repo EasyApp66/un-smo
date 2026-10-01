@@ -921,6 +921,19 @@ export const useAppStore = create<AppState>()(
       },
       onRehydrateStorage: () => (state) => {
         applyTheme(state?.themeMode ?? 'system');
+        if (!state) return;
+        const today = formatLocalDate();
+        const todayData = state.days?.[today];
+        if (todayData && todayData.reminders.some((r) => r.extra)) {
+          setTimeout(() => {
+            const s = useAppStore.getState();
+            const d = s.days[today];
+            if (!d) return;
+            useAppStore.setState({
+              days: { ...s.days, [today]: reconcileExtraReduction(today, d, s) },
+            });
+          }, 0);
+        }
       },
     }
   )
