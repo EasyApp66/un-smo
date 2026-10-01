@@ -114,17 +114,16 @@ describe('Tagesziel bleibt unverändert', () => {
     expect(useAppStore.getState().dailyCigarettes).toBe(20);
   });
 
-  it('Überspringen verschiebt keine Zeiten und ist umkehrbar', () => {
+  it('heute bleiben immer genau Ziel − geraucht offene Wecker, auch nach Überspringen', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
     const date = formatLocalDate();
     useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 8 });
-    const times = useAppStore.getState().days[date].reminders.map((r) => r.time);
-    const id = useAppStore.getState().days[date].reminders[3].id;
+    const open = () => useAppStore.getState().days[date].reminders.filter((r) => !r.completed && !r.skipped && !r.extra);
+    const id = open()[0].id;
     useAppStore.getState().skipReminder(date, id);
-    expect(useAppStore.getState().days[date].reminders.map((r) => r.time)).toEqual(times);
-    useAppStore.getState().skipReminder(date, id);
-    expect(useAppStore.getState().days[date].reminders.find((r) => r.id === id)?.skipped).toBe(
-      false
-    );
+    expect(open()).toHaveLength(8);
+    useAppStore.getState().addExtraCigarette(date);
+    expect(open()).toHaveLength(7);
   });
 
   it('verwendet den Standard aus den Einstellungen für neue Tage', () => {
