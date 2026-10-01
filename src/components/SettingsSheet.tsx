@@ -476,23 +476,6 @@ const SettingsSheet = () => {
                 </button>
               </section>
 
-              {/* Extra-Regel */}
-              <section>
-                <button
-                  onClick={toggleExtraReductionEnabled}
-                  disabled={!extraButtonEnabled}
-                  aria-disabled={!extraButtonEnabled}
-                  className={`surface-card w-full flex items-center justify-between px-4 min-h-[56px] py-3 text-left ${
-                    extraButtonEnabled ? '' : 'opacity-45'
-                  }`}
-                >
-                  <span>
-                    <span className="t-16 block text-foreground">{t('Wecker bei Extras entfernen', 'Remove alarm on extras')}</span>
-                    <span className="t-12 text-subtle">{t('Geklickte Extras kürzen den heutigen Ablauf', 'Logged extras shorten today\'s schedule')}</span>
-                  </span>
-                  <Toggle on={extraButtonEnabled && extraReductionEnabled} />
-                </button>
-              </section>
 
               <section>
                 <button

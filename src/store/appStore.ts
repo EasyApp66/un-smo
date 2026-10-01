@@ -227,18 +227,16 @@ const reconcileExtraReduction = (
   const wakeTime = day.wakeTime ?? settings.wakeTime;
   const sleepTime = day.sleepTime ?? settings.sleepTime;
   const wakeMin = toMinutes(wakeTime);
-  const reductionActive = settings.extraButtonEnabled && settings.extraReductionEnabled;
+  // Immer aktiv: Jedes Extra streicht genau einen offenen geplanten Wecker – von unten.
   let reminders: ReminderTime[] = [...planned, ...extras];
+  void now;
 
-  if (reductionActive && date === formatLocalDate(now) && extras.length > 0) {
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    const nowKey = sortKey(nowMin, wakeMin);
+  if (extras.length > 0) {
     const open = planned
-      .filter((r) => !r.completed && !r.skipped && sortKey(r.timestamp, wakeMin) > nowKey)
+      .filter((r) => !r.completed && !r.skipped)
       .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
 
     if (open.length > 0) {
-      // Jedes Extra ersetzt genau einen späteren Wecker – die Tagessumme bleibt stimmig.
       const dropCount = Math.min(open.length, extras.length);
       const dropIds = new Set(open.slice(open.length - dropCount).map((r) => r.id));
       reminders = reminders.filter((r) => r.extra || !dropIds.has(r.id));
