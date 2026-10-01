@@ -108,6 +108,12 @@ const StatisticsScreen = () => {
     }
     return weeks;
   }, [days, rangeEnd, locale]);
+  const [archiveMode, setArchiveMode] = useState<'weeks' | 'months'>('weeks');
+  const [weekAKey, setWeekAKey] = useState('');
+  const [weekBKey, setWeekBKey] = useState('');
+  // Standard: Vorwoche (links) gegen aktuelle Woche (rechts)
+  const weekA = weekArchive.find((w) => w.start === weekAKey) ?? weekArchive[1] ?? weekArchive[0];
+  const weekB = weekArchive.find((w) => w.start === weekBKey) ?? weekArchive[0];
 
   const milestones = useMemo(() => {
     const longTermActive = !!reductionPlan.zeroReachedAt && formatLocalDate() >= reductionPlan.zeroReachedAt;
