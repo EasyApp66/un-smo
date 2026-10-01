@@ -276,20 +276,21 @@ export const balanceRemaining = (
   const openFuture = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) > nowKey);
   const openPast = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) <= nowKey);
 
-  if (openFuture.length === needed && openPast.length === 0) return reminders;
-  // Nach der Schlafenszeit nichts mehr neu verteilen.
-  if (nowKey >= sleepKey) return reminders;
-
+  const open = [...openPast, ...openFuture].sort((x, y) => sortKey(x.timestamp, wakeMin) - sortKey(y.timestamp, wakeMin));
+  if (open.length === needed) return reminders;
   const kept = reminders.filter((r) => !isOpen(r));
-  // Gültige zukünftige Wecker behalten, nur fehlende ergänzen bzw. überzählige von unten streichen.
-  const future = [...openFuture].sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
-  if (future.length >= needed) return [...kept, ...future.slice(0, needed)];
-
+  // Zu viele: von unten streichen.
+  if (open.length > needed) return [...kept, ...open.slice(0, needed)];
+  // Nach der Schlafenszeit nichts mehr ergänzen.
+  if (nowKey >= sleepKey) return reminders;
+  // Zu wenige: überfällige bleiben, die zukünftigen werden neu ab jetzt verteilt.
+  const futureNeeded = needed - openPast.length;
+  const keptAll = [...kept, ...openPast];
   // Zu wenige: alle offenen gleichmässig zwischen jetzt und Schlafenszeit neu verteilen.
   const span = sleepKey - nowKey;
-  const interval = span / needed;
+  const interval = span / futureNeeded;
   const stamp = Date.now();
-  const fresh: ReminderTime[] = Array.from({ length: needed }, (_, i) => {
+  const fresh: ReminderTime[] = Array.from({ length: futureNeeded }, (_, i) => {
     const key = nowKey + interval * i + interval / 2;
     const minutes = Math.floor(key) % 1440;
     return {
@@ -299,7 +300,7 @@ export const balanceRemaining = (
       timestamp: minutes,
     };
   });
-  return [...kept, ...fresh];
+  return [...keptAll, ...fresh];
 };
 
 /** Untergrenze für automatische Ziel-Empfehlungen */
