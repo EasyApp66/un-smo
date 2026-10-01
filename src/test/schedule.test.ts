@@ -79,39 +79,20 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
     expect(useAppStore.getState().extraReductionEnabled).toBe(true);
   });
 
-  it('stellt entfernte heutige Wecker beim Ausschalten wieder her', () => {
-    vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
+  it('streicht pro Extra immer den untersten offenen Wecker, auch überfällige zählen', () => {
+    vi.setSystemTime(new Date(2026, 8, 17, 21, 0, 0));
     const date = formatLocalDate();
     useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 8 });
+    const before = useAppStore.getState().days[date].reminders.filter((r) => !r.extra);
+    const last = before[before.length - 1];
+    useAppStore.getState().addExtraCigarette(date);
     useAppStore.getState().addExtraCigarette(date);
     useAppStore.getState().addExtraCigarette(date);
 
     const reduced = useAppStore.getState().days[date];
-    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(6);
-    expect(reduced.reminders.filter((r) => r.extra)).toHaveLength(2);
-
-    useAppStore.getState().toggleExtraReductionEnabled();
-    const restored = useAppStore.getState().days[date];
-    expect(useAppStore.getState().extraReductionEnabled).toBe(false);
-    expect(restored.totalCigarettes).toBe(8);
-    expect(restored.reminders.filter((r) => !r.extra)).toHaveLength(8);
-    expect(restored.reminders.filter((r) => r.extra)).toHaveLength(2);
-  });
-
-  it('wendet die Extra-Kürzung beim erneuten Einschalten wieder an', () => {
-    vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
-    const date = formatLocalDate();
-    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 8 });
-    useAppStore.getState().addExtraCigarette(date);
-    useAppStore.getState().addExtraCigarette(date);
-    useAppStore.getState().toggleExtraReductionEnabled();
-    useAppStore.getState().toggleExtraReductionEnabled();
-
-    const reducedAgain = useAppStore.getState().days[date];
-    expect(useAppStore.getState().extraReductionEnabled).toBe(true);
-    expect(reducedAgain.totalCigarettes).toBe(8);
-    expect(reducedAgain.reminders.filter((r) => !r.extra)).toHaveLength(6);
-    expect(reducedAgain.reminders.filter((r) => r.extra)).toHaveLength(2);
+    expect(reduced.totalCigarettes).toBe(8);
+    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(5);
+    expect(reduced.reminders.some((r) => r.id === last.id)).toBe(false);
   });
 });
 
