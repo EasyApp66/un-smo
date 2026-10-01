@@ -84,6 +84,31 @@ const StatisticsScreen = () => {
 
   const pauses = useMemo(() => pauseStats(days), [days]);
 
+  // Wochenarchiv: Wochen ab Montag, wählbarer Zeitraum Mo bis X
+  const [rangeEnd, setRangeEnd] = useState(6);
+  const rangeShort = t(['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'], ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']);
+  const rangeLabels = t(['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
+  const weekArchive = useMemo(() => {
+    const mondayOf = (d: Date) => { const m = new Date(d); m.setHours(12, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; };
+    const isoWeek = (d: Date) => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x.getTime() - y.getTime()) / 86_400_000 + 1) / 7); };
+    const dates = Object.keys(days).sort();
+    if (dates.length === 0) return [];
+    const currentMonday = mondayOf(new Date());
+    const firstMonday = mondayOf(new Date(`${dates[0]}T12:00:00`));
+    const weeks = [];
+    for (let m = new Date(currentMonday); m >= firstMonday && weeks.length < 26; m.setDate(m.getDate() - 7)) {
+      let total = 0; let range = 0; let any = false;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(m); d.setDate(d.getDate() + i);
+        const day = days[formatLocalDate(d)];
+        if (day) { any = true; total += day.cigarettesSmoked || 0; if (i <= rangeEnd) range += day.cigarettesSmoked || 0; }
+      }
+      const end = new Date(m); end.setDate(end.getDate() + 6);
+      if (any) weeks.push({ start: formatLocalDate(m), week: isoWeek(m), total, range, current: m.getTime() === currentMonday.getTime(), label: `${m.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })} – ${end.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })}` });
+    }
+    return weeks;
+  }, [days, rangeEnd, locale]);
+
   const milestones = useMemo(() => {
     const longTermActive = !!reductionPlan.zeroReachedAt && formatLocalDate() >= reductionPlan.zeroReachedAt;
     return [
@@ -196,6 +221,33 @@ const StatisticsScreen = () => {
             ))}
           </div>
         </motion.div>
+
+        {!locked && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.12 }} className="surface-card p-5">
+            <h2 className="t-18 text-foreground mb-1">{t('Wochenarchiv', 'Weekly archive')}</h2>
+            <p className="t-12 text-subtle mb-3">{t(`Geraucht von Montag bis ${rangeLabels[rangeEnd]}`, `Smoked from Monday to ${rangeLabels[rangeEnd]}`)}</p>
+            <div className="grid grid-cols-7 gap-1 mb-4" role="radiogroup" aria-label={t('Zeitraum bis', 'Range until')}>
+              {rangeShort.map((label, i) => (
+                <button key={i} role="radio" aria-checked={rangeEnd === i} onClick={() => setRangeEnd(i)} className={`h-9 rounded-pill t-12 ${rangeEnd === i ? 'bg-primary text-primary-foreground' : i < rangeEnd ? 'bg-primary/15 text-foreground' : 'bg-muted text-subtle'}`}>{label}</button>
+              ))}
+            </div>
+            <div>
+              {weekArchive.map((w) => (
+                <div key={w.start} className="flex items-center justify-between py-3 border-b border-border/60 last:border-0">
+                  <div>
+                    <p className="t-16 text-foreground">{t('KW', 'Wk')} {w.week}{w.current ? <span className="t-12 text-primary ml-2">{t('aktuell', 'current')}</span> : null}</p>
+                    <p className="t-12 num text-subtle">{w.label}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="num"><span className="t-24 text-foreground">{w.range}</span>{rangeEnd < 6 && <span className="t-12 text-subtle ml-1">{t('bis', 'to')} {rangeShort[rangeEnd]}</span>}</p>
+                    {rangeEnd < 6 && <p className="t-12 num text-subtle">{t('ganze Woche', 'full week')} {w.total}</p>}
+                  </div>
+                </div>
+              ))}
+              {weekArchive.length === 0 && <p className="t-14 text-subtle text-center py-4">{t('Noch keine Daten', 'No data yet')}</p>}
+            </div>
+          </motion.div>
+        )}
 
         {!locked && (
           <>
