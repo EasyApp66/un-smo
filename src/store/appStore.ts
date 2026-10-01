@@ -732,7 +732,7 @@ export const useAppStore = create<AppState>()(
           return {
             days: {
               ...state.days,
-              [date]: { ...dayData, reminders: updatedReminders },
+              [date]: reconcileExtraReduction(date, { ...dayData, reminders: updatedReminders }, state),
             },
           };
         });
@@ -975,7 +975,7 @@ export const useAppStore = create<AppState>()(
         if (!state) return;
         const today = formatLocalDate();
         const todayData = state.days?.[today];
-        if (todayData && todayData.reminders.some((r) => r.extra)) {
+        if (todayData) {
           setTimeout(() => {
             const s = useAppStore.getState();
             const d = s.days[today];
