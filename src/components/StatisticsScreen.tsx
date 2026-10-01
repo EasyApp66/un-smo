@@ -173,38 +173,6 @@ const StatisticsScreen = () => {
           </div>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.04 }} className="surface-card p-5">
-          <h2 className="t-18 text-foreground mb-4">{t('Wochenübersicht', 'Weekly overview')}</h2>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weekData} barCategoryGap="30%">
-                <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.2)" strokeWidth={1} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--subtle))', fontSize: 12 }} />
-                <YAxis hide />
-                <Bar dataKey="smoked" radius={[8, 8, 0, 0]}>
-                  {weekData.map((entry, index) => (
-                     <Cell key={`cell-${index}`} fill={entry.hasData ? `hsl(var(--${{ ok: 'success', warn: 'warning', over: 'destructive' }[dayStatus(entry.smoked, entry.goal)]}))` : 'hsl(var(--border))'} opacity={entry.hasData ? 1 : 0.4} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-           <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 t-12 text-subtle">
-             {([['bg-success', t('im Ziel', 'on target')], ['bg-warning', t('bis 2 darüber', 'up to 2 over')], ['bg-destructive', t('mehr als 2 darüber', 'more than 2 over')]] as const).map(([color, label]) => <span key={color} className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-pill ${color}`} />{label}</span>)}
-           </div>
-        </motion.div>
-
-        {!locked && (
-          <>
-            <div className="grid grid-cols-2 gap-[10px]">
-              <Metric icon={Cigarette} label={t('Gesamt geraucht', 'Total smoked')} delay={0.06}><p className="t-32 num text-foreground">{stats.totalSmoked}</p></Metric>
-              <Metric icon={Calendar} label={t('Ø pro Tag', 'Avg per day')} delay={0.08}><p className="t-32 num text-foreground">{stats.avgPerDay}</p></Metric>
-              <Metric icon={Target} label={t('Zur Vorwoche', 'Vs. last week')} delay={0.1}>{weekDelta === null ? <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p> : <p className="flex items-baseline gap-1"><span className={`t-32 num ${weekDelta <= 0 ? 'text-success' : 'text-destructive'}`}>{weekDelta > 0 ? `+${weekDelta}` : weekDelta < 0 ? `−${Math.abs(weekDelta)}` : '0'}</span><span className="t-14 text-subtle">{weekDelta < 0 ? t('weniger', 'less') : weekDelta > 0 ? t('mehr', 'more') : t('gleich', 'same')}</span></p>}</Metric>
-              <Metric icon={Calendar} label={t('Bester Tag', 'Best day')} delay={0.12}>{stats.bestDay ? <p className="flex items-baseline gap-1"><span className="t-32 num text-foreground">{stats.bestDay.smoked}</span><span className="t-14 num text-subtle">({formatDate(stats.bestDay.date)})</span></p> : <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p>}</Metric>
-            </div>
-          </>
-        )}
-
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.16 }} className="surface-card p-5">
           <h2 className="t-18 text-foreground mb-3">{t('Ziel & erreicht pro Tag', 'Goal & achieved per day')}</h2>
           <div>
@@ -221,38 +189,43 @@ const StatisticsScreen = () => {
             ))}
           </div>
         </motion.div>
-
         {!locked && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.12 }} className="surface-card p-5">
-            <h2 className="t-18 text-foreground mb-1">{t('Wochenarchiv', 'Weekly archive')}</h2>
-            <p className="t-12 text-subtle mb-3">{t(`Geraucht von Montag bis ${rangeLabels[rangeEnd]}`, `Smoked from Monday to ${rangeLabels[rangeEnd]}`)}</p>
-            <div className="grid grid-cols-7 gap-1 mb-4" role="radiogroup" aria-label={t('Zeitraum bis', 'Range until')}>
-              {rangeShort.map((label, i) => (
-                <button key={i} role="radio" aria-checked={rangeEnd === i} onClick={() => setRangeEnd(i)} className={`h-9 rounded-pill t-12 ${rangeEnd === i ? 'bg-primary text-primary-foreground' : i < rangeEnd ? 'bg-primary/15 text-foreground' : 'bg-muted text-subtle'}`}>{label}</button>
-              ))}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.08 }} className="surface-card p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="t-18 text-foreground">{t('Archiv', 'Archive')}</h2>
+              <div className="flex rounded-pill bg-muted p-1" role="tablist">
+                {(['weeks', 'months'] as const).map((mode) => (
+                  <button key={mode} role="tab" aria-selected={archiveMode === mode} onClick={() => setArchiveMode(mode)} className={`h-8 px-4 rounded-pill t-14 ${archiveMode === mode ? 'bg-primary text-primary-foreground' : 'text-subtle'}`}>{mode === 'weeks' ? t('Wochen', 'Weeks') : t('Monate', 'Months')}</button>
+                ))}
+              </div>
             </div>
-            <div>
-              {weekArchive.map((w) => (
-                <div key={w.start} className="flex items-center justify-between py-3 border-b border-border/60 last:border-0">
-                  <div>
-                    <p className="t-16 text-foreground">{t('KW', 'Wk')} {w.week}{w.current ? <span className="t-12 text-primary ml-2">{t('aktuell', 'current')}</span> : null}</p>
-                    <p className="t-12 num text-subtle">{w.label}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="num"><span className="t-24 text-foreground">{w.range}</span>{rangeEnd < 6 && <span className="t-12 text-subtle ml-1">{t('bis', 'to')} {rangeShort[rangeEnd]}</span>}</p>
-                    {rangeEnd < 6 && <p className="t-12 num text-subtle">{t('ganze Woche', 'full week')} {w.total}</p>}
-                  </div>
+            {archiveMode === 'weeks' ? (
+              weekArchive.length === 0 ? <p className="t-14 text-subtle text-center py-4">{t('Noch keine Daten', 'No data yet')}</p> : (
+              <>
+                <p className="t-12 text-subtle mb-2">{t(`Gezählt von Montag bis ${rangeLabels[rangeEnd]}`, `Counted from Monday to ${rangeLabels[rangeEnd]}`)}</p>
+                <div className="grid grid-cols-7 gap-1 mb-4" role="radiogroup" aria-label={t('Zeitraum bis', 'Range until')}>
+                  {rangeShort.map((label, i) => (
+                    <button key={i} role="radio" aria-checked={rangeEnd === i} onClick={() => setRangeEnd(i)} className={`h-9 rounded-pill t-12 ${rangeEnd === i ? 'bg-primary text-primary-foreground' : i < rangeEnd ? 'bg-primary/15 text-foreground' : 'bg-muted text-subtle'}`}>{label}</button>
+                  ))}
                 </div>
-              ))}
-              {weekArchive.length === 0 && <p className="t-14 text-subtle text-center py-4">{t('Noch keine Daten', 'No data yet')}</p>}
-            </div>
-          </motion.div>
-        )}
-
-        {!locked && (
-          <>
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay: 0.14 }} className="surface-card p-5">
-              <div className="flex items-center justify-between gap-3 mb-4"><h2 className="t-18 text-foreground">{t('Monats-Memory', 'Monthly memory')}</h2><span className="t-12 text-subtle">{monthMemories.length}</span></div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[weekA, weekB].map((w, slot) => (
+                    <div key={slot} className="rounded-inner bg-muted p-3">
+                      <select aria-label={slot === 0 ? t('Erste Woche', 'First week') : t('Zweite Woche', 'Second week')} value={w?.start ?? ''} onChange={(e) => (slot === 0 ? setWeekAKey : setWeekBKey)(e.target.value)} className="w-full bg-transparent t-14 text-foreground outline-none">
+                        {weekArchive.map((o) => <option key={o.start} value={o.start}>{t('KW', 'Wk')} {o.week} · {o.label}</option>)}
+                      </select>
+                      <p className="t-36 num text-foreground mt-2">{w ? w.range : '–'}</p>
+                      <p className="t-12 num text-subtle">{rangeEnd < 6 ? `${t('ganze Woche', 'full week')} ${w?.total ?? 0}` : t('ganze Woche', 'full week')}</p>
+                    </div>
+                  ))}
+                </div>
+                {weekA && weekB && weekA.start !== weekB.start && (() => {
+                  const diff = weekB.range - weekA.range;
+                  return <p className="t-14 text-subtle mt-3 text-center">{t('KW', 'Wk')} {weekB.week} {t('zu', 'vs')} {t('KW', 'Wk')} {weekA.week}: <span className={`num t-16 ${diff <= 0 ? 'text-success' : 'text-destructive'}`}>{diff > 0 ? `+${diff}` : diff < 0 ? `−${Math.abs(diff)}` : '0'}</span> {diff < 0 ? t('weniger', 'less') : diff > 0 ? t('mehr', 'more') : t('gleich', 'same')}</p>;
+                })()}
+              </>)
+            ) : (
+              <>
               <label className="relative block mb-3">
                 <span className="sr-only">{t('Monat suchen', 'Search month')}</span>
                 <Search className="absolute left-4 top-1/2 w-4 h-4 -translate-y-1/2 text-subtle" strokeWidth={1.75} />
@@ -273,7 +246,18 @@ const StatisticsScreen = () => {
                 ))}
                 {visibleMonthMemories.length === 0 && <p className="t-14 text-subtle text-center py-4">{t('Kein Monat gefunden', 'No month found')}</p>}
               </div>
-            </motion.div>
+              </>
+            )}
+          </motion.div>
+        )}
+        {!locked && (
+          <>
+            <div className="grid grid-cols-2 gap-[10px]">
+              <Metric icon={Cigarette} label={t('Gesamt geraucht', 'Total smoked')} delay={0.06}><p className="t-32 num text-foreground">{stats.totalSmoked}</p></Metric>
+              <Metric icon={Calendar} label={t('Ø pro Tag', 'Avg per day')} delay={0.08}><p className="t-32 num text-foreground">{stats.avgPerDay}</p></Metric>
+              <Metric icon={Target} label={t('Zur Vorwoche', 'Vs. last week')} delay={0.1}>{weekDelta === null ? <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p> : <p className="flex items-baseline gap-1"><span className={`t-32 num ${weekDelta <= 0 ? 'text-success' : 'text-destructive'}`}>{weekDelta > 0 ? `+${weekDelta}` : weekDelta < 0 ? `−${Math.abs(weekDelta)}` : '0'}</span><span className="t-14 text-subtle">{weekDelta < 0 ? t('weniger', 'less') : weekDelta > 0 ? t('mehr', 'more') : t('gleich', 'same')}</span></p>}</Metric>
+              <Metric icon={Calendar} label={t('Bester Tag', 'Best day')} delay={0.12}>{stats.bestDay ? <p className="flex items-baseline gap-1"><span className="t-32 num text-foreground">{stats.bestDay.smoked}</span><span className="t-14 num text-subtle">({formatDate(stats.bestDay.date)})</span></p> : <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p>}</Metric>
+            </div>
           </>
         )}
 
