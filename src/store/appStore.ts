@@ -222,21 +222,23 @@ const reconcileExtraReduction = (
   },
   now: Date = new Date()
 ): DayData => {
-  const extras = day.reminders.filter((r) => r.extra);
-  const planned = restorePlannedReminders(day, settings);
   const wakeTime = day.wakeTime ?? settings.wakeTime;
   const sleepTime = day.sleepTime ?? settings.sleepTime;
   const wakeMin = toMinutes(wakeTime);
-  // Immer aktiv: Jedes Extra streicht genau einen offenen geplanten Wecker – von unten.
-  let reminders: ReminderTime[] = [...planned, ...extras];
-  void now;
+  const extras = day.reminders.filter((r) => r.extra);
+  let reminders: ReminderTime[];
 
-  if (extras.length > 0) {
-    const open = planned
-      .filter((r) => !r.completed && !r.skipped)
-      .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
-
-    if (open.length > 0) {
+  if (date === formatLocalDate(now)) {
+    // Heute gilt die feste Formel: offene Wecker = Tagesziel − geraucht.
+    reminders = balanceRemaining(day.reminders, day.totalCigarettes, wakeTime, sleepTime, now);
+  } else {
+    // Andere Tage: Jedes Extra streicht genau einen offenen geplanten Wecker – von unten.
+    const planned = restorePlannedReminders(day, settings);
+    reminders = [...planned, ...extras];
+    if (extras.length > 0) {
+      const open = planned
+        .filter((r) => !r.completed && !r.skipped)
+        .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
       const dropCount = Math.min(open.length, extras.length);
       const dropIds = new Set(open.slice(open.length - dropCount).map((r) => r.id));
       reminders = reminders.filter((r) => r.extra || !dropIds.has(r.id));
@@ -250,6 +252,54 @@ const reconcileExtraReduction = (
     reminders,
     cigarettesSmoked: reminders.filter((r) => r.completed).length,
   };
+};
+
+/**
+ * Formel für heute: Es bleiben genau (Tagesziel − geraucht) offene Wecker,
+ * alle noch vor der Schlafenszeit und gleichmässig ab jetzt verteilt.
+ * Stimmt die Anzahl bereits, bleiben die Zeiten unverändert.
+ */
+export const balanceRemaining = (
+  reminders: ReminderTime[],
+  goal: number,
+  wakeTime: string,
+  sleepTime: string,
+  now: Date = new Date()
+): ReminderTime[] => {
+  const wakeMin = toMinutes(wakeTime);
+  const nowKey = sortKey(now.getHours() * 60 + now.getMinutes(), wakeMin);
+  let sleepKey = sortKey(toMinutes(sleepTime), wakeMin);
+  if (sleepKey <= wakeMin) sleepKey += 1440;
+  const smoked = reminders.filter((r) => r.completed).length;
+  const needed = Math.max(0, goal - smoked);
+  const isOpen = (r: ReminderTime) => !r.completed && !r.skipped && !r.extra;
+  const openFuture = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) > nowKey);
+  const openPast = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) <= nowKey);
+
+  if (openFuture.length === needed && openPast.length === 0) return reminders;
+  // Nach der Schlafenszeit nichts mehr neu verteilen.
+  if (nowKey >= sleepKey) return reminders;
+
+  const kept = reminders.filter((r) => !isOpen(r));
+  // Gültige zukünftige Wecker behalten, nur fehlende ergänzen bzw. überzählige von unten streichen.
+  const future = [...openFuture].sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
+  if (future.length >= needed) return [...kept, ...future.slice(0, needed)];
+
+  // Zu wenige: alle offenen gleichmässig zwischen jetzt und Schlafenszeit neu verteilen.
+  const span = sleepKey - nowKey;
+  const interval = span / needed;
+  const stamp = Date.now();
+  const fresh: ReminderTime[] = Array.from({ length: needed }, (_, i) => {
+    const key = nowKey + interval * i + interval / 2;
+    const minutes = Math.floor(key) % 1440;
+    return {
+      id: `reminder-r${stamp}-${i}`,
+      time: `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`,
+      completed: false,
+      timestamp: minutes,
+    };
+  });
+  return [...kept, ...fresh];
 };
 
 /** Untergrenze für automatische Ziel-Empfehlungen */
