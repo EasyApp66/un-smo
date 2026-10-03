@@ -271,28 +271,44 @@ export const balanceRemaining = (
   let sleepKey = sortKey(toMinutes(sleepTime), wakeMin);
   if (sleepKey <= wakeMin) sleepKey += 1440;
   const smoked = reminders.filter((r) => r.completed).length;
-  const needed = Math.max(0, goal - smoked);
+  // Ein übersprungener geplanter Wecker verbraucht seinen Platz.
+  const skipped = reminders.filter((r) => r.skipped && !r.completed && !r.extra).length;
+  const needed = Math.max(0, goal - smoked - skipped);
   const isOpen = (r: ReminderTime) => !r.completed && !r.skipped && !r.extra;
-  const openFuture = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) > nowKey);
-  const openPast = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) <= nowKey);
-
-  const open = [...openPast, ...openFuture].sort((x, y) => sortKey(x.timestamp, wakeMin) - sortKey(y.timestamp, wakeMin));
+  const open = reminders
+    .filter(isOpen)
+    .sort((x, y) => sortKey(x.timestamp, wakeMin) - sortKey(y.timestamp, wakeMin));
   if (open.length === needed) return reminders;
-  const kept = reminders.filter((r) => !isOpen(r));
-  // Zu viele: von unten streichen.
-  if (open.length > needed) return [...kept, ...open.slice(0, needed)];
-  // Nach der Schlafenszeit nichts mehr ergänzen.
-  if (nowKey >= sleepKey) return reminders;
-  // Zu wenige: überfällige bleiben, die zukünftigen werden neu ab jetzt verteilt.
-  const futureNeeded = needed - openPast.length;
-  const keptAll = [...kept, ...openPast];
-  // Zu wenige: alle offenen gleichmässig zwischen jetzt und Schlafenszeit neu verteilen.
-  const span = sleepKey - nowKey;
-  const interval = span / futureNeeded;
+  // Zu viele: die spätesten streichen, alle anderen bleiben exakt.
+  if (open.length > needed) {
+    const drop = new Set(open.slice(needed).map((r) => r.id));
+    return reminders.filter((r) => !drop.has(r.id));
+  }
+  // Zu wenige: bestehende bleiben unverändert; fehlende in die grössten Lücken,
+  // frühestens 20 Minuten ab jetzt und vor der Schlafenszeit.
+  const earliest = nowKey + 20;
+  if (earliest >= sleepKey) return reminders;
+  const points = open
+    .map((r) => sortKey(r.timestamp, wakeMin))
+    .filter((k) => k > earliest && k < sleepKey);
+  const added: number[] = [];
   const stamp = Date.now();
-  const fresh: ReminderTime[] = Array.from({ length: futureNeeded }, (_, i) => {
-    const key = nowKey + interval * i + interval / 2;
-    const minutes = Math.floor(key) % 1440;
+  for (let n = 0; n < needed - open.length; n++) {
+    const all = [...points, ...added].sort((x, y) => x - y);
+    // Lücken: [earliest, erster], zwischen Punkten, [letzter, sleep]
+    let best = { from: earliest, to: sleepKey, size: -1, edgeStart: true };
+    const bounds = [earliest, ...all, sleepKey];
+    for (let i = 0; i < bounds.length - 1; i++) {
+      const size = bounds[i + 1] - bounds[i];
+      if (size > best.size) best = { from: bounds[i], to: bounds[i + 1], size, edgeStart: i === 0 };
+    }
+    if (best.size < 2) break;
+    // Am Anfang darf der Wecker direkt auf „frühestens“ liegen, sonst in die Mitte.
+    const key = best.edgeStart && all.length === 0 ? best.from + best.size / 2 : best.edgeStart ? best.from : best.from + best.size / 2;
+    added.push(Math.round(key));
+  }
+  const fresh: ReminderTime[] = added.map((key, i) => {
+    const minutes = key % 1440;
     return {
       id: `reminder-r${stamp}-${i}`,
       time: `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`,
@@ -300,7 +316,7 @@ export const balanceRemaining = (
       timestamp: minutes,
     };
   });
-  return [...keptAll, ...fresh];
+  return [...reminders, ...fresh];
 };
 
 /** Untergrenze für automatische Ziel-Empfehlungen */
