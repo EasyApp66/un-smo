@@ -34,6 +34,7 @@ const HomeScreen = () => {
     wakeTime,
     reductionPlan,
     homeSavingsEnabled,
+    sleepTime,
   } = useAppStore();
 
   const dayData = days[selectedDate];
@@ -47,9 +48,9 @@ const HomeScreen = () => {
   const [minuteTick, setMinuteTick] = useState(0);
   const todayRef = useRef(getLogicalDate());
   useEffect(() => {
-    const id = window.setInterval(() => {
+    const tick = () => {
       setMinuteTick((t) => t + 1);
-      // Tageswechsel um Mitternacht: die Ansicht folgt dem neuen Tag,
+      // Tageswechsel um 07:00 Uhr: die Ansicht folgt dem neuen Tag,
       // wenn zuvor der laufende Tag angezeigt wurde.
       const today = getLogicalDate();
       if (today !== todayRef.current) {
@@ -57,8 +58,19 @@ const HomeScreen = () => {
         todayRef.current = today;
         setSelectedDate((current) => (current === previousToday ? today : current));
       }
-    }, 15000);
-    return () => window.clearInterval(id);
+    };
+    const id = window.setInterval(tick, 15000);
+    // Nach Standby / App im Hintergrund sofort aktualisieren statt bis zu 15 s veraltet.
+    const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', tick);
+    window.addEventListener('focus', tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', tick);
+      window.removeEventListener('focus', tick);
+    };
   }, []);
 
   // Nächste anstehende Zigarette – nur zur Anzeige
@@ -220,7 +232,7 @@ const HomeScreen = () => {
             <ReminderList
               reminders={dayData?.reminders || []}
               wakeTime={dayWakeTime}
-              sleepTime={dayData?.sleepTime ?? useAppStore.getState().sleepTime}
+              sleepTime={dayData?.sleepTime ?? sleepTime}
               date={selectedDate}
               goal={dayData?.totalCigarettes}
 
