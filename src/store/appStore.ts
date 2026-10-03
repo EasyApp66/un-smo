@@ -746,7 +746,7 @@ export const useAppStore = create<AppState>()(
           return {
             days: {
               ...state.days,
-              [date]: reconcileExtraReduction(date, { ...dayData, reminders: updatedReminders }, state),
+              [date]: { ...dayData, reminders: updatedReminders },
             },
           };
         });
