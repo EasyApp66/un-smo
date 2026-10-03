@@ -48,14 +48,14 @@ const SettingsGroup = ({ id, icon: Icon, title, summary, open, onToggle, childre
       style={open ? { top: 'max(env(safe-area-inset-top), 8px)', background: 'linear-gradient(hsl(var(--primary) / 0.14), hsl(var(--primary) / 0.14)), hsl(var(--card))' } : undefined}
     >
       <Icon className="w-5 h-5 shrink-0 text-primary" strokeWidth={1.75} />
-      <span className="min-w-0 flex-1"><span className={`block t-16 font-medium [transition:color_180ms_cubic-bezier(0.22,1,0.36,1)] ${open ? 'text-primary' : 'text-foreground'}`}>{title}</span><span className="block t-12 text-subtle font-normal break-words">{summary}</span></span>
-      <ChevronDown className={`w-5 h-5 shrink-0 [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)] ${open ? 'rotate-180 text-primary' : 'text-subtle'}`} strokeWidth={open ? 2.25 : 1.75} />
+      <span className="min-w-0 flex-1"><span className={`block t-16 font-medium [transition:color_180ms_cubic-bezier(0.22,1,0.36,1)] ${open ? 'text-primary-strong' : 'text-foreground'}`}>{title}</span><span className="block t-12 text-subtle font-normal break-words">{summary}</span></span>
+      <ChevronDown className={`w-5 h-5 shrink-0 [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)] ${open ? 'rotate-180 text-primary-strong' : 'text-subtle'}`} strokeWidth={open ? 2.25 : 1.75} />
     </Button>
     <div id={`settings-${id}`} className={`grid [transition:grid-template-rows_180ms_cubic-bezier(0.22,1,0.36,1)] ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`} aria-hidden={!open} {...(!open ? { inert: '' } : {})}>
       <div className="min-h-0 overflow-hidden">
         <div className="ml-3 pl-3 border-l-2 border-primary/30 space-y-[10px] pt-[10px]">
           {children}
-          <button type="button" onClick={toggle} className="w-full h-11 t-14 text-primary text-center">{tr('Zuklappen', 'Collapse')}</button>
+          <button type="button" onClick={toggle} className="w-full h-11 t-14 text-primary-strong text-center">{tr('Zuklappen', 'Collapse')}</button>
         </div>
       </div>
     </div>

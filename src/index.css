@@ -43,6 +43,7 @@
     --primary: 22 43% 70%;
     --primary-foreground: 222 32% 8%;
     --primary-tint: 22 42% 91%;
+    --primary-strong: 22 48% 36%;
 
     --secondary: 260 33% 98%;
     --secondary-foreground: 222 32% 8%;
@@ -93,6 +94,7 @@
     --primary: 22 43% 70%;
     --primary-foreground: 222 32% 8%;
     --primary-tint: 22 42% 91%;
+    --primary-strong: 22 43% 70%;
 
     --secondary: 0 0% 6%;
     --secondary-foreground: 40 20% 97%;
