@@ -6,6 +6,7 @@ import { useAppStore, resolveIsDark } from '../store/appStore';
 import { tap } from '../lib/haptics';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
+import { ODD_GOAL_VALUES } from '@/lib/reductionPlan';
 
 import { enablePush, disablePush, sendTestPush } from '../lib/push';
 import { formatMoney, weeklyActuals, type CurrencyCode, weekKey } from '@/lib/reductionPlan';
@@ -325,7 +326,7 @@ const SettingsSheet = () => {
                     value={dailyCigarettes}
                     min={0}
                     max={60}
-                    step={1}
+                    values={ODD_GOAL_VALUES}
                     onChange={setDailyCigarettes}
                     label={t('Zigaretten pro Tag', 'Cigarettes per day')}
                     compact
@@ -363,6 +364,7 @@ const SettingsSheet = () => {
                       value={reductionPlan.baselineCigarettes}
                       min={0}
                       max={60}
+                      values={ODD_GOAL_VALUES}
                       onChange={(value) => updateReductionPlan({ baselineCigarettes: value })}
                       label={t('Ausgangswert', 'Starting value')}
                       compact

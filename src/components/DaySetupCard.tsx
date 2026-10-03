@@ -5,6 +5,7 @@ import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
+import { ODD_GOAL_VALUES } from '@/lib/reductionPlan';
 import { useLocale, useT } from '../lib/i18n';
 
 interface DaySetupCardProps {
@@ -165,7 +166,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
                 value={goal}
                 min={0}
                 max={60}
-                step={1}
+                values={ODD_GOAL_VALUES}
                 onChange={setGoal}
                 label={t('Zigaretten pro Tag', 'Cigarettes per day')}
                 horizontal

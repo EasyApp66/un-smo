@@ -11,6 +11,8 @@ interface WheelPickerProps {
   compact?: boolean;
   horizontal?: boolean;
   viewportWidth?: number;
+  /** Feste Werteliste – ersetzt min/max/step */
+  values?: number[];
 }
 
 const WheelPicker = ({
@@ -24,11 +26,14 @@ const WheelPicker = ({
   compact = false,
   horizontal = false,
   viewportWidth = 280,
+  values: fixedValues,
 }: WheelPickerProps) => {
-  const values: number[] = [];
-  for (let i = min; i <= max; i += step) values.push(i);
+  const values: number[] = fixedValues ?? [];
+  if (!fixedValues) for (let i = min; i <= max; i += step) values.push(i);
 
-  const index = Math.max(0, values.indexOf(value));
+  // Nicht enthaltener Wert: nächstkleinerer Eintrag
+  let index = values.indexOf(value);
+  if (index < 0) index = Math.max(0, values.filter((v) => v <= value).length - 1);
 
   return (
     <div className="flex flex-col items-center w-full">
