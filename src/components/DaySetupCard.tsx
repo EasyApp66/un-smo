@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
+import { logicalDay } from '@/lib/logicalDate';
 import TimePicker from './TimePicker';
 import WheelPicker from './WheelPicker';
 import { ODD_GOAL_VALUES } from '@/lib/reductionPlan';
@@ -92,8 +93,7 @@ const DaySetupCard = ({ selectedDate, onComplete, isEditing = false }: DaySetupC
   }, [wake, sleep, goal]);
 
   const formatDate = (dateString: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = logicalDay();
     const todayString = formatLocalDate(today);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);

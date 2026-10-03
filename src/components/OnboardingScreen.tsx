@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useAppStore, type ReductionSpeed } from '../store/appStore';
+import { getLogicalDate } from '../lib/logicalDate';
 import Mark from './Mark';
 import WheelPicker from './WheelPicker';
 import TimePicker from './TimePicker';
@@ -27,7 +28,7 @@ const awakeText = (wakeTime: string, sleepTime: string, count: number) => {
 };
 
 const planState = (daily: number, reduction: number) => ({
-  planStartedAt: new Date().toISOString().slice(0, 10),
+  planStartedAt: getLogicalDate(),
   measurementCompletedAt: null,
   baselineCigarettes: daily,
   onboardingEstimate: daily,

@@ -1,4 +1,4 @@
-import { useAppStore, applyTheme, formatLocalDate } from '../store/appStore';
+import { useAppStore, applyTheme, getLogicalDate } from '../store/appStore';
 import OnboardingScreen from '../components/OnboardingScreen';
 import HomeScreen from '../components/HomeScreen';
 import BottomTabBar from '../components/BottomTabBar';
@@ -34,7 +34,7 @@ const Index = () => {
   }, [themeMode]);
 
   useEffect(() => {
-    completeMeasurementIfNeeded(formatLocalDate());
+    completeMeasurementIfNeeded(getLogicalDate());
   }, [completeMeasurementIfNeeded, days]);
 
 
@@ -151,10 +151,10 @@ const Index = () => {
         onAddExtra={
           extraButtonEnabled
             ? () => {
-                addExtraCigarette(formatLocalDate());
+                addExtraCigarette(getLogicalDate());
                 if ('vibrate' in navigator) navigator.vibrate(12);
                 const extraCount =
-                  useAppStore.getState().days[formatLocalDate()]?.reminders.filter((r) => r.extra).length || 0;
+                  useAppStore.getState().days[getLogicalDate()]?.reminders.filter((r) => r.extra).length || 0;
                 setExtraFeedback(extraCount);
                 setTimeout(() => setExtraFeedback(null), 2200);
               }

@@ -1,3 +1,4 @@
+import { getLogicalDate } from '@/lib/logicalDate';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { durableStorage } from '../lib/persistentStorage';
@@ -150,7 +151,9 @@ export const formatLocalDate = (d: Date = new Date()) => {
   return `${y}-${m}-${day}`;
 };
 
-const getTodayString = () => formatLocalDate();
+export { DAY_BOUNDARY_HOUR, logicalDay, getLogicalDate } from '@/lib/logicalDate';
+
+const getTodayString = () => getLogicalDate();
 
 const defaultReductionPlan = (): ReductionPlanState => ({
   planStartedAt: null,
@@ -229,7 +232,7 @@ const reconcileExtraReduction = (
   const extras = day.reminders.filter((r) => r.extra);
   let reminders: ReminderTime[];
 
-  if (date === formatLocalDate(now)) {
+  if (date === getLogicalDate(now)) {
     // Heute gilt die feste Formel: offene Wecker = Tagesziel − geraucht.
     reminders = balanceRemaining(day.reminders, day.totalCigarettes, wakeTime, sleepTime, now);
   } else {
@@ -1004,7 +1007,7 @@ export const useAppStore = create<AppState>()(
       onRehydrateStorage: () => (state) => {
         applyTheme(state?.themeMode ?? 'system');
         if (!state) return;
-        const today = formatLocalDate();
+        const today = getLogicalDate();
         const todayData = state.days?.[today];
         if (todayData) {
           setTimeout(() => {

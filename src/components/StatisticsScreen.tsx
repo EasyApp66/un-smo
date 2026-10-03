@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-import { Cigarette, Calendar, Target, Search, Lock } from 'lucide-react';
+import { getLogicalDate, logicalDay } from '@/lib/logicalDate';
+import { Search, Lock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Input } from './ui/input';
 import { dayStatus } from '@/lib/reductionPlan';
@@ -23,7 +23,7 @@ const StatisticsScreen = () => {
 
   const weekData = useMemo(() => {
     const data = [];
-    const today = new Date();
+    const today = logicalDay();
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
@@ -41,36 +41,6 @@ const StatisticsScreen = () => {
     return data;
   }, [days, dailyCigarettes, t]);
 
-  const stats = useMemo(() => {
-    const daysWithData = weekData.filter((d) => d.hasData);
-    if (daysWithData.length === 0) return { totalSmoked: 0, avgPerDay: 0, bestDay: null, savedCigarettes: 0 };
-    const totalSmoked = daysWithData.reduce((sum, d) => sum + d.smoked, 0);
-    const totalGoal = daysWithData.reduce((sum, d) => sum + d.goal, 0);
-    const avgPerDay = totalSmoked / daysWithData.length;
-    const bestDay = daysWithData.reduce((best, d) => (d.smoked < (best?.smoked ?? Infinity) ? d : best), daysWithData[0]);
-    return { totalSmoked, avgPerDay: Math.round(avgPerDay * 10) / 10, bestDay, savedCigarettes: Math.max(0, totalGoal - totalSmoked) };
-  }, [weekData]);
-
-  // Summe der letzten 7 Tage im Vergleich zu den 7 Tagen davor
-  const weekDelta = useMemo(() => {
-    const sum = (from: number) => {
-      let total = 0;
-      let any = false;
-      for (let i = from; i < from + 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const day = days[formatLocalDate(d)];
-        if (day) { any = true; total += day.cigarettesSmoked || 0; }
-      }
-      return any ? total : null;
-    };
-    const current = sum(0);
-    const previous = sum(7);
-    if (current === null || previous === null) return null;
-    return current - previous;
-  }, [days]);
-
-
   // Wochenarchiv: Wochen ab Montag, wählbarer Zeitraum Mo bis X
   const [rangeEnd, setRangeEnd] = useState(6);
   const rangeShort = t(['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'], ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']);
@@ -80,7 +50,7 @@ const StatisticsScreen = () => {
     const isoWeek = (d: Date) => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x.getTime() - y.getTime()) / 86_400_000 + 1) / 7); };
     const dates = Object.keys(days).sort();
     if (dates.length === 0) return [];
-    const currentMonday = mondayOf(new Date());
+    const currentMonday = mondayOf(logicalDay());
     const firstMonday = mondayOf(new Date(`${dates[0]}T12:00:00`));
     const weeks = [];
     for (let m = new Date(currentMonday); m >= firstMonday && weeks.length < 26; m.setDate(m.getDate() - 7)) {
@@ -103,7 +73,7 @@ const StatisticsScreen = () => {
   const weekB = weekArchive.find((w) => w.start === weekBKey) ?? weekArchive[0];
 
   const monthMemories = useMemo(() => {
-    const currentMonth = formatLocalDate().slice(0, 7);
+    const currentMonth = getLogicalDate().slice(0, 7);
     const months = Array.from(new Set([currentMonth, ...Object.keys(days).map((date) => date.slice(0, 7))])).sort((a, b) => b.localeCompare(a));
     return months.map((month) => {
       const entries = Object.values(days).filter((day) => day.date.startsWith(month));
@@ -124,14 +94,6 @@ const StatisticsScreen = () => {
   }, [monthMemories, monthSearch, locale]);
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
-
-  const Metric = ({ icon: Icon, label, children, delay }: { icon: typeof Cigarette; label: string; children: React.ReactNode; delay: number }) => (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE, delay }} className="surface-card p-4">
-      <span className="icon-tile mb-3"><Icon className="w-6 h-6" strokeWidth={1.5} /></span>
-      <p className="t-14 text-subtle">{label}</p>
-      {children}
-    </motion.div>
-  );
 
   const locked = !account.access && account.role !== 'admin';
 
@@ -224,16 +186,6 @@ const StatisticsScreen = () => {
               </>
             )}
           </motion.div>
-        )}
-        {!locked && (
-          <>
-            <div className="grid grid-cols-2 gap-[10px]">
-              <Metric icon={Cigarette} label={t('Gesamt geraucht', 'Total smoked')} delay={0.06}><p className="t-32 num text-foreground">{stats.totalSmoked}</p></Metric>
-              <Metric icon={Calendar} label={t('Ø pro Tag', 'Avg per day')} delay={0.08}><p className="t-32 num text-foreground">{stats.avgPerDay}</p></Metric>
-              <Metric icon={Target} label={t('Zur Vorwoche', 'Vs. last week')} delay={0.1}>{weekDelta === null ? <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p> : <p className="flex items-baseline gap-1"><span className={`t-32 num ${weekDelta <= 0 ? 'text-success' : 'text-destructive'}`}>{weekDelta > 0 ? `+${weekDelta}` : weekDelta < 0 ? `−${Math.abs(weekDelta)}` : '0'}</span><span className="t-14 text-subtle">{weekDelta < 0 ? t('weniger', 'less') : weekDelta > 0 ? t('mehr', 'more') : t('gleich', 'same')}</span></p>}</Metric>
-              <Metric icon={Calendar} label={t('Bester Tag', 'Best day')} delay={0.12}>{stats.bestDay ? <p className="flex items-baseline gap-1"><span className="t-32 num text-foreground">{stats.bestDay.smoked}</span><span className="t-14 num text-subtle">({formatDate(stats.bestDay.date)})</span></p> : <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p>}</Metric>
-            </div>
-          </>
         )}
       </div>
     </div>

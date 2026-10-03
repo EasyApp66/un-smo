@@ -1,6 +1,7 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
-import { ReminderTime, formatLocalDate } from '../store/appStore';
+import { ReminderTime } from '../store/appStore';
+import { getLogicalDate, logicalTargetTime } from '@/lib/logicalDate';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
 import { tr, useT } from '../lib/i18n';
@@ -58,17 +59,7 @@ const CountdownFill = memo(({ start, target }: { start: number; target: number }
 });
 CountdownFill.displayName = 'CountdownFill';
 
-/** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit zählen zum nächsten Tag */
-const targetTime = (timeString: string, now: number, wakeMin: number): number => {
-  const nowDate = new Date(now);
-  const [hours, minutes] = timeString.split(':').map(Number);
-  const target = new Date(nowDate);
-  target.setHours(hours, minutes, 0, 0);
-  const slotMin = hours * 60 + minutes;
-  const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
-  if (slotMin < wakeMin && nowMin >= wakeMin) target.setDate(target.getDate() + 1);
-  return target.getTime();
-};
+const targetTime = logicalTargetTime;
 
 const timeUntilLabel = (timeString: string, now: number, wakeMin: number): string => {
   const diffMins = Math.floor((targetTime(timeString, now, wakeMin) - now) / 60000);
@@ -305,7 +296,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
   const smokedCount = doneRows.filter(({ r }) => r.completed).length;
   const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
   const extraCount = reminders.filter((r) => r.extra).length;
-  const isToday = !!date && date === formatLocalDate();
+  const isToday = !!date && date === getLogicalDate();
   const rewardDue = isToday && goal !== undefined && stillOpenRows.length === 0 && reminders.length > 0 && smokedCount < goal;
 
   // Erfolgs-Haptik nur beim ersten Erscheinen pro Tag

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { plannedTargetForDate } from '@/lib/reductionPlan';
+import { getLogicalDate } from '@/lib/logicalDate';
 import { useAppStore, formatLocalDate, generateReminders, type DayData } from '@/store/appStore';
 
 // Öffentlicher VAPID-Schlüssel (darf im Code stehen)
@@ -40,7 +41,9 @@ export const buildPlan = (): Record<string, string[]> => {
   const state = useAppStore.getState();
   const { days, wakeTime, sleepTime } = state;
   const plan: Record<string, string[]> = {};
-  const today = formatLocalDate();
+  const today = getLogicalDate();
+  // Server-Pläne sind nach Kalendertagen geordnet.
+  const calendarToday = formatLocalDate();
   for (let i = 0; i < 3; i++) plan[shiftDate(today, i)] = [];
   // Der Vortag zählt mit: Nachtzeiten nach Mitternacht gehören zum heutigen Kalendertag.
   for (let i = -1; i < 3; i++) {
@@ -68,7 +71,7 @@ export const buildPlan = (): Record<string, string[]> => {
     for (const r of day.reminders) {
       if (r.completed || r.extra || r.skipped) continue;
       const planKey = toMinutes(r.time) < wakeMin ? shiftDate(key, 1) : key;
-      if (planKey < today) continue;
+      if (planKey < calendarToday) continue;
       (plan[planKey] ??= []).push(r.time);
     }
   }
