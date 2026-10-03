@@ -33,14 +33,28 @@ const SettingsGroup = ({ id, icon: Icon, title, summary, open, onToggle, childre
     onToggle();
     if (!open) requestAnimationFrame(() => header.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }));
   };
+  const ease = '[transition:background-color_180ms_cubic-bezier(0.22,1,0.36,1),border-color_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)]';
   return <section>
-    <Button ref={header} variant="ghost" aria-expanded={open} aria-controls={`settings-${id}`} onClick={toggle} className="surface-card w-full min-h-16 h-auto p-4 flex items-center justify-between gap-3 text-left whitespace-normal scroll-mt-6 hover:bg-card">
+    <Button
+      ref={header}
+      variant="ghost"
+      aria-expanded={open}
+      aria-controls={`settings-${id}`}
+      onClick={toggle}
+      className={`surface-card w-full min-h-16 h-auto p-4 flex items-center justify-between gap-3 text-left whitespace-normal scroll-mt-6 ${ease} ${open ? 'sticky z-20 border border-primary/40 hover:bg-transparent' : 'hover:bg-card'}`}
+      style={open ? { top: 'max(env(safe-area-inset-top), 8px)', background: 'linear-gradient(hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.1)), hsl(var(--card))' } : undefined}
+    >
       <Icon className="w-5 h-5 shrink-0 text-primary" strokeWidth={1.75} />
       <span className="min-w-0 flex-1"><span className="block t-16 text-foreground">{title}</span><span className="block t-12 text-subtle font-normal break-words">{summary}</span></span>
-      <ChevronDown className={`w-5 h-5 shrink-0 text-subtle transition-transform duration-200 ease-smooth ${open ? 'rotate-180' : ''}`} strokeWidth={1.75} />
+      <ChevronDown className={`w-5 h-5 shrink-0 [transition:transform_180ms_cubic-bezier(0.22,1,0.36,1),color_180ms_cubic-bezier(0.22,1,0.36,1)] ${open ? 'rotate-180 text-primary' : 'text-subtle'}`} strokeWidth={1.75} />
     </Button>
-    <div id={`settings-${id}`} className={`grid transition-[grid-template-rows] duration-200 ease-smooth ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`} aria-hidden={!open} {...(!open ? { inert: '' } : {})}>
-      <div className="min-h-0 overflow-hidden"><div className="space-y-[10px] pt-[10px]">{children}</div></div>
+    <div id={`settings-${id}`} className={`grid [transition:grid-template-rows_180ms_cubic-bezier(0.22,1,0.36,1)] ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`} aria-hidden={!open} {...(!open ? { inert: '' } : {})}>
+      <div className="min-h-0 overflow-hidden">
+        <div className="ml-3 pl-3 border-l-2 border-primary/30 space-y-[10px] pt-[10px]">
+          {children}
+          <button type="button" onClick={toggle} className="w-full h-11 t-14 text-subtle text-center">{tr('Zuklappen', 'Collapse')}</button>
+        </div>
+      </div>
     </div>
   </section>;
 };
