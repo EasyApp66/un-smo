@@ -50,8 +50,14 @@ const Countdown = ({ target, className }: CountdownProps) => {
 
   useEffect(() => {
     setLabel(format(target));
-    const id = window.setInterval(() => setLabel(format(target)), 1000);
-    return () => window.clearInterval(id);
+    const update = () => setLabel(format(target));
+    const id = window.setInterval(update, 1000);
+    // Nach Standby/Hintergrund sofort den richtigen Wert zeigen
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', update);
+    };
   }, [target]);
 
   if (!/\d/.test(label)) return <span className={className}>{label}</span>;
