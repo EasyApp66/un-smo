@@ -150,7 +150,21 @@ export const formatLocalDate = (d: Date = new Date()) => {
   return `${y}-${m}-${day}`;
 };
 
-const getTodayString = () => formatLocalDate();
+/** Der App-Tag wechselt nicht um Mitternacht, sondern erst um 07:00 Uhr lokale Zeit. */
+export const DAY_BOUNDARY_HOUR = 7;
+
+/** Datum (als Date, 12:00 Uhr) des logischen Tages: 00:00–06:59 zählt zum Vortag. */
+export const logicalDay = (now: Date = new Date()) => {
+  const d = new Date(now);
+  if (d.getHours() < DAY_BOUNDARY_HOUR) d.setDate(d.getDate() - 1);
+  d.setHours(12, 0, 0, 0);
+  return d;
+};
+
+/** Zentrale Hilfsfunktion: 'YYYY-MM-DD' des logischen Tages. */
+export const getLogicalDate = (now: Date = new Date()) => formatLocalDate(logicalDay(now));
+
+const getTodayString = () => getLogicalDate();
 
 const defaultReductionPlan = (): ReductionPlanState => ({
   planStartedAt: null,
@@ -229,7 +243,7 @@ const reconcileExtraReduction = (
   const extras = day.reminders.filter((r) => r.extra);
   let reminders: ReminderTime[];
 
-  if (date === formatLocalDate(now)) {
+  if (date === getLogicalDate(now)) {
     // Heute gilt die feste Formel: offene Wecker = Tagesziel − geraucht.
     reminders = balanceRemaining(day.reminders, day.totalCigarettes, wakeTime, sleepTime, now);
   } else {
@@ -1004,7 +1018,7 @@ export const useAppStore = create<AppState>()(
       onRehydrateStorage: () => (state) => {
         applyTheme(state?.themeMode ?? 'system');
         if (!state) return;
-        const today = formatLocalDate();
+        const today = getLogicalDate();
         const todayData = state.days?.[today];
         if (todayData) {
           setTimeout(() => {
