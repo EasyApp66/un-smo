@@ -148,7 +148,7 @@ const SettingsSheet = () => {
   }, []);
 
   const actualRows = useMemo(() => weeklyActuals(days, reductionPlan).slice(0, 12), [days, reductionPlan]);
-  const thisWeekPaused = reductionPlan.pausedWeekKeys.includes(weekKey(new Date().toISOString().slice(0, 10)));
+  const thisWeekPaused = reductionPlan.pausedWeekKeys.includes(weekKey(getLogicalDate()));
 
   const isLifetime = account.paymentStatus === 'lifetime';
   const isPaying = account.paymentStatus === 'active' || isLifetime;

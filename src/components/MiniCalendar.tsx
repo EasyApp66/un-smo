@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { useLang, useT } from '../lib/i18n';
 import { dayStatus } from '../lib/reductionPlan';
+import { logicalDay } from '../lib/logicalDate';
 
 interface MiniCalendarProps {
   selectedDate: string;
@@ -102,7 +103,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   const lang = useLang();
   const dateLocale = lang === 'en' ? enGB : de;
   const daysData = useAppStore((s) => s.days);
-  const [today, setToday] = useState(() => toDateString(new Date()));
+  const [today, setToday] = useState(() => toDateString(logicalDay()));
   const [weekOffset, setWeekOffset] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
@@ -118,10 +119,10 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
     return () => ro.disconnect();
   }, []);
 
-  // Datum wechselt automatisch um Mitternacht
+  // Datum wechselt automatisch um 07:00 Uhr (logischer Tag)
   useEffect(() => {
     const tick = () => {
-      const now = toDateString(new Date());
+      const now = toDateString(logicalDay());
       if (now !== today) {
         setToday(now);
         setWeekOffset(0);
@@ -137,7 +138,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect }: MiniCalendarProps) => {
   }, [today, onDateSelect]);
 
   const weekStart = useMemo(
-    () => addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset),
+    () => addWeeks(startOfWeek(logicalDay(), { weekStartsOn: 1 }), weekOffset),
     [weekOffset, today]
   );
 

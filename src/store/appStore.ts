@@ -1,3 +1,4 @@
+import { getLogicalDate } from '@/lib/logicalDate';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { durableStorage } from '../lib/persistentStorage';
@@ -150,19 +151,7 @@ export const formatLocalDate = (d: Date = new Date()) => {
   return `${y}-${m}-${day}`;
 };
 
-/** Der App-Tag wechselt nicht um Mitternacht, sondern erst um 07:00 Uhr lokale Zeit. */
-export const DAY_BOUNDARY_HOUR = 7;
-
-/** Datum (als Date, 12:00 Uhr) des logischen Tages: 00:00–06:59 zählt zum Vortag. */
-export const logicalDay = (now: Date = new Date()) => {
-  const d = new Date(now);
-  if (d.getHours() < DAY_BOUNDARY_HOUR) d.setDate(d.getDate() - 1);
-  d.setHours(12, 0, 0, 0);
-  return d;
-};
-
-/** Zentrale Hilfsfunktion: 'YYYY-MM-DD' des logischen Tages. */
-export const getLogicalDate = (now: Date = new Date()) => formatLocalDate(logicalDay(now));
+export { DAY_BOUNDARY_HOUR, logicalDay, getLogicalDate } from '@/lib/logicalDate';
 
 const getTodayString = () => getLogicalDate();
 

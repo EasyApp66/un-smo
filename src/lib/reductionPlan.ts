@@ -1,3 +1,4 @@
+import { getLogicalDate } from '@/lib/logicalDate';
 import type { DayData, ReminderTime } from '@/store/appStore';
 import { tr, currentLocale } from '@/lib/i18n';
 
@@ -157,7 +158,7 @@ const rawTargetForDate = (state: ReductionPlanState, date: string) => {
 export const buildReductionPlan = (state: ReductionPlanState, maxRows = 80): PlanWeekRow[] => {
   const baseline = Math.max(0, Math.round(state.baselineCigarettes || state.onboardingEstimate || 0));
   const reduction = Math.max(1, Math.round(state.reductionPerWeek || 1));
-  const start = state.planStartedAt ?? normalizeDate(new Date());
+  const start = state.planStartedAt ?? getLogicalDate();
   const rows: PlanWeekRow[] = [
     { week: 1, label: tr('Woche 1', 'Week 1'), target: baseline, isMeasurement: true, isSmokeFree: false, date: start },
   ];
@@ -224,8 +225,8 @@ export const formatSavedTime = (minutes: number) => {
 };
 
 export const weeklyActuals = (days: Record<string, DayData>, state: ReductionPlanState): WeeklyActualRow[] => {
-  const start = state.planStartedAt ?? normalizeDate(new Date());
-  const current = normalizeDate(new Date());
+  const start = state.planStartedAt ?? getLogicalDate();
+  const current = getLogicalDate();
   const plan = buildReductionPlan(state);
   return plan.map((row) => {
     const entries: DayData[] = [];

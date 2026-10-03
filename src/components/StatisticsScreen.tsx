@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { formatLocalDate } from '../store/appStore';
+import { getLogicalDate, logicalDay } from '@/lib/logicalDate';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 import { Cigarette, Calendar, Target, Search, Lock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -23,7 +24,7 @@ const StatisticsScreen = () => {
 
   const weekData = useMemo(() => {
     const data = [];
-    const today = new Date();
+    const today = logicalDay();
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
@@ -80,7 +81,7 @@ const StatisticsScreen = () => {
     const isoWeek = (d: Date) => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x.getTime() - y.getTime()) / 86_400_000 + 1) / 7); };
     const dates = Object.keys(days).sort();
     if (dates.length === 0) return [];
-    const currentMonday = mondayOf(new Date());
+    const currentMonday = mondayOf(logicalDay());
     const firstMonday = mondayOf(new Date(`${dates[0]}T12:00:00`));
     const weeks = [];
     for (let m = new Date(currentMonday); m >= firstMonday && weeks.length < 26; m.setDate(m.getDate() - 7)) {
@@ -103,7 +104,7 @@ const StatisticsScreen = () => {
   const weekB = weekArchive.find((w) => w.start === weekBKey) ?? weekArchive[0];
 
   const monthMemories = useMemo(() => {
-    const currentMonth = formatLocalDate().slice(0, 7);
+    const currentMonth = getLogicalDate().slice(0, 7);
     const months = Array.from(new Set([currentMonth, ...Object.keys(days).map((date) => date.slice(0, 7))])).sort((a, b) => b.localeCompare(a));
     return months.map((month) => {
       const entries = Object.values(days).filter((day) => day.date.startsWith(month));

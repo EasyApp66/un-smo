@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/lib/i18n';
-import { useAppStore, formatLocalDate, sortKey, toMinutes } from '../store/appStore';
+import { useAppStore, sortKey, toMinutes } from '../store/appStore';
+import { getLogicalDate, logicalTargetTime } from '@/lib/logicalDate';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
@@ -16,22 +17,12 @@ import {
 } from '@/lib/reductionPlan';
 
 
-/** Zielzeitpunkt – nur Zeiten vor der Aufstehzeit liegen nach Mitternacht. */
-const targetTime = (timeString: string, now: number, wakeMin: number): number => {
-  const nowDate = new Date(now);
-  const [hours, minutes] = timeString.split(':').map(Number);
-  const target = new Date(nowDate);
-  target.setHours(hours, minutes, 0, 0);
-  const slotMin = hours * 60 + minutes;
-  const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
-  if (slotMin < wakeMin && nowMin >= wakeMin) target.setDate(target.getDate() + 1);
-  return target.getTime();
-};
+const targetTime = logicalTargetTime;
 
 
 const HomeScreen = () => {
   const t = useT();
-  const [selectedDate, setSelectedDate] = useState(() => formatLocalDate());
+  const [selectedDate, setSelectedDate] = useState(() => getLogicalDate());
 
   const {
     days,
@@ -54,13 +45,13 @@ const HomeScreen = () => {
 
   // Minutentakt, damit die nächste Zigarette weiterwandert, auch ohne Antippen
   const [minuteTick, setMinuteTick] = useState(0);
-  const todayRef = useRef(formatLocalDate());
+  const todayRef = useRef(getLogicalDate());
   useEffect(() => {
     const id = window.setInterval(() => {
       setMinuteTick((t) => t + 1);
       // Tageswechsel um Mitternacht: die Ansicht folgt dem neuen Tag,
       // wenn zuvor der laufende Tag angezeigt wurde.
-      const today = formatLocalDate();
+      const today = getLogicalDate();
       if (today !== todayRef.current) {
         const previousToday = todayRef.current;
         todayRef.current = today;
@@ -117,7 +108,7 @@ const HomeScreen = () => {
   const handleDaySetupComplete = () => {};
 
   const needsSetup = !dayData;
-  const measurementLeft = measurementDaysLeft(reductionPlan, formatLocalDate());
+  const measurementLeft = measurementDaysLeft(reductionPlan, getLogicalDate());
   const savings = useMemo(() => savedSummary(days, reductionPlan), [days, reductionPlan]);
   const reduceMotion = useReducedMotion();
   const status = dayStatus(completedCount, totalCount);

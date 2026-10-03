@@ -27,7 +27,7 @@ const awakeText = (wakeTime: string, sleepTime: string, count: number) => {
 };
 
 const planState = (daily: number, reduction: number) => ({
-  planStartedAt: new Date().toISOString().slice(0, 10),
+  planStartedAt: getLogicalDate(),
   measurementCompletedAt: null,
   baselineCigarettes: daily,
   onboardingEstimate: daily,
