@@ -122,6 +122,7 @@ export type Database = {
           daily_cigarettes: number
           endpoint: string
           id: string
+          last_sent_at: string | null
           last_sent_slot: string | null
           plan: Json
           sleep_time: string
@@ -135,6 +136,7 @@ export type Database = {
           daily_cigarettes?: number
           endpoint: string
           id?: string
+          last_sent_at?: string | null
           last_sent_slot?: string | null
           plan?: Json
           sleep_time?: string
@@ -148,6 +150,7 @@ export type Database = {
           daily_cigarettes?: number
           endpoint?: string
           id?: string
+          last_sent_at?: string | null
           last_sent_slot?: string | null
           plan?: Json
           sleep_time?: string

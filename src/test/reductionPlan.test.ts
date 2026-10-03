@@ -50,9 +50,9 @@ describe('Messwoche und Abbauplan', () => {
   });
   it('hält Woche 1 als Messwoche und senkt danach montags', () => {
     expect(isMeasurementDate(plan, '2026-09-14')).toBe(true);
-    expect(plannedTargetForDate(plan, '2026-09-20')).toBe(20);
-    expect(plannedTargetForDate({ ...plan, measurementCompletedAt: '2026-09-21' }, '2026-09-21')).toBe(18);
-    expect(plannedTargetForDate({ ...plan, measurementCompletedAt: '2026-09-21' }, '2026-09-28')).toBe(16);
+    expect(plannedTargetForDate(plan, '2026-09-20')).toBe(19);
+    expect(plannedTargetForDate({ ...plan, measurementCompletedAt: '2026-09-21' }, '2026-09-21')).toBe(17);
+    expect(plannedTargetForDate({ ...plan, measurementCompletedAt: '2026-09-21' }, '2026-09-28')).toBe(15);
   });
 
   it('setzt den gemessenen Durchschnitt gerundet als Ausgangswert', () => {
@@ -70,8 +70,8 @@ describe('Messwoche und Abbauplan', () => {
 
   it('pausiert eine Woche ohne das Ziel zu erhöhen', () => {
     const paused = { ...plan, measurementCompletedAt: '2026-09-21', pausedWeekKeys: [weekKey('2026-09-28')] };
-    expect(plannedTargetForDate(paused, '2026-09-28')).toBe(18);
-    expect(plannedTargetForDate(paused, '2026-10-05')).toBe(16);
+    expect(plannedTargetForDate(paused, '2026-09-28')).toBe(17);
+    expect(plannedTargetForDate(paused, '2026-10-05')).toBe(15);
   });
 
   it('berechnet Geld- und Zeitersparnis aus Ausgangswert minus tatsächlich geraucht', () => {

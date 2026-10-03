@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
           timezone: body.timezone,
           plan: body.plan ?? {},
           last_sent_slot: null,
+          last_sent_at: null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'endpoint' },

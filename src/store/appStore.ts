@@ -8,6 +8,7 @@ import {
   measuredAverage,
   needsMeasurementReview,
   plannedTargetForDate,
+  toOddGoal,
   weekKey,
 } from '../lib/reductionPlan';
 
@@ -271,28 +272,42 @@ export const balanceRemaining = (
   let sleepKey = sortKey(toMinutes(sleepTime), wakeMin);
   if (sleepKey <= wakeMin) sleepKey += 1440;
   const smoked = reminders.filter((r) => r.completed).length;
-  const needed = Math.max(0, goal - smoked);
+  // Ein übersprungener geplanter Wecker verbraucht seinen Platz.
+  const skipped = reminders.filter((r) => r.skipped && !r.completed && !r.extra).length;
+  const needed = Math.max(0, goal - smoked - skipped);
   const isOpen = (r: ReminderTime) => !r.completed && !r.skipped && !r.extra;
-  const openFuture = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) > nowKey);
-  const openPast = reminders.filter((r) => isOpen(r) && sortKey(r.timestamp, wakeMin) <= nowKey);
-
-  const open = [...openPast, ...openFuture].sort((x, y) => sortKey(x.timestamp, wakeMin) - sortKey(y.timestamp, wakeMin));
+  const open = reminders
+    .filter(isOpen)
+    .sort((x, y) => sortKey(x.timestamp, wakeMin) - sortKey(y.timestamp, wakeMin));
   if (open.length === needed) return reminders;
-  const kept = reminders.filter((r) => !isOpen(r));
-  // Zu viele: von unten streichen.
-  if (open.length > needed) return [...kept, ...open.slice(0, needed)];
-  // Nach der Schlafenszeit nichts mehr ergänzen.
-  if (nowKey >= sleepKey) return reminders;
-  // Zu wenige: überfällige bleiben, die zukünftigen werden neu ab jetzt verteilt.
-  const futureNeeded = needed - openPast.length;
-  const keptAll = [...kept, ...openPast];
-  // Zu wenige: alle offenen gleichmässig zwischen jetzt und Schlafenszeit neu verteilen.
-  const span = sleepKey - nowKey;
-  const interval = span / futureNeeded;
+  // Zu viele: die spätesten streichen, alle anderen bleiben exakt.
+  if (open.length > needed) {
+    const drop = new Set(open.slice(needed).map((r) => r.id));
+    return reminders.filter((r) => !drop.has(r.id));
+  }
+  // Zu wenige: bestehende bleiben unverändert; fehlende in die grössten Lücken,
+  // frühestens 20 Minuten ab jetzt und vor der Schlafenszeit.
+  const earliest = nowKey + 20;
+  if (earliest >= sleepKey) return reminders;
+  const points = open
+    .map((r) => sortKey(r.timestamp, wakeMin))
+    .filter((k) => k > earliest && k < sleepKey);
+  const added: number[] = [];
   const stamp = Date.now();
-  const fresh: ReminderTime[] = Array.from({ length: futureNeeded }, (_, i) => {
-    const key = nowKey + interval * i + interval / 2;
-    const minutes = Math.floor(key) % 1440;
+  for (let n = 0; n < needed - open.length; n++) {
+    const all = [...points, ...added].sort((x, y) => x - y);
+    // Lücken: [earliest, erster], zwischen Punkten, [letzter, sleep]
+    let best = { from: earliest, size: -1 };
+    const bounds = [earliest, ...all, sleepKey];
+    for (let i = 0; i < bounds.length - 1; i++) {
+      const size = bounds[i + 1] - bounds[i];
+      if (size > best.size) best = { from: bounds[i], size };
+    }
+    if (best.size < 2) break;
+    added.push(Math.round(best.from + best.size / 2));
+  }
+  const fresh: ReminderTime[] = added.map((key, i) => {
+    const minutes = key % 1440;
     return {
       id: `reminder-r${stamp}-${i}`,
       time: `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`,
@@ -300,7 +315,7 @@ export const balanceRemaining = (
       timestamp: minutes,
     };
   });
-  return [...keptAll, ...fresh];
+  return [...reminders, ...fresh];
 };
 
 /** Untergrenze für automatische Ziel-Empfehlungen */
@@ -406,7 +421,8 @@ export const useAppStore = create<AppState>()(
         if (get().applyScheduleToAllDays) get().recalculateAllDays();
       },
 
-      setDailyCigarettes: (count, date) => {
+      setDailyCigarettes: (rawCount, date) => {
+        const count = toOddGoal(rawCount);
         const state = get();
         if (date && state.days[date]) {
           const day = state.days[date];
@@ -506,7 +522,8 @@ export const useAppStore = create<AppState>()(
 
       completeOnboardingWithPlan: (input) => {
         const today = getTodayString();
-        const goal = Math.max(1, Math.min(60, Math.round(input.dailyCigarettes)));
+        const estimate = Math.max(1, Math.min(60, Math.round(input.dailyCigarettes)));
+        const goal = toOddGoal(estimate);
         const reductionPerWeek = Math.max(1, Math.min(5, Math.round(input.reductionPerWeek))) as ReductionSpeed;
         set((state) => ({
           wakeTime: input.wakeTime,
@@ -519,8 +536,8 @@ export const useAppStore = create<AppState>()(
             planStartedAt: today,
             measurementCompletedAt: null,
             baselineCigarettes: goal,
-            onboardingEstimate: goal,
-            savingsBaseline: goal,
+            onboardingEstimate: estimate,
+            savingsBaseline: estimate,
             reductionPerWeek,
             automaticReductionEnabled: true,
             zeroReachedAt: null,
@@ -532,7 +549,13 @@ export const useAppStore = create<AppState>()(
       resetOnboarding: () => set({ hasCompletedOnboarding: false, onboardingVersion: 0 }),
 
       updateReductionPlan: (patch) =>
-        set((state) => ({ reductionPlan: { ...state.reductionPlan, ...patch } })),
+        set((state) => ({
+          reductionPlan: {
+            ...state.reductionPlan,
+            ...patch,
+            ...(typeof patch.baselineCigarettes === 'number' ? { baselineCigarettes: toOddGoal(patch.baselineCigarettes) } : {}),
+          },
+        })),
 
       setPlanMoney: ({ packPrice, packSize, currency }) =>
         set((state) => ({
@@ -569,11 +592,12 @@ export const useAppStore = create<AppState>()(
       completeMeasurementIfNeeded: (today = getTodayString()) =>
         set((state) => {
           if (!needsMeasurementReview(state.reductionPlan, today) || !state.reductionPlan.planStartedAt) return state;
-          const baseline = measuredAverage(
+          const measured = measuredAverage(
             state.days,
             state.reductionPlan.planStartedAt,
             state.reductionPlan.onboardingEstimate
           );
+          const baseline = toOddGoal(measured);
           const zeroWeek = Math.ceil(baseline / Math.max(1, state.reductionPlan.reductionPerWeek));
           const zeroDate = new Date(`${state.reductionPlan.planStartedAt}T12:00:00`);
           zeroDate.setDate(zeroDate.getDate() + 7 + zeroWeek * 7);
@@ -732,7 +756,7 @@ export const useAppStore = create<AppState>()(
           return {
             days: {
               ...state.days,
-              [date]: reconcileExtraReduction(date, { ...dayData, reminders: updatedReminders }, state),
+              [date]: { ...dayData, reminders: updatedReminders },
             },
           };
         });
@@ -769,7 +793,8 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      configureDay: (date, cfg) => {
+      configureDay: (date, rawCfg) => {
+        const cfg = { ...rawCfg, goal: toOddGoal(rawCfg.goal) };
         set((s) => {
           const existingDay = s.days[date];
 
@@ -917,7 +942,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'smoke-storage',
       storage: createJSONStorage(() => durableStorage),
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
         if (p.themeMode === undefined) {
@@ -955,6 +980,12 @@ export const useAppStore = create<AppState>()(
           if (typeof reductionPlan.savingsBaseline !== 'number') {
             reductionPlan.savingsBaseline = reductionPlan.baselineCigarettes;
           }
+        }
+        if (version < 5) {
+          // Ziele einmalig ungerade machen – bestehende Tage bleiben unverändert.
+          if (typeof p.dailyCigarettes === 'number') p.dailyCigarettes = toOddGoal(p.dailyCigarettes);
+          const rp = p.reductionPlan as ReductionPlanState;
+          rp.baselineCigarettes = toOddGoal(rp.baselineCigarettes);
         }
         if (p.milestoneSeenIds === undefined) {
           p.milestoneSeenIds = [];

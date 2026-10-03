@@ -28,7 +28,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
       if (!el || !(el instanceof HTMLElement)) return false;
       if (el.isContentEditable) return true;
       const tag = el.tagName;
-      if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      if (tag === 'TEXTAREA') return true;
       if (tag === 'INPUT') {
         const type = (el as HTMLInputElement).type;
         return !['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image', 'hidden'].includes(type);
@@ -123,7 +123,7 @@ const BottomTabBar = ({ activeTab, onTabChange, onAddExtra }: BottomTabBarProps)
     const id = window.setInterval(() => {
       const el = document.activeElement as HTMLElement | null;
       const editable =
-        !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
+        !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName));
       if (!editable) setKeyboardOpen(false);
     }, 500);
     return () => window.clearInterval(id);

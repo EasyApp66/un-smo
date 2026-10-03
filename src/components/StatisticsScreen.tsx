@@ -4,26 +4,14 @@ import { formatLocalDate } from '../store/appStore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 import { Cigarette, Calendar, Target, Search, Lock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { Input } from './ui/input';
-import { dayStatus, pauseStats } from '@/lib/reductionPlan';
+import { dayStatus } from '@/lib/reductionPlan';
 import { defaultAccountStatus, fetchAccountStatus, type AccountStatus } from '@/lib/account';
 import { useT, useLocale } from '@/lib/i18n';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const hour = () => new Date().getHours();
-const quietOrTyping = () => {
-  const active = document.activeElement?.tagName?.toLowerCase();
-  return hour() >= 23 || hour() < 7 || active === 'input' || active === 'textarea';
-};
-const fmtDuration = (ms: number, t: <T,>(de: T, en: T) => T) => {
-  const hours = Math.floor(ms / 3_600_000);
-  if (hours >= 24) return t(`${Math.floor(hours / 24)} Tag${Math.floor(hours / 24) === 1 ? '' : 'e'}`, `${Math.floor(hours / 24)} day${Math.floor(hours / 24) === 1 ? '' : 's'}`);
-  return t(`${Math.max(0, hours)} Std.`, `${Math.max(0, hours)} hr`);
-};
-
 const StatisticsScreen = () => {
-  const { days, dailyCigarettes, reductionPlan, milestoneSeenIds, markMilestoneSeen } = useAppStore();
+  const { days, dailyCigarettes } = useAppStore();
   const t = useT();
   const locale = useLocale();
   const [monthSearch, setMonthSearch] = useState('');
@@ -82,7 +70,6 @@ const StatisticsScreen = () => {
     return current - previous;
   }, [days]);
 
-  const pauses = useMemo(() => pauseStats(days), [days]);
 
   // Wochenarchiv: Wochen ab Montag, wählbarer Zeitraum Mo bis X
   const [rangeEnd, setRangeEnd] = useState(6);
@@ -114,24 +101,6 @@ const StatisticsScreen = () => {
   // Standard: Vorwoche (links) gegen aktuelle Woche (rechts)
   const weekA = weekArchive.find((w) => w.start === weekAKey) ?? weekArchive[1] ?? weekArchive[0];
   const weekB = weekArchive.find((w) => w.start === weekBKey) ?? weekArchive[0];
-
-  const milestones = useMemo(() => {
-    const longTermActive = !!reductionPlan.zeroReachedAt && formatLocalDate() >= reductionPlan.zeroReachedAt;
-    return [
-      { id: 'short-20m', label: t('20 Minuten', '20 minutes'), detail: t('Puls und Blutdruck beginnen sich zu normalisieren.', 'Pulse and blood pressure start to normalize.'), done: pauses.currentMs >= 20 * 60_000 },
-      { id: 'short-8h', label: t('8 Stunden', '8 hours'), detail: t('Der Sauerstoffgehalt verbessert sich.', 'Oxygen levels improve.'), done: pauses.currentMs >= 8 * 3_600_000 },
-      { id: 'short-24h', label: t('24 Stunden', '24 hours'), detail: t('Das Herzinfarkt-Risiko beginnt zu sinken.', 'Heart attack risk starts to decrease.'), done: pauses.currentMs >= 24 * 3_600_000 },
-      { id: 'long-2w', label: t('2 Wochen', '2 weeks'), detail: t('Kreislauf und Lungenfunktion können sich verbessern.', 'Circulation and lung function can improve.'), done: longTermActive && reductionPlan.zeroReachedAt ? formatLocalDate() >= new Date(new Date(`${reductionPlan.zeroReachedAt}T12:00:00`).getTime() + 14 * 86_400_000).toISOString().slice(0, 10) : false },
-    ];
-  }, [pauses.currentMs, reductionPlan.zeroReachedAt, t]);
-
-  useEffect(() => {
-    if (quietOrTyping()) return;
-    const next = milestones.find((m) => m.done && !milestoneSeenIds.includes(m.id));
-    if (!next) return;
-    toast(next.label, { description: next.detail });
-    markMilestoneSeen(next.id);
-  }, [milestones, milestoneSeenIds, markMilestoneSeen]);
 
   const monthMemories = useMemo(() => {
     const currentMonth = formatLocalDate().slice(0, 7);
@@ -217,7 +186,7 @@ const StatisticsScreen = () => {
                 <div className="grid grid-cols-2 gap-2">
                   {[weekA, weekB].map((w, slot) => (
                     <div key={slot} className="rounded-inner bg-muted p-3">
-                      <select aria-label={slot === 0 ? t('Erste Woche', 'First week') : t('Zweite Woche', 'Second week')} value={w?.start ?? ''} onChange={(e) => (slot === 0 ? setWeekAKey : setWeekBKey)(e.target.value)} className="w-full bg-transparent t-14 text-foreground outline-none">
+                      <select aria-label={slot === 0 ? t('Erste Woche', 'First week') : t('Zweite Woche', 'Second week')} value={w?.start ?? ''} onChange={(e) => { (slot === 0 ? setWeekAKey : setWeekBKey)(e.target.value); (e.target as HTMLSelectElement).blur(); }} className="w-full bg-transparent t-14 text-foreground outline-none">
                         {weekArchive.map((o) => <option key={o.start} value={o.start}>{t('KW', 'Wk')} {o.week} · {o.label}</option>)}
                       </select>
                       <p className="t-36 num text-foreground mt-2">{w ? w.range : '–'}</p>
@@ -264,36 +233,6 @@ const StatisticsScreen = () => {
               <Metric icon={Target} label={t('Zur Vorwoche', 'Vs. last week')} delay={0.1}>{weekDelta === null ? <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p> : <p className="flex items-baseline gap-1"><span className={`t-32 num ${weekDelta <= 0 ? 'text-success' : 'text-destructive'}`}>{weekDelta > 0 ? `+${weekDelta}` : weekDelta < 0 ? `−${Math.abs(weekDelta)}` : '0'}</span><span className="t-14 text-subtle">{weekDelta < 0 ? t('weniger', 'less') : weekDelta > 0 ? t('mehr', 'more') : t('gleich', 'same')}</span></p>}</Metric>
               <Metric icon={Calendar} label={t('Bester Tag', 'Best day')} delay={0.12}>{stats.bestDay ? <p className="flex items-baseline gap-1"><span className="t-32 num text-foreground">{stats.bestDay.smoked}</span><span className="t-14 num text-subtle">({formatDate(stats.bestDay.date)})</span></p> : <p className="t-14 text-subtle">{t('Keine Daten', 'No data')}</p>}</Metric>
             </div>
-          </>
-        )}
-
-        {!locked && (
-          <>
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE }} className="surface-card p-5">
-              <h2 className="t-18 text-foreground mb-4">{t('Dein Körper', 'Your body')}</h2>
-              <div className="mb-4 grid grid-cols-2 gap-3">
-                <div className="rounded-inner bg-muted p-4">
-                  <p className="t-12 text-subtle">{t('Aktuelle Pause', 'Current pause')}</p>
-                  <p className="t-24 num text-foreground">{fmtDuration(pauses.currentMs, t)}</p>
-                </div>
-                <div className="rounded-inner bg-muted p-4">
-                  <p className="t-12 text-subtle">{t('Längste Pause', 'Longest pause')}</p>
-                  <p className="t-24 num text-foreground">{fmtDuration(pauses.longestMs, t)}</p>
-                </div>
-              </div>
-              <div className="space-y-0">
-                {milestones.map((m) => (
-                  <div key={m.id} className="relative pl-6 pb-5 last:pb-0">
-                    <span className="absolute left-[5px] top-2 bottom-0 w-px bg-border last:hidden" />
-                    <span className={`absolute left-0 top-1.5 w-3 h-3 rounded-pill ${m.done ? 'bg-primary' : 'bg-border'}`} />
-                    <p className="t-16 text-foreground">{m.label}</p>
-                    <p className="t-12 text-subtle">{m.detail}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="t-12 text-subtle mt-4">{t('Hinweis nach WHO/NHS. Keine medizinische Beratung.', 'Based on WHO/NHS. Not medical advice.')}</p>
-            </motion.div>
-
           </>
         )}
       </div>
