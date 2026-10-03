@@ -31,8 +31,8 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
-  // Aufräumen: Geräte, die seit 60 Tagen nichts mehr gemeldet haben, entfernen
-  const cutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  // Aufräumen: Geräte, die seit 21 Tagen nichts mehr abgeglichen haben, entfernen
+  const cutoff = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString();
   await supabase.from('push_subscriptions').delete().lt('updated_at', cutoff);
 
   const { data: subs, error } = await supabase.from('push_subscriptions').select('*');
@@ -84,6 +84,8 @@ Deno.serve(async (req) => {
     if (!due) continue;
     const d = due as { key: string; index: number; time: number };
     if (sub.last_sent_slot === d.key) continue;
+    // Schutz gegen Meldungs-Flut: höchstens eine Meldung alle 15 Minuten pro Gerät.
+    if (sub.last_sent_at && now.getTime() - new Date(sub.last_sent_at).getTime() < 15 * 60_000) continue;
 
     const remaining = slots.length - d.index - 1;
     const payload = JSON.stringify({
@@ -97,7 +99,7 @@ Deno.serve(async (req) => {
       sent++;
       await supabase
         .from('push_subscriptions')
-        .update({ last_sent_slot: d.key, updated_at: now.toISOString() })
+        .update({ last_sent_slot: d.key, last_sent_at: now.toISOString() })
         .eq('id', sub.id);
     } catch (e) {
       const status = (e as { statusCode?: number }).statusCode;
