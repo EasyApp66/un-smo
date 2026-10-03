@@ -296,16 +296,14 @@ export const balanceRemaining = (
   for (let n = 0; n < needed - open.length; n++) {
     const all = [...points, ...added].sort((x, y) => x - y);
     // Lücken: [earliest, erster], zwischen Punkten, [letzter, sleep]
-    let best = { from: earliest, to: sleepKey, size: -1, edgeStart: true };
+    let best = { from: earliest, size: -1 };
     const bounds = [earliest, ...all, sleepKey];
     for (let i = 0; i < bounds.length - 1; i++) {
       const size = bounds[i + 1] - bounds[i];
-      if (size > best.size) best = { from: bounds[i], to: bounds[i + 1], size, edgeStart: i === 0 };
+      if (size > best.size) best = { from: bounds[i], size };
     }
     if (best.size < 2) break;
-    // Am Anfang darf der Wecker direkt auf „frühestens“ liegen, sonst in die Mitte.
-    const key = best.edgeStart && all.length === 0 ? best.from + best.size / 2 : best.edgeStart ? best.from : best.from + best.size / 2;
-    added.push(Math.round(key));
+    added.push(Math.round(best.from + best.size / 2));
   }
   const fresh: ReminderTime[] = added.map((key, i) => {
     const minutes = key % 1440;
