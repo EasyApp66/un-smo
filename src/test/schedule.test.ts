@@ -36,9 +36,9 @@ describe('Tagesplan über Mitternacht', () => {
     const date = formatLocalDate();
     useAppStore
       .getState()
-      .configureDay(date, { wakeTime: '08:00', sleepTime: '02:00', goal: 6 });
+      .configureDay(date, { wakeTime: '08:00', sleepTime: '02:00', goal: 7 });
     const day = useAppStore.getState().days[date];
-    expect(day.reminders).toHaveLength(6);
+    expect(day.reminders).toHaveLength(7);
     expect(day.reminders.some((r) => r.timestamp < 240)).toBe(true);
   });
 });
@@ -72,7 +72,7 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
     useAppStore.getState().addExtraCigarette(date);
     const day = useAppStore.getState().days[date];
     expect(day.reminders.filter((r) => !r.extra).length).toBeGreaterThan(0);
-    expect(day.totalCigarettes).toBe(20);
+    expect(day.totalCigarettes).toBe(19);
   });
 
   it('ist von Anfang an eingeschaltet', () => {
@@ -83,7 +83,7 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
   it('streicht pro Extra immer den untersten offenen Wecker, auch überfällige zählen', () => {
     vi.setSystemTime(new Date(2026, 8, 17, 21, 0, 0));
     const date = formatLocalDate();
-    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 8 });
+    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 9 });
     const before = useAppStore.getState().days[date].reminders.filter((r) => !r.extra);
     const last = before[before.length - 1];
     useAppStore.getState().addExtraCigarette(date);
@@ -91,8 +91,8 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
     useAppStore.getState().addExtraCigarette(date);
 
     const reduced = useAppStore.getState().days[date];
-    expect(reduced.totalCigarettes).toBe(8);
-    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(5);
+    expect(reduced.totalCigarettes).toBe(9);
+    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(6);
     expect(reduced.reminders.some((r) => r.id === last.id)).toBe(false);
   });
 });
@@ -107,18 +107,18 @@ describe('Tagesziel bleibt unverändert', () => {
 
   it('bei Extra und Überspringen', () => {
     const date = formatLocalDate();
-    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 12 });
+    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 13 });
     const first = useAppStore.getState().days[date].reminders[0].id;
     useAppStore.getState().skipReminder(date, first);
     useAppStore.getState().addExtraCigarette(date);
-    expect(useAppStore.getState().days[date].totalCigarettes).toBe(12);
+    expect(useAppStore.getState().days[date].totalCigarettes).toBe(13);
     expect(useAppStore.getState().dailyCigarettes).toBe(20);
   });
 
-  it('heute bleiben immer genau Ziel − geraucht offene Wecker, auch nach Überspringen', () => {
+  it('offene Wecker = Ziel − geraucht − übersprungen', () => {
     vi.setSystemTime(new Date(2026, 8, 17, 12, 0, 0));
     const date = formatLocalDate();
-    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 8 });
+    useAppStore.getState().configureDay(date, { wakeTime: '08:00', sleepTime: '22:00', goal: 9 });
     const open = () => useAppStore.getState().days[date].reminders.filter((r) => !r.completed && !r.skipped && !r.extra);
     const id = open()[0].id;
     useAppStore.getState().skipReminder(date, id);
@@ -129,13 +129,13 @@ describe('Tagesziel bleibt unverändert', () => {
 
   it('verwendet den Standard aus den Einstellungen für neue Tage', () => {
     const date = formatLocalDate();
-    useAppStore.getState().setDailyCigarettes(30);
+    useAppStore.getState().setDailyCigarettes(31);
     useAppStore.getState().initializeDay(date);
 
     const state = useAppStore.getState();
-    expect(state.reductionPlan.baselineCigarettes).toBe(30);
-    expect(state.days[date].totalCigarettes).toBe(30);
-    expect(state.days[date].reminders).toHaveLength(30);
+    expect(state.reductionPlan.baselineCigarettes).toBe(31);
+    expect(state.days[date].totalCigarettes).toBe(31);
+    expect(state.days[date].reminders).toHaveLength(31);
   });
 });
 
