@@ -1,5 +1,5 @@
 import { ChevronRight, ChevronDown, AlertTriangle, Sun, Moon, Smartphone, Bell, BellOff, RotateCcw, ShieldCheck, Clock, TrendingDown, Sparkles, Palette, User, Database, Info, type LucideIcon } from 'lucide-react';
-import { useT, useLocale } from '@/lib/i18n';
+import { useT, useLocale, tr } from '@/lib/i18n';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { useAppStore, resolveIsDark } from '../store/appStore';

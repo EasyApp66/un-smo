@@ -269,3 +269,55 @@ describe('Frühe Aufstehzeit und Nachtpläne', () => {
     expect(Object.keys(plan).every((k) => /^\d{4}-\d{2}-\d{2}$/.test(k))).toBe(true);
   });
 });
+
+describe('Formel ohne neue Wecker beim Überspringen', () => {
+  const R = (id: string, time: string, extra: Partial<import('../store/appStore').ReminderTime> = {}) => {
+    const [h, m] = time.split(':').map(Number);
+    return { id, time, timestamp: h * 60 + m, completed: false, ...extra };
+  };
+  const now = new Date(2026, 9, 3, 14, 0, 0);
+
+  it('(a) Ziel 10, 3 geraucht, 1 übersprungen → 6 offen, keine neuen IDs', () => {
+    const rem = [
+      R('a', '08:00', { completed: true }), R('b', '09:00', { completed: true }), R('c', '10:00', { completed: true }),
+      R('d', '11:00', { skipped: true }),
+      R('e', '13:00'), R('f', '15:00'), R('g', '16:00'), R('h', '18:00'), R('i', '19:00'), R('j', '21:00'),
+    ];
+    const out = balanceRemaining(rem, 10, '07:00', '22:00', now);
+    expect(out.filter((r) => !r.completed && !r.skipped)).toHaveLength(6);
+    expect(out.map((r) => r.id)).toEqual(rem.map((r) => r.id));
+  });
+
+  it('(b) vergangenen offenen Wecker überspringen ändert keine andere Zeit', () => {
+    vi.setSystemTime(now);
+    const date = formatLocalDate();
+    useAppStore.getState().configureDay(date, { wakeTime: '07:00', sleepTime: '22:00', goal: 9 });
+    const before = useAppStore.getState().days[date].reminders;
+    const past = before.find((r) => r.timestamp < 14 * 60)!;
+    useAppStore.getState().skipReminder(date, past.id);
+    const after = useAppStore.getState().days[date].reminders;
+    expect(after.map((r) => [r.id, r.time])).toEqual(before.map((r) => [r.id, r.time]));
+  });
+
+  it('(c) Neustart auf unverändertem Tag lässt alles identisch', () => {
+    const rem = [R('a', '08:00', { completed: true }), R('b', '12:00', { skipped: true }), R('c', '16:00'), R('d', '20:00')];
+    const out = balanceRemaining(rem, 4, '07:00', '22:00', now);
+    expect(out).toBe(rem);
+  });
+});
+
+describe('Ungerade Ziele', () => {
+  it('toOddGoal', () => {
+    expect([toOddGoal(20), toOddGoal(19), toOddGoal(1), toOddGoal(0)]).toEqual([19, 19, 1, 0]);
+  });
+  it('Plan ab 20 mit −2 nur ungerade bis 0', () => {
+    const base = { planStartedAt: '2026-01-05', measurementCompletedAt: '2026-01-12', baselineCigarettes: 20, onboardingEstimate: 20, savingsBaseline: 20, reductionPerWeek: 2, automaticReductionEnabled: true, pausedWeekKeys: [], packPrice: 9, packSize: 20, currency: 'CHF' as const, zeroReachedAt: null };
+    const goals = new Set<number>();
+    for (let w = 0; w < 15; w++) {
+      const d = new Date(2026, 0, 12 + w * 7, 12);
+      goals.add(plannedTargetForDate(base, formatLocalDate(d)));
+    }
+    for (const g of goals) expect(g === 0 || g % 2 === 1).toBe(true);
+    expect(goals.has(0)).toBe(true);
+  });
+});
