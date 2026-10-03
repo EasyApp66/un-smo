@@ -235,12 +235,6 @@ const StatisticsScreen = () => {
             </div>
           </>
         )}
-
-        </p>
-            </motion.div>
-
-          </>
-        )}
       </div>
     </div>
   );
