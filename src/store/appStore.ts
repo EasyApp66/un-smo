@@ -8,6 +8,7 @@ import {
   measuredAverage,
   needsMeasurementReview,
   plannedTargetForDate,
+  toOddGoal,
   weekKey,
 } from '../lib/reductionPlan';
 
@@ -420,7 +421,8 @@ export const useAppStore = create<AppState>()(
         if (get().applyScheduleToAllDays) get().recalculateAllDays();
       },
 
-      setDailyCigarettes: (count, date) => {
+      setDailyCigarettes: (rawCount, date) => {
+        const count = toOddGoal(rawCount);
         const state = get();
         if (date && state.days[date]) {
           const day = state.days[date];
@@ -520,7 +522,8 @@ export const useAppStore = create<AppState>()(
 
       completeOnboardingWithPlan: (input) => {
         const today = getTodayString();
-        const goal = Math.max(1, Math.min(60, Math.round(input.dailyCigarettes)));
+        const estimate = Math.max(1, Math.min(60, Math.round(input.dailyCigarettes)));
+        const goal = toOddGoal(estimate);
         const reductionPerWeek = Math.max(1, Math.min(5, Math.round(input.reductionPerWeek))) as ReductionSpeed;
         set((state) => ({
           wakeTime: input.wakeTime,
@@ -533,8 +536,8 @@ export const useAppStore = create<AppState>()(
             planStartedAt: today,
             measurementCompletedAt: null,
             baselineCigarettes: goal,
-            onboardingEstimate: goal,
-            savingsBaseline: goal,
+            onboardingEstimate: estimate,
+            savingsBaseline: estimate,
             reductionPerWeek,
             automaticReductionEnabled: true,
             zeroReachedAt: null,
@@ -546,7 +549,13 @@ export const useAppStore = create<AppState>()(
       resetOnboarding: () => set({ hasCompletedOnboarding: false, onboardingVersion: 0 }),
 
       updateReductionPlan: (patch) =>
-        set((state) => ({ reductionPlan: { ...state.reductionPlan, ...patch } })),
+        set((state) => ({
+          reductionPlan: {
+            ...state.reductionPlan,
+            ...patch,
+            ...(typeof patch.baselineCigarettes === 'number' ? { baselineCigarettes: toOddGoal(patch.baselineCigarettes) } : {}),
+          },
+        })),
 
       setPlanMoney: ({ packPrice, packSize, currency }) =>
         set((state) => ({
@@ -583,11 +592,12 @@ export const useAppStore = create<AppState>()(
       completeMeasurementIfNeeded: (today = getTodayString()) =>
         set((state) => {
           if (!needsMeasurementReview(state.reductionPlan, today) || !state.reductionPlan.planStartedAt) return state;
-          const baseline = measuredAverage(
+          const measured = measuredAverage(
             state.days,
             state.reductionPlan.planStartedAt,
             state.reductionPlan.onboardingEstimate
           );
+          const baseline = toOddGoal(measured);
           const zeroWeek = Math.ceil(baseline / Math.max(1, state.reductionPlan.reductionPerWeek));
           const zeroDate = new Date(`${state.reductionPlan.planStartedAt}T12:00:00`);
           zeroDate.setDate(zeroDate.getDate() + 7 + zeroWeek * 7);
@@ -783,7 +793,8 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      configureDay: (date, cfg) => {
+      configureDay: (date, rawCfg) => {
+        const cfg = { ...rawCfg, goal: toOddGoal(rawCfg.goal) };
         set((s) => {
           const existingDay = s.days[date];
 
@@ -931,7 +942,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'smoke-storage',
       storage: createJSONStorage(() => durableStorage),
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const p = (persisted ?? {}) as Record<string, unknown> & { isDarkMode?: boolean };
         if (p.themeMode === undefined) {
@@ -969,6 +980,12 @@ export const useAppStore = create<AppState>()(
           if (typeof reductionPlan.savingsBaseline !== 'number') {
             reductionPlan.savingsBaseline = reductionPlan.baselineCigarettes;
           }
+        }
+        if (version < 5) {
+          // Ziele einmalig ungerade machen – bestehende Tage bleiben unverändert.
+          if (typeof p.dailyCigarettes === 'number') p.dailyCigarettes = toOddGoal(p.dailyCigarettes);
+          const rp = p.reductionPlan as ReductionPlanState;
+          rp.baselineCigarettes = toOddGoal(rp.baselineCigarettes);
         }
         if (p.milestoneSeenIds === undefined) {
           p.milestoneSeenIds = [];

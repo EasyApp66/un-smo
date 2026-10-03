@@ -8,6 +8,16 @@ export const MINUTES_PER_CIGARETTE = 11;
 export const dayStatus = (smoked: number, goal: number): 'ok' | 'warn' | 'over' =>
   smoked <= goal ? 'ok' : smoked <= goal + 2 ? 'warn' : 'over';
 
+/** Tagesziele sind immer ungerade (0 = rauchfrei); gerade Werte runden nach unten. */
+export const toOddGoal = (n: number) => {
+  const v = Math.round(n);
+  if (v <= 0) return 0;
+  return v % 2 === 0 ? v - 1 : v;
+};
+
+/** Auswahl für Tagesziel-Räder: 0, 1, 3, 5 … 59 */
+export const ODD_GOAL_VALUES = [0, ...Array.from({ length: 30 }, (_, i) => i * 2 + 1)];
+
 export type CurrencyCode = 'CHF' | 'EUR' | 'USD' | 'GBP';
 
 export interface ReductionPlanState {
@@ -126,7 +136,10 @@ export const measuredAverage = (days: Record<string, DayData>, startDate: string
   return Math.max(0, Math.round(values.reduce((sum, value) => sum + value, 0) / values.length));
 };
 
-export const plannedTargetForDate = (state: ReductionPlanState, date: string) => {
+export const plannedTargetForDate = (state: ReductionPlanState, date: string) =>
+  toOddGoal(rawTargetForDate(state, date));
+
+const rawTargetForDate = (state: ReductionPlanState, date: string) => {
   const baseline = Math.max(0, Math.round(state.baselineCigarettes || state.onboardingEstimate || 0));
   const reduction = Math.max(1, Math.round(state.reductionPerWeek || 1));
 
