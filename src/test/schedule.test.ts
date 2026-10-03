@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
-import { useAppStore, sortKey, toMinutes, formatLocalDate } from '../store/appStore';
+import { useAppStore, sortKey, toMinutes, formatLocalDate, balanceRemaining } from '../store/appStore';
+import { toOddGoal, plannedTargetForDate } from '../lib/reductionPlan';
 
 const shift = (date: string, days: number) => {
   const d = new Date(`${date}T12:00:00`);
