@@ -1,7 +1,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
-import { reminderSlots, localNow } from '../_shared/schedule.ts';
+import { localNow } from '../_shared/schedule.ts';
 import { authenticateCronRequest } from '../_shared/verify-cron.ts';
 
 const json = (body: unknown, status = 200) =>
@@ -49,18 +49,30 @@ Deno.serve(async (req) => {
   for (const sub of subs ?? []) {
     const { date, minutes } = localNow(sub.timezone, now);
 
+    // Nach 07:00 nur mit einem Abgleich vom heutigen App-Tag senden.
+    // Alte Pläne bleiben im Hintergrund gespeichert, dürfen aber nicht den neuen Morgen wecken.
+    const updated = sub.updated_at ? localNow(sub.timezone, new Date(sub.updated_at)) : null;
+    const logicalDate = minutes < 7 * 60
+      ? new Date(`${date}T12:00:00Z`)
+      : null;
+    logicalDate?.setUTCDate(logicalDate.getUTCDate() - 1);
+    const currentDay = logicalDate ? logicalDate.toISOString().slice(0, 10) : date;
+    const updatedDay = updated && updated.minutes < 7 * 60
+      ? (() => { const d = new Date(`${updated.date}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })()
+      : updated?.date;
+    if (updatedDay !== currentDay) continue;
+
     // Bevorzugt der vom Gerät übertragene, tatsächlich angezeigte Wecker-Plan
     const plan = (sub.plan ?? {}) as Record<string, string[]>;
-    // Leere Liste ist gültig (= nichts senden); Rückfall nur, wenn der Tag fehlt
-    const planned = Object.prototype.hasOwnProperty.call(plan, date) && Array.isArray(plan[date]) ? plan[date] : null;
+    // Fehlende oder leere Tage bleiben still, bis die App einen eingerichteten Tag abgeglichen hat.
+    const planned = plan[date];
+    if (!Array.isArray(planned) || planned.length === 0) continue;
     const slots = planned
-      ? planned
-          .map((t) => {
-            const [h, m] = t.split(':').map(Number);
-            return h * 60 + m;
-          })
-          .sort((a, b) => a - b)
-      : reminderSlots(sub.wake_time, sub.sleep_time, sub.daily_cigarettes);
+      .map((t) => {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+      })
+      .sort((a, b) => a - b);
 
     // Fälliger Slot: liegt maximal 3 Minuten zurück (Cron-Jitter), noch nicht gesendet
     // Slots > 1440 gehören zum Vortag nach Mitternacht → Datum des Vortags verwenden
@@ -95,7 +107,7 @@ Deno.serve(async (req) => {
     });
 
     try {
-      await webpush.sendNotification(sub.subscription, payload, { TTL: 600, urgency: 'high' });
+      await webpush.sendNotification(sub.subscription, payload, { TTL: 60, urgency: 'high' });
       sent++;
       await supabase
         .from('push_subscriptions')
