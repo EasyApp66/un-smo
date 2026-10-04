@@ -1,7 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { plannedTargetForDate } from '@/lib/reductionPlan';
-import { getLogicalDate, logicalDay } from '@/lib/logicalDate';
-import { useAppStore, formatLocalDate, generateReminders, type DayData } from '@/store/appStore';
+import { getLogicalDate } from '@/lib/logicalDate';
+import { useAppStore, formatLocalDate } from '@/store/appStore';
 
 // Öffentlicher VAPID-Schlüssel (darf im Code stehen)
 export const VAPID_PUBLIC_KEY =
@@ -55,14 +54,10 @@ export const buildPlan = (): Record<string, string[]> => {
     if (smoked >= (day.totalCigarettes ?? 0)) continue;
     // Der Tag beginnt mit seiner Aufstehzeit; nur frühere Zeiten liegen nach Mitternacht.
     const wakeMin = toMinutes(day.wakeTime ?? wakeTime);
-    const dayStart = logicalDay(new Date(`${key}T12:00:00`));
-    dayStart.setHours(Math.floor(wakeMin / 60), wakeMin % 60, 0, 0);
     for (const r of day.reminders) {
       if (r.completed || r.extra || r.skipped) continue;
       const planKey = toMinutes(r.time) < wakeMin ? shiftDate(key, 1) : key;
       if (planKey < calendarToday) continue;
-      // Keine verpassten Slots vor der Aufstehzeit oder nach dem App-Tageswechsel erneut senden.
-      if (key === today && Date.now() < dayStart.getTime()) continue;
       (plan[planKey] ??= []).push(r.time);
     }
   }
