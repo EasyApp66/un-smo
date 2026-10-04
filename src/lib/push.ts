@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { plannedTargetForDate } from '@/lib/reductionPlan';
-import { getLogicalDate } from '@/lib/logicalDate';
+import { getLogicalDate, logicalDay } from '@/lib/logicalDate';
 import { useAppStore, formatLocalDate, generateReminders, type DayData } from '@/store/appStore';
 
 // Öffentlicher VAPID-Schlüssel (darf im Code stehen)
@@ -35,43 +35,34 @@ const toMinutes = (hhmm: string) => {
   return h * 60 + m;
 };
 
-/** Konkrete, noch offene Weckerzeiten der nächsten Tage – exakt wie in der App angezeigt.
- *  Heute und die nächsten zwei Tage sind immer enthalten; [] heisst: keine Meldungen. */
+/** Konkrete, noch offene Weckerzeiten eingerichteter Tage.
+ *  Nicht eingerichtete Tage bleiben leer: erst nach dem Einrichten darf ein Wecker melden. */
 export const buildPlan = (): Record<string, string[]> => {
   const state = useAppStore.getState();
-  const { days, wakeTime, sleepTime } = state;
+  const { days, wakeTime } = state;
   const plan: Record<string, string[]> = {};
   const today = getLogicalDate();
   // Server-Pläne sind nach Kalendertagen geordnet.
   const calendarToday = formatLocalDate();
-  for (let i = 0; i < 3; i++) plan[shiftDate(today, i)] = [];
+  for (let i = 0; i < 3; i++) plan[shiftDate(calendarToday, i)] = [];
   // Der Vortag zählt mit: Nachtzeiten nach Mitternacht gehören zum heutigen Kalendertag.
   for (let i = -1; i < 3; i++) {
     const key = shiftDate(today, i);
-    let day = days[key];
-    if (!day) {
-      if (i < 0) continue;
-      // Noch nicht angelegter Tag: nur berechnen, nicht speichern.
-      // Dasselbe Ziel wie initializeDay() – auch 0 bleibt 0.
-      const goal = plannedTargetForDate(state.reductionPlan, key);
-      day = {
-        date: key,
-        cigarettesSmoked: 0,
-        totalCigarettes: goal,
-        wakeTime,
-        sleepTime,
-        reminders: generateReminders(wakeTime, sleepTime, goal),
-      } as DayData;
-    }
+    const day = days[key];
+    if (!day) continue;
     // Tagesziel erreicht (inkl. Extras): keine weiteren Meldungen für diesen Tag.
     const smoked = day.reminders.filter((r) => r.completed).length;
     if (smoked >= (day.totalCigarettes ?? 0)) continue;
     // Der Tag beginnt mit seiner Aufstehzeit; nur frühere Zeiten liegen nach Mitternacht.
     const wakeMin = toMinutes(day.wakeTime ?? wakeTime);
+    const dayStart = logicalDay(new Date(`${key}T12:00:00`));
+    dayStart.setHours(Math.floor(wakeMin / 60), wakeMin % 60, 0, 0);
     for (const r of day.reminders) {
       if (r.completed || r.extra || r.skipped) continue;
       const planKey = toMinutes(r.time) < wakeMin ? shiftDate(key, 1) : key;
       if (planKey < calendarToday) continue;
+      // Keine verpassten Slots vor der Aufstehzeit oder nach dem App-Tageswechsel erneut senden.
+      if (key === today && Date.now() < dayStart.getTime()) continue;
       (plan[planKey] ??= []).push(r.time);
     }
   }
