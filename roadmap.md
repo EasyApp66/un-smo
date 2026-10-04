@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Verlauf ohne Seitensprung öffnen und unten zuklappen; Nach-oben-Knopf erhalten
+- [x] Morgens keine alten Push-Meldungen vor dem Einrichten des neuen Tages
+
 - [x] Neues Onboarding mit Ergebnisplan fertigstellen
 - [x] Messwoche und automatischen Abbauplan einbauen
 - [x] Gespartes Geld und Zeit anzeigen

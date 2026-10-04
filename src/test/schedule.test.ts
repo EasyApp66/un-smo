@@ -159,6 +159,16 @@ describe('Benachrichtigungsplan', () => {
     expect(plan['2026-09-18']).toEqual(expect.arrayContaining(nightTimes));
     for (const t of nightTimes) expect(plan[date] ?? []).not.toContain(t);
   });
+
+  it('meldet an einem nicht eingerichteten Morgen nichts aus alten oder berechneten Plänen', () => {
+    useAppStore.getState().configureDay('2026-09-17', { wakeTime: '08:00', sleepTime: '09:00', goal: 3 });
+    vi.setSystemTime(new Date(2026, 8, 18, 7, 30, 0));
+    const plan = buildPlan();
+    expect(plan['2026-09-18']).toEqual([]);
+    expect(plan['2026-09-19']).toEqual([]);
+    useAppStore.getState().configureDay('2026-09-18', { wakeTime: '08:00', sleepTime: '22:00', goal: 3 });
+    expect(buildPlan()['2026-09-18']).toHaveLength(3);
+  });
 });
 
 describe('Frühe Aufstehzeit und Nachtpläne', () => {

@@ -68,23 +68,32 @@ const Index = () => {
     };
   }, [pushToken, wakeTime, sleepTime, dailyCigarettes, days]);
 
-  // Fehlgeschlagenen Abgleich (z. B. offline) beim nächsten Online-/Sichtbar-Ereignis nachholen
+  // Nach 07:00 alten Server-Plan ersetzen, auch wenn die App im Vordergrund blieb.
+  // Offline fehlgeschlagene Abgleiche werden beim Wiederverbinden wiederholt.
   const pushSyncFailed = useRef(false);
   useEffect(() => {
     if (!pushToken) return;
+    let syncedDay = getLogicalDate();
     const retry = () => {
-      if (!pushSyncFailed.current) return;
       if (document.visibilityState !== 'visible' || !navigator.onLine) return;
+      const day = getLogicalDate();
+      if (!pushSyncFailed.current && day === syncedDay) return;
       const s = useAppStore.getState();
       syncPushSchedule(pushToken, { wakeTime: s.wakeTime, sleepTime: s.sleepTime, dailyCigarettes: s.dailyCigarettes })
-        .then(() => { pushSyncFailed.current = false; })
-        .catch((e) => console.warn('Push-Sync fehlgeschlagen', e));
+        .then(() => { pushSyncFailed.current = false; syncedDay = day; })
+        .catch((e) => { pushSyncFailed.current = true; console.warn('Push-Sync fehlgeschlagen', e); });
     };
+    const interval = window.setInterval(retry, 15_000);
     window.addEventListener('online', retry);
     document.addEventListener('visibilitychange', retry);
+    window.addEventListener('pageshow', retry);
+    window.addEventListener('focus', retry);
     return () => {
+      window.clearInterval(interval);
       window.removeEventListener('online', retry);
       document.removeEventListener('visibilitychange', retry);
+      window.removeEventListener('pageshow', retry);
+      window.removeEventListener('focus', retry);
     };
   }, [pushToken]);
 
