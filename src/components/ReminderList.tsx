@@ -8,6 +8,7 @@ import { tr, useT } from '../lib/i18n';
 import { MINUTES_PER_CIGARETTE } from '../lib/reductionPlan';
 import Countdown from './Countdown';
 import Mark from './Mark';
+import { Button } from '@/components/ui/button';
 
 interface ReminderListProps {
   reminders: ReminderTime[];
@@ -383,20 +384,29 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
         </button>
 
         {showCompleted && doneRows.length > 0 && (
+          <div className="pt-[10px]">
           <div
-            className="pt-[10px]"
+            className="max-h-[55dvh] overflow-y-auto overscroll-contain"
             ref={(el) => {
               if (!el || !scrollOnOpen.current) return;
               scrollOnOpen.current = false;
-              // Die zuletzt eingetragenen Zigaretten mittig zeigen
+              // Nur den Verlauf scrollen, niemals die Seite mit ihrer fixierten Leiste.
               requestAnimationFrame(() => {
-                const last = el.lastElementChild as HTMLElement | null;
-                last?.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+                el.scrollTop = el.scrollHeight;
               });
             }}
           >
             <p className="px-1 pb-2 t-14 text-subtle">{t(`${smokedCount} geraucht`, `${smokedCount} smoked`)}</p>
             {doneRows.map(renderRow)}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => { setShowCompleted(false); tap(); }}
+            className="w-full h-11 mt-1 text-subtle t-14"
+          >
+            {t('Zuklappen', 'Collapse')}
+          </Button>
           </div>
         )}
       </div>
