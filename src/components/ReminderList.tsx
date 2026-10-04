@@ -385,28 +385,26 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
 
         {showCompleted && doneRows.length > 0 && (
           <div className="pt-[10px]">
-          <div
-            className="max-h-[55dvh] overflow-y-auto overscroll-contain"
-            ref={(el) => {
-              if (!el || !scrollOnOpen.current) return;
-              scrollOnOpen.current = false;
-              // Nur den Verlauf scrollen, niemals die Seite mit ihrer fixierten Leiste.
-              requestAnimationFrame(() => {
-                el.scrollTop = el.scrollHeight;
-              });
-            }}
-          >
-            <p className="px-1 pb-2 t-14 text-subtle">{t(`${smokedCount} geraucht`, `${smokedCount} smoked`)}</p>
-            {doneRows.map(renderRow)}
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => { setShowCompleted(false); tap(); }}
-            className="w-full h-11 mt-1 text-subtle t-14"
-          >
-            {t('Zuklappen', 'Collapse')}
-          </Button>
+            <div
+              className="max-h-[55dvh] overflow-y-auto overscroll-contain"
+              ref={(el) => {
+                if (!el || !scrollOnOpen.current) return;
+                scrollOnOpen.current = false;
+                // Nur den Verlauf scrollen, niemals die Seite mit ihrer fixierten Leiste.
+                requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+              }}
+            >
+              <p className="px-1 pb-2 t-14 text-subtle">{t(`${smokedCount} geraucht`, `${smokedCount} smoked`)}</p>
+              {doneRows.map(renderRow)}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => { setShowCompleted(false); tap(); }}
+              className="w-full h-11 mt-1 text-subtle t-14"
+            >
+              {t('Zuklappen', 'Collapse')}
+            </Button>
           </div>
         )}
       </div>

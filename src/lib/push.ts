@@ -44,8 +44,8 @@ export const buildPlan = (): Record<string, string[]> => {
   // Server-Pläne sind nach Kalendertagen geordnet.
   const calendarToday = formatLocalDate();
   for (let i = 0; i < 3; i++) plan[shiftDate(calendarToday, i)] = [];
-  // Der Vortag zählt mit: Nachtzeiten nach Mitternacht gehören zum heutigen Kalendertag.
-  for (let i = -1; i < 3; i++) {
+  // Nachtzeiten des laufenden logischen Tages zählen auch nach Mitternacht.
+  for (let i = 0; i < 3; i++) {
     const key = shiftDate(today, i);
     const day = days[key];
     if (!day) continue;
