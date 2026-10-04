@@ -12,6 +12,12 @@ const json = (body: unknown, status = 200) =>
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (m: number) => `${pad(Math.floor((m % 1440) / 60))}:${pad(m % 60)}`;
+const appDay = ({ date, minutes }: { date: string; minutes: number }) => {
+  if (minutes >= 7 * 60) return date;
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -52,15 +58,7 @@ Deno.serve(async (req) => {
     // Nach 07:00 nur mit einem Abgleich vom heutigen App-Tag senden.
     // Alte Pläne bleiben im Hintergrund gespeichert, dürfen aber nicht den neuen Morgen wecken.
     const updated = sub.updated_at ? localNow(sub.timezone, new Date(sub.updated_at)) : null;
-    const logicalDate = minutes < 7 * 60
-      ? new Date(`${date}T12:00:00Z`)
-      : null;
-    logicalDate?.setUTCDate(logicalDate.getUTCDate() - 1);
-    const currentDay = logicalDate ? logicalDate.toISOString().slice(0, 10) : date;
-    const updatedDay = updated && updated.minutes < 7 * 60
-      ? (() => { const d = new Date(`${updated.date}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })()
-      : updated?.date;
-    if (updatedDay !== currentDay) continue;
+    if (!updated || appDay(updated) !== appDay({ date, minutes })) continue;
 
     // Bevorzugt der vom Gerät übertragene, tatsächlich angezeigte Wecker-Plan
     const plan = (sub.plan ?? {}) as Record<string, string[]>;
