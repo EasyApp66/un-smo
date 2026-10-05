@@ -112,8 +112,7 @@ const ReminderRow = memo(
 
     return (
       <motion.div
-        layout={completedSection ? false : 'position'}
-        layoutDependency={openLayoutKey}
+        {...(completedSection ? {} : { layout: 'position' as const, layoutDependency: openLayoutKey })}
         initial={completedSection || reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0 }}
