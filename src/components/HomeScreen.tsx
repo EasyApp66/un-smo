@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/lib/i18n';
 import { useAppStore, sortKey, toMinutes } from '../store/appStore';
-import { getLogicalDate, logicalTargetTime } from '@/lib/logicalDate';
+import { getLogicalDate, targetForDay } from '@/lib/logicalDate';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
@@ -15,9 +15,6 @@ import {
   measurementDaysLeft,
   savedSummary,
 } from '@/lib/reductionPlan';
-
-
-const targetTime = logicalTargetTime;
 
 
 const HomeScreen = () => {
@@ -75,7 +72,7 @@ const HomeScreen = () => {
 
   // Nächste anstehende Zigarette – nur zur Anzeige
   const nextTarget = useMemo(() => {
-    if (!dayData) return null;
+    if (!dayData || selectedDate !== getLogicalDate()) return null;
     const now = Date.now();
     const wakeMin = toMinutes(dayWakeTime);
     const open = [...dayData.reminders]
@@ -83,8 +80,8 @@ const HomeScreen = () => {
       .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
     // Abgelaufene Einträge gelten als vorbei – der Countdown läuft für den
     // ersten noch bevorstehenden Wecker.
-    const next = open.find((r) => targetTime(r.time, now, wakeMin) > now) ?? open[0];
-    return next ? targetTime(next.time, now, wakeMin) : null;
+    const next = open.find((r) => targetForDay(selectedDate, r.time, wakeMin) > now);
+    return next ? targetForDay(selectedDate, next.time, wakeMin) : null;
   }, [dayData, dayWakeTime, selectedDate, minuteTick]);
 
 
