@@ -441,7 +441,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
         )}
       </div>
 
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence initial={false}>
         {openRows.map(renderRow)}
       </AnimatePresence>
 
