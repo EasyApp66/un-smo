@@ -442,7 +442,7 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
       </div>
 
       <AnimatePresence initial={false}>
-        {openRows.map(renderRow)}
+        {openRows.map((row) => renderRow(row))}
       </AnimatePresence>
 
       {stillOpenRows.length === 0 && reminders.length > 0 && (
