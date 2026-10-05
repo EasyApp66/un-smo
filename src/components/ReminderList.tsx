@@ -320,7 +320,12 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
       scrollOnOpen.current = false;
       const bottom = lastDoneRef.current?.getBoundingClientRect().bottom;
       if (bottom === undefined) return;
-      const safeArea = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-bottom')) || 0;
+      const probe = document.createElement('div');
+      probe.style.position = 'fixed';
+      probe.style.bottom = 'env(safe-area-inset-bottom, 0px)';
+      document.body.appendChild(probe);
+      const safeArea = parseFloat(getComputedStyle(probe).bottom) || 0;
+      probe.remove();
       const visibleBottom = window.innerHeight - 120 - safeArea;
       if (bottom > visibleBottom) {
         window.scrollTo({ top: window.scrollY + bottom - visibleBottom, behavior: reduceMotion ? 'instant' : 'smooth' });

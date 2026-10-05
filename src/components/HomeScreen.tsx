@@ -62,13 +62,14 @@ const HomeScreen = () => {
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('pageshow', tick);
     window.addEventListener('focus', tick);
+    tick();
     return () => {
       window.clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('pageshow', tick);
       window.removeEventListener('focus', tick);
     };
-  }, []);
+  }, [wakeTime]);
 
   // Nächste anstehende Zigarette – nur zur Anzeige
   const nextTarget = useMemo(() => {
