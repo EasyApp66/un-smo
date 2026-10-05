@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Dynamische Tagesgrenze und Zielzeiten pro ausgewähltem Tag korrigieren; drei Fälle testen
+- [x] Erledigten Verlauf ohne inneres Scrollen und Ruckeln öffnen; Menüleiste unverändert lassen
 - [x] Verlauf ohne Seitensprung öffnen und unten zuklappen; Nach-oben-Knopf erhalten
 - [x] Morgens keine alten Push-Meldungen vor dem Einrichten des neuen Tages
 

@@ -1,4 +1,4 @@
-import { getLogicalDate } from '@/lib/logicalDate';
+import { getLogicalDate, setDayBoundaryMinutes } from '@/lib/logicalDate';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { durableStorage } from '../lib/persistentStorage';
@@ -175,6 +175,9 @@ export const toMinutes = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 };
+
+// Auch vor dem asynchronen Laden des gespeicherten Zustands gilt der Startwert.
+setDayBoundaryMinutes(toMinutes('06:00'));
 
 /**
  * Rückfallwert, wenn keine Aufstehzeit bekannt ist (Zeiten vor 04:00 gelten
@@ -406,6 +409,7 @@ export const useAppStore = create<AppState>()(
           return;
         }
         set({ wakeTime: time });
+        setDayBoundaryMinutes(toMinutes(time));
         if (get().applyScheduleToAllDays) get().recalculateAllDays();
       },
 
@@ -524,6 +528,7 @@ export const useAppStore = create<AppState>()(
       completeOnboarding: () => set({ hasCompletedOnboarding: true, onboardingVersion: REQUIRED_ONBOARDING_VERSION }),
 
       completeOnboardingWithPlan: (input) => {
+        setDayBoundaryMinutes(toMinutes(input.wakeTime));
         const today = getTodayString();
         const estimate = Math.max(1, Math.min(60, Math.round(input.dailyCigarettes)));
         const goal = toOddGoal(estimate);
@@ -918,6 +923,7 @@ export const useAppStore = create<AppState>()(
       },
 
       deleteAllData: () => {
+        setDayBoundaryMinutes(toMinutes('06:00'));
         // Setze auf Standardwerte zurück
         set({
           wakeTime: '06:00',
@@ -1002,9 +1008,11 @@ export const useAppStore = create<AppState>()(
       },
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
+        setDayBoundaryMinutes(toMinutes(p.wakeTime ?? current.wakeTime));
         return { ...current, ...p, isLocked: !!p.pinHash };
       },
       onRehydrateStorage: () => (state) => {
+        setDayBoundaryMinutes(toMinutes(state?.wakeTime ?? '06:00'));
         applyTheme(state?.themeMode ?? 'system');
         if (!state) return;
         const today = getLogicalDate();

@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { ReminderTime } from '../store/appStore';
-import { getLogicalDate, logicalTargetTime } from '@/lib/logicalDate';
+import { getLogicalDate, targetForDay } from '@/lib/logicalDate';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { success, tap } from '../lib/haptics';
 import { tr, useT } from '../lib/i18n';
@@ -60,10 +60,8 @@ const CountdownFill = memo(({ start, target }: { start: number; target: number }
 });
 CountdownFill.displayName = 'CountdownFill';
 
-const targetTime = logicalTargetTime;
-
-const timeUntilLabel = (timeString: string, now: number, wakeMin: number): string => {
-  const diffMins = Math.floor((targetTime(timeString, now, wakeMin) - now) / 60000);
+const timeUntilLabel = (target: number, now: number): string => {
+  const diffMins = Math.floor((target - now) / 60000);
   if (diffMins <= 0) return tr('jetzt', 'now');
   if (diffMins < 60) return tr(`in ${diffMins} Min`, `in ${diffMins} min`);
   const h = Math.floor(diffMins / 60);
@@ -81,6 +79,8 @@ interface RowProps {
   target: number;
   progressStart: number;
   reduceMotion: boolean;
+  openLayoutKey?: string;
+  completedSection?: boolean;
   onToggle: (reminder: ReminderTime) => void;
   onSkip?: (id: string) => void;
 }
@@ -95,6 +95,8 @@ const ReminderRow = memo(
     target,
     progressStart,
     reduceMotion,
+    openLayoutKey,
+    completedSection,
     onToggle,
     onSkip,
   }: RowProps) => {
@@ -110,14 +112,14 @@ const ReminderRow = memo(
 
     return (
       <motion.div
-        layout="position"
-        initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+        {...(completedSection ? {} : { layout: 'position' as const, layoutDependency: openLayoutKey })}
+        initial={completedSection || reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0 }}
         transition={{
           duration: reduceMotion ? 0 : 0.18,
           ease: EASE,
-          delay: index < 6 ? index * 0.02 : 0,
+          delay: completedSection ? 0 : index < 6 ? index * 0.02 : 0,
           layout: { duration: reduceMotion ? 0 : 0.2, ease: EASE },
         }}
         className="mb-[10px]"
@@ -245,12 +247,20 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
   const [minuteTick, setMinuteTick] = useState(() => Date.now());
   const [showCompleted, setShowCompleted] = useState(false);
   const scrollOnOpen = useRef(false);
+  const lastDoneRef = useRef<HTMLDivElement>(null);
 
   const reduceMotion = !!useReducedMotion();
 
   useEffect(() => {
     const id = window.setInterval(() => setMinuteTick(Date.now()), 30_000);
-    return () => window.clearInterval(id);
+    const refresh = () => setMinuteTick(Date.now());
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('pageshow', refresh);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('pageshow', refresh);
+    };
   }, []);
 
   const wakeMin = wakeTime ? toMinutes(wakeTime) : DAY_BREAK;
@@ -261,15 +271,18 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
     [reminders, sortKey]
   );
 
+  const isToday = !!date && date === getLogicalDate(new Date(minuteTick));
+  const isPastDay = !!date && date < getLogicalDate(new Date(minuteTick));
   const nextReminderIndex = useMemo(() => {
+    if (!isToday || !date) return -1;
     // Abgelaufene offene Einträge gelten als „Vorbei“. Der Countdown läuft
     // beim ersten offenen Eintrag, dessen Zeit noch bevorsteht.
     const isOpen = (r: ReminderTime) => !r.completed && !r.extra && !r.skipped;
     const future = sortedReminders.findIndex(
-      (r) => isOpen(r) && targetTime(r.time, minuteTick, wakeMin) > minuteTick
+      (r) => isOpen(r) && targetForDay(date, r.time, wakeMin) > minuteTick
     );
-    return future >= 0 ? future : sortedReminders.findIndex(isOpen);
-  }, [sortedReminders, minuteTick, wakeMin]);
+    return future;
+  }, [sortedReminders, minuteTick, wakeMin, date, isToday]);
 
 
   const toggle = useCallback(
@@ -289,16 +302,36 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
   // Erledigte, Extra- und übersprungene Zigaretten liegen im aufklappbaren Zähler.
   const doneRows = rows.filter(({ r }) => r.completed || r.skipped || r.extra);
   const openRows = rows.filter(({ r }) => !r.completed && !r.skipped && !r.extra);
+  const openLayoutKey = openRows.map(({ r }) => r.id).join('|');
   // Nach der Schlafenszeit zählen vergangene offene Wecker nicht mehr als offen.
-  const afterSleep = !!sleepTime && targetTime(sleepTime, minuteTick, wakeMin) <= minuteTick;
+  const afterSleep = !!sleepTime && !!date && targetForDay(date, sleepTime, wakeMin) <= minuteTick;
   const stillOpenRows = afterSleep
-    ? openRows.filter(({ r }) => targetTime(r.time, minuteTick, wakeMin) > minuteTick)
+    ? openRows.filter(({ r }) => !!date && targetForDay(date, r.time, wakeMin) > minuteTick)
     : openRows;
   const smokedCount = doneRows.filter(({ r }) => r.completed).length;
   const skippedCount = doneRows.filter(({ r }) => !r.completed && r.skipped).length;
   const extraCount = reminders.filter((r) => r.extra).length;
-  const isToday = !!date && date === getLogicalDate();
   const rewardDue = isToday && goal !== undefined && stillOpenRows.length === 0 && reminders.length > 0 && smokedCount < goal;
+
+  useEffect(() => {
+    if (!showCompleted || !scrollOnOpen.current) return;
+    const frame = requestAnimationFrame(() => {
+      scrollOnOpen.current = false;
+      const bottom = lastDoneRef.current?.getBoundingClientRect().bottom;
+      if (bottom === undefined) return;
+      const probe = document.createElement('div');
+      probe.style.position = 'fixed';
+      probe.style.bottom = 'env(safe-area-inset-bottom, 0px)';
+      document.body.appendChild(probe);
+      const safeArea = parseFloat(getComputedStyle(probe).bottom) || 0;
+      probe.remove();
+      const visibleBottom = window.innerHeight - 120 - safeArea;
+      if (bottom > visibleBottom) {
+        window.scrollTo({ top: window.scrollY + bottom - visibleBottom, behavior: reduceMotion ? 'instant' : 'smooth' });
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [showCompleted, reduceMotion]);
 
   // Erfolgs-Haptik nur beim ersten Erscheinen pro Tag
   useEffect(() => {
@@ -314,9 +347,9 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
   }, [rewardDue, date]);
 
 
-  const renderRow = ({ r, i }: { r: ReminderTime; i: number }) => {
+  const renderRow = ({ r, i }: { r: ReminderTime; i: number }, completedSection = false) => {
     const isNext = i === nextReminderIndex;
-    const target = targetTime(r.time, minuteTick, wakeMin);
+    const target = date ? targetForDay(date, r.time, wakeMin) : 0;
     const planned = sortedReminders.filter((item) => !item.extra);
     const plannedIndex = planned.findIndex((item) => item.id === r.id);
     const currentKey = sortKey(r.timestamp);
@@ -333,11 +366,13 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
         reminder={r}
         index={i}
         isNext={isNext}
-        isPassed={!r.completed && !r.skipped && !isNext && target < minuteTick}
-        timeUntil={timeUntilLabel(r.time, minuteTick, wakeMin)}
+        isPassed={!r.completed && !r.skipped && (isPastDay || (isToday && !isNext && target < minuteTick))}
+        timeUntil={timeUntilLabel(target, minuteTick)}
         target={target}
         progressStart={progressStart}
         reduceMotion={reduceMotion}
+        completedSection={completedSection}
+        openLayoutKey={completedSection ? undefined : openLayoutKey}
         onToggle={toggle}
         onSkip={onSkip}
       />
@@ -385,18 +420,14 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
 
         {showCompleted && doneRows.length > 0 && (
           <div className="pt-[10px]">
-            <div
-              className="max-h-[55dvh] overflow-y-auto overscroll-contain"
-              ref={(el) => {
-                if (!el || !scrollOnOpen.current) return;
-                scrollOnOpen.current = false;
-                // Nur den Verlauf scrollen, niemals die Seite mit ihrer fixierten Leiste.
-                requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-              }}
-            >
+            <motion.div initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.15 }}>
               <p className="px-1 pb-2 t-14 text-subtle">{t(`${smokedCount} geraucht`, `${smokedCount} smoked`)}</p>
-              {doneRows.map(renderRow)}
-            </div>
+              {doneRows.map((row, index) => (
+                <div key={row.r.id} ref={index === doneRows.length - 1 ? lastDoneRef : undefined}>
+                  {renderRow(row, true)}
+                </div>
+              ))}
+            </motion.div>
             <Button
               type="button"
               variant="ghost"
@@ -409,8 +440,8 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
         )}
       </div>
 
-      <AnimatePresence mode="popLayout" initial={false}>
-        {openRows.map(renderRow)}
+      <AnimatePresence initial={false}>
+        {openRows.map((row) => renderRow(row))}
       </AnimatePresence>
 
       {stillOpenRows.length === 0 && reminders.length > 0 && (
