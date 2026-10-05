@@ -1008,6 +1008,7 @@ export const useAppStore = create<AppState>()(
       },
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
+        setDayBoundaryMinutes(toMinutes(p.wakeTime ?? current.wakeTime));
         return { ...current, ...p, isLocked: !!p.pinHash };
       },
       onRehydrateStorage: () => (state) => {
