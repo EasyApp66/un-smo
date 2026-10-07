@@ -43,7 +43,7 @@ describe('Tagesplan über Mitternacht', () => {
   });
 });
 
-describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
+describe('Extra-Zigarette lässt geplante Wecker stehen', () => {
   beforeEach(() => {
     resetStore();
     vi.useFakeTimers();
@@ -62,7 +62,7 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
 
     useAppStore.getState().addExtraCigarette(date);
     const after = useAppStore.getState().days[date].reminders;
-    expect(after.find((r) => r.id === latest.id)).toBeUndefined();
+    expect(after.find((r) => r.id === latest.id)).toBeDefined();
     expect(after.filter((r) => r.extra)).toHaveLength(1);
   });
 
@@ -92,8 +92,8 @@ describe('Extra-Zigarette entfernt den spätesten offenen Wecker', () => {
 
     const reduced = useAppStore.getState().days[date];
     expect(reduced.totalCigarettes).toBe(9);
-    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(6);
-    expect(reduced.reminders.some((r) => r.id === last.id)).toBe(false);
+    expect(reduced.reminders.filter((r) => !r.extra)).toHaveLength(9);
+    expect(reduced.reminders.some((r) => r.id === last.id)).toBe(true);
   });
 });
 
@@ -124,7 +124,7 @@ describe('Tagesziel bleibt unverändert', () => {
     useAppStore.getState().skipReminder(date, id);
     expect(open()).toHaveLength(8);
     useAppStore.getState().addExtraCigarette(date);
-    expect(open()).toHaveLength(7);
+    expect(open()).toHaveLength(8);
   });
 
   it('verwendet den Standard aus den Einstellungen für neue Tage', () => {
@@ -245,7 +245,7 @@ describe('Frühe Aufstehzeit und Nachtpläne', () => {
       .at(-1)!;
     useAppStore.getState().addExtraCigarette(date);
     const after = useAppStore.getState().days[date].reminders;
-    expect(after.find((r) => r.id === latest.id)).toBeUndefined();
+    expect(after.find((r) => r.id === latest.id)).toBeDefined();
   });
 
   it('nach Mitternacht bleiben die offenen Nachtzeiten des Vortags im Plan', () => {
