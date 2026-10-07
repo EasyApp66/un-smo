@@ -431,7 +431,12 @@ const ReminderList = ({ reminders, wakeTime, sleepTime, date, goal, onComplete, 
             <Button
               type="button"
               variant="ghost"
-              onClick={() => { setShowCompleted(false); tap(); }}
+              onClick={() => {
+                scrollOnOpen.current = false;
+                setShowCompleted(false);
+                window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' });
+                tap();
+              }}
               className="w-full h-11 mt-1 text-subtle t-14"
             >
               {t('Zuklappen', 'Collapse')}

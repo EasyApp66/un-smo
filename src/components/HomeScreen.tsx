@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/lib/i18n';
-import { useAppStore, sortKey, toMinutes } from '../store/appStore';
-import { getLogicalDate, targetForDay } from '@/lib/logicalDate';
+import { useAppStore } from '../store/appStore';
+import { getLogicalDate } from '@/lib/logicalDate';
 import MiniCalendar from './MiniCalendar';
 import ReminderList from './ReminderList';
 import DaySetupCard from './DaySetupCard';
-import Countdown from './Countdown';
-import { Timer, Flame } from 'lucide-react';
+import { CalendarDays, ArrowDown, ArrowUp, Minus, Flame } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   dayStatus,
   formatMoney,
   formatSavedTime,
   measurementDaysLeft,
+  previousWeekDayComparison,
   savedSummary,
 } from '@/lib/reductionPlan';
 
@@ -41,12 +41,10 @@ const HomeScreen = () => {
   const completedCount = dayData?.reminders.filter((r) => r.completed).length || 0;
   const totalCount = dayData?.totalCigarettes ?? dailyCigarettes;
 
-  // Minutentakt, damit die nächste Zigarette weiterwandert, auch ohne Antippen
-  const [minuteTick, setMinuteTick] = useState(0);
+  // Keep the selected logical day current after standby and at the day boundary.
   const todayRef = useRef(getLogicalDate());
   useEffect(() => {
     const tick = () => {
-      setMinuteTick((t) => t + 1);
       // Tageswechsel um 07:00 Uhr: die Ansicht folgt dem neuen Tag,
       // wenn zuvor der laufende Tag angezeigt wurde.
       const today = getLogicalDate();
@@ -71,19 +69,9 @@ const HomeScreen = () => {
     };
   }, [wakeTime]);
 
-  // Nächste anstehende Zigarette – nur zur Anzeige
-  const nextTarget = useMemo(() => {
-    if (!dayData || selectedDate !== getLogicalDate()) return null;
-    const now = Date.now();
-    const wakeMin = toMinutes(dayWakeTime);
-    const open = [...dayData.reminders]
-      .filter((r) => !r.completed && !r.skipped && !r.extra)
-      .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
-    // Abgelaufene Einträge gelten als vorbei – der Countdown läuft für den
-    // ersten noch bevorstehenden Wecker.
-    const next = open.find((r) => targetForDay(selectedDate, r.time, wakeMin) > now);
-    return next ? targetForDay(selectedDate, next.time, wakeMin) : null;
-  }, [dayData, dayWakeTime, selectedDate, minuteTick]);
+  const weekComparison = useMemo(() => previousWeekDayComparison(days, selectedDate), [days, selectedDate]);
+  const difference = weekComparison?.difference ?? 0;
+  const ComparisonArrow = difference < 0 ? ArrowDown : difference > 0 ? ArrowUp : Minus;
 
 
   const handleComplete = (reminderId: string) => {
@@ -173,16 +161,19 @@ const HomeScreen = () => {
 
           <div className="surface-card p-4">
             <span className="icon-tile mb-3">
-              <Timer className="w-6 h-6" strokeWidth={1.5} />
+              <CalendarDays className="w-6 h-6" strokeWidth={1.5} />
             </span>
-            <p className="t-14 text-subtle">{t('Abstand', 'Interval')}</p>
+            <p className="t-14 text-subtle">{t('Vorwoche', 'Last week')}</p>
             <p className="t-32 num text-foreground">
-              {nextTarget ? <Countdown target={nextTarget} /> : '–'}
+              {weekComparison?.previousSmoked ?? '–'}
             </p>
-            {nextTarget && (
-              <p className="t-12 text-subtle">
-                {t('um', 'at')} {new Date(nextTarget).toTimeString().slice(0, 5)}
+            {weekComparison ? (
+              <p className={`t-12 flex items-center gap-1 ${difference < 0 ? 'text-success' : difference > 0 ? 'text-destructive' : 'text-subtle'}`}>
+                <ComparisonArrow className="w-3.5 h-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                {difference < 0 ? t(`${Math.abs(difference)} weniger`, `${Math.abs(difference)} fewer`) : difference > 0 ? t(`${difference} mehr`, `${difference} more`) : t('Gleich viel', 'Same amount')}
               </p>
+            ) : (
+              <p className="t-12 text-subtle">{t('Keine Daten', 'No data')}</p>
             )}
           </div>
         </div>

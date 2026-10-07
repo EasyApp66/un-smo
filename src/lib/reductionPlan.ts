@@ -127,6 +127,15 @@ export const needsMeasurementReview = (
 
 export const actualSmoked = (day?: DayData) => day?.reminders.filter((r) => r.completed).length ?? 0;
 
+/** Compare the selected day with the same weekday seven local calendar days earlier. */
+export const previousWeekDayComparison = (days: Record<string, DayData>, date: string) => {
+  const previousDate = shiftDate(date, -7);
+  const previousDay = days[previousDate];
+  if (!previousDay) return null;
+  const previousSmoked = actualSmoked(previousDay);
+  return { previousDate, previousSmoked, difference: actualSmoked(days[date]) - previousSmoked };
+};
+
 export const measuredAverage = (days: Record<string, DayData>, startDate: string, fallback: number) => {
   const values: number[] = [];
   for (let i = 0; i < MEASUREMENT_DAYS; i += 1) {
