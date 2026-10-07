@@ -242,7 +242,7 @@ const reconcileExtraReduction = (
     // Andere Tage: Jedes Extra streicht genau einen offenen geplanten Wecker – von unten.
     const planned = restorePlannedReminders(day, settings);
     reminders = [...planned, ...extras];
-    if (extras.length > 0) {
+    if (false as boolean) {
       const open = planned
         .filter((r) => !r.completed && !r.skipped)
         .sort((a, b) => sortKey(a.timestamp, wakeMin) - sortKey(b.timestamp, wakeMin));
@@ -277,7 +277,8 @@ export const balanceRemaining = (
   const nowKey = sortKey(now.getHours() * 60 + now.getMinutes(), wakeMin);
   let sleepKey = sortKey(toMinutes(sleepTime), wakeMin);
   if (sleepKey <= wakeMin) sleepKey += 1440;
-  const smoked = reminders.filter((r) => r.completed).length;
+  // Extras verbrauchen keinen geplanten Platz – sie stehen zusätzlich im Verlauf.
+  const smoked = reminders.filter((r) => r.completed && !r.extra).length;
   // Ein übersprungener geplanter Wecker verbraucht seinen Platz.
   const skipped = reminders.filter((r) => r.skipped && !r.completed && !r.extra).length;
   const needed = Math.max(0, goal - smoked - skipped);
