@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Verlauf-Zuklappen scrollt nach oben; rechte Startseiten-Kachel zeigt gleichen Wochentag der Vorwoche mit Vergleich
+
 - [x] Dynamische Tagesgrenze und Zielzeiten pro ausgewähltem Tag korrigieren; drei Fälle testen
 - [x] Erledigten Verlauf ohne inneres Scrollen und Ruckeln öffnen; Menüleiste unverändert lassen
 - [x] Verlauf ohne Seitensprung öffnen und unten zuklappen; Nach-oben-Knopf erhalten

@@ -5,6 +5,7 @@ import {
   isMeasurementDate,
   measuredAverage,
   plannedTargetForDate,
+  previousWeekDayComparison,
   savedSummary,
   weekKey,
   type ReductionPlanState,
@@ -41,6 +42,19 @@ const day = (date: string, smoked: number, goal = 20): DayData => ({
 });
 
 describe('Messwoche und Abbauplan', () => {
+  it('vergleicht den gleichen Wochentag inklusive Extras und ohne übersprungene Wecker', () => {
+    const today = day('2026-10-07', 3);
+    today.reminders[0].extra = true;
+    today.reminders.push({ id: 'skip', time: '13:00', timestamp: 780, completed: false, skipped: true });
+    const days = { '2026-10-07': today, '2026-09-30': day('2026-09-30', 5) };
+    expect(previousWeekDayComparison(days, '2026-10-07')).toEqual({ previousDate: '2026-09-30', previousSmoked: 5, difference: -2 });
+    expect(previousWeekDayComparison({ ...days, '2026-09-30': day('2026-09-30', 1) }, '2026-10-07')?.difference).toBe(2);
+    expect(previousWeekDayComparison({ ...days, '2026-09-30': day('2026-09-30', 3) }, '2026-10-07')?.difference).toBe(0);
+  });
+  it('unterscheidet fehlende Vorwochendaten von einem rauchfreien Tag', () => {
+    expect(previousWeekDayComparison({}, '2026-10-07')).toBeNull();
+    expect(previousWeekDayComparison({ '2026-09-30': day('2026-09-30', 0) }, '2026-10-07')?.previousSmoked).toBe(0);
+  });
   it('stuft das Tagesziel einheitlich in grün, orange und rot ein', () => {
     expect(dayStatus(10, 10)).toBe('ok');
     expect(dayStatus(11, 10)).toBe('warn');
